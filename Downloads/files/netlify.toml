@@ -1,0 +1,36 @@
+[build]
+  # Build command for Expo web
+  command = "npm run build:web"
+  # Publish directory (Expo web output)
+  publish = "web-build"
+
+[build.environment]
+  # Node version
+  NODE_VERSION = "18"
+  # Expo CLI
+  EXPO_USE_METRO = "true"
+
+# Redirects for SPA routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Headers for security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Backend API proxy (if using Netlify Functions)
+# Uncomment if you want to use Netlify Functions as proxy to backend
+# Make sure to set BACKEND_URL environment variable in Netlify dashboard
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+

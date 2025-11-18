@@ -1,0 +1,10 @@
+{
+  "name": "netlify-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions for Scan Good API proxy",
+  "main": "api.js",
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}
+
