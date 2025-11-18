@@ -1,6 +1,7 @@
 [build]
-  # Build command for Expo web
-  command = "npx expo export:web"
+  # Build command for Expo web (Metro bundler)
+  # Install dependencies first, then export for web platform
+  command = "npm install && npx expo export --platform web --output-dir web-build"
   # Publish directory (Expo web output)
   publish = "web-build"
 
