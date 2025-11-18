@@ -1,6 +1,6 @@
 [build]
   # Build command for Expo web
-  command = "npm run build:web"
+  command = "npx expo export:web"
   # Publish directory (Expo web output)
   publish = "web-build"
 
