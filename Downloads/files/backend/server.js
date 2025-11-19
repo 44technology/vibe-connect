@@ -8,6 +8,7 @@ require('dotenv').config();
 const visionService = require('./services/visionService');
 const productService = require('./services/productService');
 const storeService = require('./services/storeService');
+const productSearchService = require('./services/productSearchService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -149,17 +150,20 @@ app.post('/api/scan/barcode', upload.single('image'), async (req, res) => {
   }
 });
 
-// Scan Product - Image recognition
+// Scan Product - Image recognition with internet product links
 app.post('/api/scan/product', upload.single('image'), async (req, res) => {
   try {
     let labels = null;
     let product = null;
+    let productName = null;
 
     // Try image recognition if image is provided
     if (req.file && req.file.buffer) {
       labels = await visionService.detectProductLabels(req.file.buffer);
       if (labels && labels.length > 0) {
         product = productService.findProductByLabels(labels);
+        // Get product name from labels for internet search
+        productName = labels[0].description || labels.map(l => l.description).join(' ');
       }
     }
 
@@ -191,13 +195,26 @@ app.post('/api/scan/product', upload.single('image'), async (req, res) => {
             },
           ],
         };
+        productName = product.name;
+      } else {
+        productName = product.name;
       }
+    } else {
+      productName = product.name || productName;
+    }
+
+    // Search for product links on internet
+    let productLinks = [];
+    if (productName) {
+      console.log('🔍 Searching product links for:', productName);
+      productLinks = await productSearchService.searchProductLinks(productName);
     }
     
     res.json({
       success: true,
       product: product,
       labelsDetected: labels ? labels.map(l => l.description) : null,
+      productLinks: productLinks, // Internet product links
     });
   } catch (error) {
     console.error('Error scanning product:', error);
