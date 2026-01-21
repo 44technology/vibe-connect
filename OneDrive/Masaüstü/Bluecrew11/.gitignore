@@ -1,0 +1,67 @@
+# dependencies
+node_modules/
+
+# expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macos
+.DS_Store
+*.pem
+
+# windows
+AppData/
+AppData/**
+**/AppData/**
+*.tmp
+*.odl
+*.tbres
+*.ldb
+Thumbs.db
+Desktop.ini
+
+# Chrome cache (absolute paths)
+**/Chrome/**
+**/Google/Chrome/**
+
+# OneDrive
+**/OneDrive/**
+
+# Microsoft cache
+**/Microsoft/OneDrive/**
+**/Microsoft/TokenBroker/**
+**/Microsoft/Windows/INetCache/**
+**/Microsoft/Windows/SharedWebView/**
+**/Microsoft/Windows/WebCache/**
+**/Microsoft.StartExperiencesApp*/
+
+# local env files
+.env*.local
+.env
+
+# Firebase config files (uncomment if you don't want to commit these)
+# google-services.json
+# GoogleService-Info.plist
+
+# typescript
+*.tsbuildinfo
+
+.vercel

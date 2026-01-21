@@ -1,0 +1,316 @@
+Test Case ID,Priority,Category,Test Case Name,Description,Preconditions,Test Steps,Expected Result,Test Data,Test Roles,Platform,Status,Notes
+TC-001,High,Authentication & User Management,User Login,Verify user can login with valid credentials,User account exists in Firebase,"1. Navigate to login page
+2. Enter valid email and password
+3. Click ""Login""","User successfully logs in and redirected to /projects page",Valid email and password,Admin PM Sales Office Client,All,
+TC-002,High,Authentication & User Management,Signup Functionality Removal,Verify signup is disabled,None,"1. Navigate to login page
+2. Check for ""Create New Account"" button
+3. Try to access /auth/register directly","No signup button visible on login page
+Register page redirects to login or shows access denied",None,All (public access),All,
+TC-003,Critical,Authentication & User Management,Admin Account Creation Security,Verify only admins can create admin accounts,Admin and non-admin users exist,"1. As non-admin user try to create admin account via team page
+2. As admin create new admin account via team page","Non-admin cannot create admin accounts
+Only existing admins can create new admin accounts",User credentials,Admin PM Sales Office,All,
+TC-004,High,Time Clock,Clock In/Out Functionality,Verify clock in/out works correctly,User has time clock access,"1. Navigate to Time Clock page
+2. Click ""Clock In""
+3. Verify entry appears at top of list
+4. Click ""Clock Out""
+5. Verify entry is updated","Clock in creates new entry
+New entries appear at top (sorted by created_at desc)
+Clock out updates entry with total hours",None,PM Sales Office,All,
+TC-005,Medium,Time Clock,Time Clock Entry Sorting,Verify entries are sorted correctly,Multiple time clock entries exist,"1. Create multiple time clock entries
+2. Verify order of entries","Most recent entries appear at top",Time clock entries,All time clock users,All,
+TC-006,High,Time Clock,Manual Clock Out (Admin Only),Verify admin can manually clock out users,Admin user and clocked-in entry exists,"1. As admin view time clock entries
+2. Find entry with status ""clocked_in""
+3. Click ""Manual Clock Out"" button
+4. Enter clock out time (HH:MM format)
+5. Click ""Complete Clock Out""","Modal opens with entry details
+Admin can enter manual clock out time
+Entry is updated with clock out time and total hours
+Entry status changes to ""clocked_out""",Clocked-in entry,Admin only,All,
+TC-007,High,Time Clock,Time Clock Access Control,Verify client cannot access time clock,Client user account,"1. Login as Client
+2. Try to access Time Clock page","Time Clock not visible in navigation menu
+Direct URL access should be blocked or show access denied",Client credentials,Client,All,
+TC-008,High,Client Management,Client Creation with Temporary Password,Verify client creation with temp password,Admin or Sales role,"1. Navigate to Clients page
+2. Click ""Add Client""
+3. Fill in Name Email Phone
+4. Click ""Generate"" for temporary password
+5. Click ""Add Client""","Password is auto-generated (12 characters)
+Success alert shows email password and login URL
+""Copy Password"" button works (web only)
+Client can login with generated password",Client details,Admin Sales,All,
+TC-009,High,Client Management,Client Login with Temporary Password,Verify client can login with temp password,Client created with temp password,"1. Create new client with temporary password
+2. Logout
+3. Login with client email and temporary password","Client successfully logs in and can access their pages",Client credentials,Client (newly created),All,
+TC-010,High,Client Management,Lead to Client Conversion,Verify lead conversion creates client with temp password,Lead exists,"1. Navigate to Leads page
+2. Select a lead
+3. Click ""Convert to Client""","Client account created in Firebase Auth
+Temporary password generated and displayed
+Login URL shown in success message
+Lead status updated to ""converted""",Lead data,Admin Sales,All,
+TC-011,Medium,Client Management,Client Detail Modal Scroll,Verify modal scrolls correctly on mobile,Mobile device client exists,"1. Navigate to Clients page (mobile view)
+2. Click on a client card
+3. Scroll through client details modal","Modal content scrolls smoothly without issues",Client data,Admin Sales,Mobile (iOS/Android),
+TC-012,High,Navigation & Permissions,Sales Menu Submenu (PM/Client/Office),Verify sales menu shows submenu for PM/Client/Office,PM Client or Office user,"1. Login as PM Client or Office
+2. Open hamburger menu (mobile) or top navigation (desktop)
+3. Click on ""Sales"" menu item","Sales menu expands to show submenu
+Submenu contains ""Proposals"" and ""Invoices""
+Sales Report is NOT visible",User credentials,PM Client Office,All,
+TC-013,High,Navigation & Permissions,Sales Menu Direct Link (Admin/Sales),Verify sales menu links directly for Admin/Sales,Admin or Sales user,"1. Login as Admin or Sales
+2. Click on ""Sales"" menu item","Directly navigates to Sales Report page (no submenu)",User credentials,Admin Sales,All,
+TC-014,Critical,Navigation & Permissions,Page Access Permissions,Verify client only sees allowed pages,Client user,"1. Login as Client
+2. Check navigation menu items
+3. Try to access restricted pages directly via URL","Only Projects Proposals Invoices visible
+Time Clock Sales Report Reports not visible
+Direct URL access to restricted pages blocked",Client credentials,Client,All,
+TC-015,High,Navigation & Permissions,Time Clock Page Access,Verify time clock visibility by role,Users of all roles,"1. Login as different roles
+2. Check Time Clock visibility","Visible for: Admin PM Sales Office
+NOT visible for: Client",User credentials,All roles,All,
+TC-016,High,Navigation & Permissions,Sales Report Page Access,Verify sales report visibility by role,Users of all roles,"1. Login as different roles
+2. Check Sales Report visibility","Visible for: Admin Sales
+NOT visible for: PM Client Office",User credentials,All roles,All,
+TC-017,High,Proposals & Invoices,Proposal Creation with Work Titles,Verify proposal creation with work title selection,Sales or Admin role,"1. Navigate to Proposals page
+2. Click ""Create Proposal""
+3. Select work title from predefined list
+4. Fill in quantity unit price
+5. Verify total calculation","Work title modal opens with search and A-Z sorting
+Can select from predefined list or enter ""New""
+Price calculated as quantity × unit_price
+Total cost includes all work titles supervision fee general conditions discount",Proposal data,Admin Sales,All,
+TC-018,High,Proposals & Invoices,Proposal Approval Workflow,Verify proposal approval workflow,Proposal created by Sales,"1. As Sales create proposal
+2. Click ""Send for Approval""
+3. As Admin approve proposal
+4. As Client approve proposal","""Send for Approval"" button disappears after clicking
+Admin can approve/reject/update review
+Client can only approve
+Invoice automatically created when both approvals complete",Proposal data,Sales Admin Client,All,
+TC-019,Medium,Proposals & Invoices,Proposal Discount Calculation,Verify discount calculation in proposals,Admin or Sales role,"1. Create proposal with work titles
+2. Add discount amount
+3. Verify total cost calculation","Discount is subtracted from total cost correctly",Proposal with discount,Admin Sales,All,
+TC-020,High,Proposals & Invoices,Invoice Partial Payment,Verify partial payment functionality,Invoice exists,"1. Navigate to Invoices page
+2. Select an invoice
+3. Change status to ""partial-paid""
+4. Enter paid amount
+5. Save","Modal opens for paid amount input
+Paid amount saved correctly
+Open balance calculated as total - paid_amount",Invoice data,Admin Sales,All,
+TC-021,High,Projects,Project Creation with Work Titles,Verify project creation with work titles,Admin or PM role,"1. Navigate to Projects page
+2. Click ""Create Project""
+3. Fill in project details
+4. Add work titles from predefined list
+5. Verify calculations","Work title modal with search and A-Z sorting
+Supervision fee calculation (full-time/part-time × weeks)
+General conditions percentage calculation
+Discount calculation
+Total budget includes all components",Project data,Admin PM,All,
+TC-022,High,Projects,Project Work Title Addition,Verify adding work title to existing project,Existing project,"1. Open existing project
+2. Click ""Add Work Title""
+3. Select work title from modal
+4. Fill in description and price
+5. Save","Work title selection modal opens (above Add Step modal)
+Can search and sort work titles
+Description and price saved correctly
+Work title appears in project details",Project data,Admin PM,All,
+TC-023,Low,Projects,Project Category Selection,Verify only Residential and Commercial options,Admin or PM role,"1. Create new project
+2. Click on Category field","Only ""Residential"" and ""Commercial"" options available",None,Admin PM,All,
+TC-024,Medium,Projects,Project Client Selection Modal,Verify client selection modal,Admin or PM role,"1. Create new project
+2. Click on Client field","Modal opens with search bar
+""New Client"" option at top
+Existing clients listed alphabetically
+Can search clients by name or email",Client list,Admin PM,All,
+TC-025,High,Expenses,Expense Creation,Verify expense creation,Admin role,"1. Navigate to Expenses page
+2. Click ""Add Expense""
+3. Select expense type
+4. Choose project or office expense
+5. Fill in amount description date
+6. Save","Expense created successfully
+Appears in expense list
+Correctly assigned to project or marked as office",Expense data,Admin,All,
+TC-026,High,Expenses,Expense Assignment,Verify expense assignment to project,Admin role and project exists,"1. Create expense
+2. Select ""Project Expense""
+3. Choose a project
+4. Save","Expense is linked to selected project",Expense and project data,Admin,All,
+TC-027,High,Expenses,Expense Integration in Reports,Verify expenses appear in reports,Completed projects with expenses,Admin role,"1. Navigate to Reports page
+2. Select a year
+3. View monthly reports","Total expenses shown per project
+Net profit calculated (gross profit - expenses)
+Expenses included in CSV export",Report data,Admin,All,
+TC-028,High,Reports,Reports Page Data Integration,Verify reports show completed projects,Completed project exists,Admin role,"1. Complete a project
+2. Navigate to Reports page
+3. Check monthly report for completion month","Completed project appears in reports
+Total revenue updated
+Gross profit calculated correctly
+Expenses included
+Net profit calculated",Project data,Admin,All,
+TC-029,Medium,Reports,Reports Page Access,Verify client cannot access reports,Client user,"1. Login as Client
+2. Check navigation menu","Reports page NOT visible for clients",Client credentials,Client,All,
+TC-030,High,Material Requests & Change Orders,Material Request Approval,Verify material request approval workflow,Material request exists,"1. Create material request
+2. As Admin approve request
+3. As Admin/Office update purchase status (ordered shipped delivered)","Only Admin can approve/reject
+Admin/Office can update purchase status
+Notifications sent on status changes",Material request data,Admin PM Office,All,
+TC-031,High,Material Requests & Change Orders,Change Order Approval,Verify change order approval,Change order request exists,"1. Create change order request
+2. As Admin approve/reject","Only Admin can approve/reject
+Notifications sent on approval/rejection",Change order data,Admin PM,All,
+TC-032,High,Notifications,Notification Creation,Verify notifications are created,User with access,"1. Send chat message in project
+2. Update material request status
+3. Approve change order","Notifications created for relevant users
+Notifications appear in Notifications page
+Unread count updates",Various actions,All roles,All,
+TC-033,Low,Notifications,Notifications Page Design,Verify notifications page design,User with notifications,"1. Navigate to Notifications page","Card-based design (not blue background)
+Yellow left border on notification cards
+White background cards with shadow",None,All roles,All,
+TC-034,Medium,UI/UX,Back Button Consistency,Verify back button appears on all pages,User logged in,"1. Navigate to various pages
+2. Check back button appearance","Yellow back button (ArrowLeft icon) on all pages
+Back button works correctly
+No ""Back to Widgets"" button in HR page",None,All roles,All,
+TC-035,Low,UI/UX,Page Title Alignment,Verify title alignment on mobile,Mobile device,"1. Navigate to Time Clock page (mobile)
+2. Navigate to Reports page (mobile)
+3. Check title alignment","Titles aligned to left (not right)",None,All roles,Mobile,
+TC-036,Low,UI/UX,Permissions Page Title,Verify permissions page title,Admin user,"1. Navigate to Permissions page","Title shows ""Permissions"" (not ""Page Permissions"")
+No Shield icon next to title",None,Admin,All,
+TC-037,High,Mobile Responsiveness,Modal Scroll on Mobile,Verify modals scroll correctly on mobile,Mobile device,"1. Open Client Detail modal (mobile)
+2. Scroll through content
+3. Open Add Client modal (mobile)
+4. Scroll through form","Content scrolls smoothly
+No scroll conflicts
+Keyboard doesn't block inputs",Client data,Admin Sales,Mobile (iOS/Android),
+TC-038,Medium,Mobile Responsiveness,Date Picker in Lead Notes,Verify date picker in lead notes,Lead exists,"1. Navigate to Leads page
+2. Open lead detail
+3. Click ""Add Note""
+4. Click on Contact Date field","Date picker opens (native on mobile HTML5 on web)
+Selected date displays correctly
+Date saved with note",Lead data,Admin Sales,All,
+TC-039,Critical,Data Integrity,Undefined Values in Firestore,Verify no undefined values in Firestore,Admin role,"1. Create user without optional fields (phone company)
+2. Create project without optional fields (description discount)
+3. Check Firestore console","No undefined values in Firestore documents",User and project data,Admin,All,
+TC-040,High,Data Integrity,User Deletion,Verify user deletion persists,User exists,"1. Delete a user from Team page
+2. Refresh page
+3. Check if user reappears","User deleted and doesn't reappear after refresh",User data,Admin,All,
+TC-041,High,Workflow & Business Logic,Material Tracking Workflow,Verify material tracking workflow,Material request exists,"1. Create material request
+2. Admin approves request
+3. Admin/Office marks as ""Ordered""
+4. Admin/Office marks as ""Shipped""
+5. Admin/Office marks as ""Delivered""","Request must be approved before tracking
+Only Admin/Office can update purchase status
+Status changes in correct order",Material request data,Admin PM Office,All,
+TC-042,High,Workflow & Business Logic,Project Approval Workflow,Verify project approval restrictions,Project exists,"1. Create project
+2. Try to approve as Sales
+3. Approve as Admin","Sales cannot approve projects
+Only Admin can approve projects",Project data,Admin Sales,All,
+TC-043,Medium,Performance & Real-time Updates,Real-time Data Updates,Verify reports update automatically,Admin user and projects,"1. Open Reports page
+2. Complete a project in another tab
+3. Wait 30 seconds","Reports page updates automatically with new completed project",Project data,Admin,All,
+TC-044,Medium,Performance & Real-time Updates,Pull to Refresh,Verify pull to refresh works,User logged in,"1. Navigate to any list page (Projects Clients Leads etc.)
+2. Pull down to refresh","Data refreshes and loading indicator shows",None,All roles,Mobile (iOS/Android),
+TC-045,Critical,Proposals & Invoices,Complete Proposal to Project Workflow,Verify complete workflow from proposal creation to project conversion,Sales Admin Client and PM user accounts exist,"1. As Sales create new proposal with client info work titles general conditions supervision fee
+2. Click ""Send for Approval""
+3. As Admin approve proposal in Project Approval page
+4. As Client approve proposal in Sales/Proposals page
+5. Verify invoice automatically created
+6. As Admin/Sales change invoice status to ""paid"" or ""partial-paid""
+7. As Admin/PM create project from paid invoice
+8. Verify project form pre-filled with invoice data
+9. Complete project creation","Proposal created and sent for approval
+Admin can approve proposal
+Client can approve proposal
+Invoice automatically created when both approvals complete
+Invoice status can be updated to paid/partial-paid
+Project can be created from paid invoice
+Project form pre-filled with invoice data
+Project created successfully",Proposal with multiple work titles discount client info,Sales Admin Client PM,All,
+TC-046,Critical,Proposals & Invoices,Automatic Invoice Creation on Dual Approval,Verify invoice automatically created when both admin and client approve,Proposal exists with management_approval = approved,"1. As Client navigate to Sales/Proposals page
+2. Find proposal with status ""Pending Client Approval""
+3. Click ""Approve"" button
+4. Verify success message
+5. As Admin/Sales navigate to Invoices page
+6. Verify new invoice exists
+7. Open invoice and verify all data matches proposal","Invoice automatically created when client approves
+Invoice number generated (INV-YYYY-####)
+All proposal data correctly transferred to invoice
+Invoice status is ""pending""
+Invoice linked to proposal via proposal_id",Approved proposal (management approved client pending),Client Admin Sales,All,
+TC-047,High,Proposals & Invoices,Invoice Deposit Payment (Partial Paid),Verify deposit payment workflow and project conversion eligibility,Invoice exists with status pending,"1. Navigate to Invoices page
+2. Select an invoice
+3. Change status to ""partial-paid""
+4. Enter deposit amount (less than total cost)
+5. Save
+6. Verify invoice status updated
+7. Verify paid_amount and open balance calculated
+8. Verify project creation eligibility","Partial paid modal opens
+Deposit amount can be entered
+Paid amount saved correctly
+Open balance calculated correctly
+Invoice status shows ""Partial Paid"",Invoice with total cost > 0,Admin Sales,All,
+TC-048,High,Proposals & Invoices,Invoice Full Payment (Paid Status),Verify full payment workflow and project conversion,Invoice exists with status pending or partial-paid,"1. Navigate to Invoices page
+2. Select an invoice
+3. Change status to ""paid""
+4. Verify invoice status updated
+5. Verify paid_amount equals total_cost
+6. Navigate to Projects page
+7. Create project from paid invoice
+8. Verify project form pre-filled","Invoice status changes to ""paid""
+Paid amount automatically set to total_cost
+Invoice can be used to create project
+Project form pre-filled with all invoice data",Invoice with status pending or partial-paid,Admin Sales PM,All,
+TC-049,Critical,Projects,Project Creation from Paid Invoice,Verify project creation from paid invoice with data pre-filling,Invoice exists with status paid and proposal_id linked,"1. Navigate to Projects page
+2. Click ""Create Project"" button
+3. Select invoice from list
+4. Verify project form pre-filled with client work titles costs
+5. Fill in required fields (title description dates category)
+6. Save project
+7. Verify project appears in projects list
+8. Open project and verify all data correct","Invoice data correctly pre-filled in project form
+Client information transferred correctly
+Work titles transferred correctly
+Costs transferred correctly
+Project can be saved successfully
+Project appears in projects list with correct status",Paid invoice with proposal_id multiple work titles,Admin PM,All,
+TC-050,High,Proposals & Invoices,Proposal to Invoice Data Integrity,Verify all proposal data correctly transfers to invoice,Proposal with all fields filled exists,"1. Create proposal with client info multiple work titles general conditions supervision fee discount
+2. Complete approval workflow (Admin + Client)
+3. Verify invoice created
+4. Compare invoice data with proposal (client work titles costs total)","All proposal data correctly transferred to invoice
+No data loss or corruption
+Calculations match (total cost)
+Proposal ID correctly linked",Complete proposal with all fields,Sales Admin Client,All,
+TC-051,High,Projects,Invoice to Project Data Integrity,Verify all invoice data correctly transfers to project,Paid invoice exists with all fields,"1. Navigate to Projects page
+2. Create project from paid invoice
+3. Verify pre-filled data (client work titles costs)
+4. Complete project creation
+5. Open created project
+6. Compare project data with invoice","All invoice data correctly transferred to project
+No data loss or corruption
+Work titles preserved
+Costs preserved",Paid invoice with complete data,Admin PM,All,
+TC-052,High,Proposals & Invoices,Proposal Rejection Workflow,Verify proposal rejection does not create invoice,Proposal exists with management_approval = approved,"1. As Client navigate to Sales/Proposals page
+2. Find proposal pending client approval
+3. Click ""Reject"" button
+4. Enter rejection reason
+5. Submit rejection
+6. As Admin/Sales navigate to Invoices page
+7. Verify no invoice created for rejected proposal
+8. Check proposal status shows ""rejected""","Proposal can be rejected by client
+Rejection reason saved
+No invoice created for rejected proposal
+Proposal status updated to ""rejected""",Approved proposal (management approved client pending),Client Admin Sales,All,
+TC-053,High,Proposals & Invoices,Proposal Change Request Workflow,Verify client can request changes to proposal,Proposal exists with management_approval = approved and client_approval = pending,"1. As Client navigate to Sales/Proposals page
+2. Find proposal pending approval
+3. Click ""Request Changes"" button
+4. Enter change request details
+5. Submit change request
+6. Verify proposal status updated
+7. As Admin/Sales verify proposal shows ""Changes Requested"" status","Client can request changes
+Change request reason saved
+Proposal status updated to ""request_changes""
+No invoice created
+Sales/Admin can see change request",Approved proposal (management approved client pending),Client Admin Sales,All,
+TC-054,Medium,Proposals & Invoices,Multiple Proposals Same Client,Verify workflow with multiple proposals for same client,Client exists with multiple proposals,"1. Create 2-3 proposals for same client
+2. Approve all proposals (Admin + Client)
+3. Verify multiple invoices created
+4. Pay invoices (full or partial)
+5. Create projects from paid invoices
+6. Verify all projects linked to same client","Multiple proposals can exist for same client
+Each approved proposal creates separate invoice
+Each paid invoice can create separate project
+All projects correctly linked to client",Multiple proposals for same client,Sales Admin Client PM,All,
+
+
+

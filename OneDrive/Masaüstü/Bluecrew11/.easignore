@@ -1,0 +1,79 @@
+# Dependencies
+node_modules/
+.expo/
+dist/
+web-build/
+
+# Build outputs
+*.log
+*.tsbuildinfo
+
+# Environment files
+.env*.local
+.env
+
+# OS files
+.DS_Store
+*.pem
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Windows system files - absolute paths
+AppData/
+AppData/**
+**/AppData/**
+
+# Chrome cache - all patterns
+**/Chrome/**
+**/Google/Chrome/**
+AppData/Local/Google/Chrome/**
+**/Chrome/**/Cache/**
+**/Chrome/**/Code Cache/**
+**/Chrome/**/Local Storage/**
+**/Chrome/**/Service Worker/**
+
+# OneDrive - all patterns
+**/OneDrive/**
+AppData/Local/Microsoft/OneDrive/**
+**/OneDrive/logs/**
+**/OneDrive/Cache/**
+
+# Microsoft cache - all patterns
+**/Microsoft/OneDrive/**
+**/Microsoft/TokenBroker/**
+**/Microsoft/Windows/INetCache/**
+**/Microsoft/Windows/SharedWebView/**
+**/Microsoft/Windows/WebCache/**
+**/Microsoft.StartExperiencesApp/**
+AppData/Local/Microsoft/**
+
+# Temp and cache files
+*.tmp
+*.odl
+*.tbres
+*.ldb
+
+# Temp files
+**/Temp/
+**/*.tmp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Vercel
+.vercel
+
+# Firebase config (uncomment if needed)
+# google-services.json
+# GoogleService-Info.plist

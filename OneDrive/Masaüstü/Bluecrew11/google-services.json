@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "822347973979",
+    "project_id": "bluecrew-app",
+    "storage_bucket": "bluecrew-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:822347973979:android:a90c670830ae2fe093067e",
+        "android_client_info": {
+          "package_name": "com.bluecrew.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfKdTZNy7PzAWDyaM9tj9ntgvFPMgYjPA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

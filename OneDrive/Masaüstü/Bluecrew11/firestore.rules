@@ -1,0 +1,339 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to get user role
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && getUserRole() == 'admin';
+    }
+    
+    // Helper function to check if user is pm, sales, or office
+    function isTimeClockUser() {
+      return request.auth != null && getUserRole() in ['pm', 'sales', 'office'];
+    }
+    
+    // Time Clock collection - special rules
+    match /time_clock/{entryId} {
+      // Users can read their own entries
+      allow read: if request.auth != null && 
+        resource.data.user_id == request.auth.uid;
+      // Admins can read all entries
+      allow read: if isAdmin();
+      // PM, Sales, Office can create entries (their own) - clock in
+      allow create: if isTimeClockUser() && 
+        request.resource.data.user_id == request.auth.uid;
+      // Users can only clock out their own entries (status changes from clocked_in to clocked_out)
+      // They cannot edit entries after clock out
+      allow update: if request.auth != null && 
+        resource.data.user_id == request.auth.uid &&
+        resource.data.status == 'clocked_in' &&
+        request.resource.data.status == 'clocked_out' &&
+        // Only allow updating clock_out, total_hours, status, updated_at, and clock_out_location fields
+        request.resource.data.clock_in == resource.data.clock_in &&
+        request.resource.data.user_id == resource.data.user_id &&
+        request.resource.data.user_name == resource.data.user_name &&
+        request.resource.data.user_role == resource.data.user_role &&
+        request.resource.data.date == resource.data.date &&
+        request.resource.data.created_at == resource.data.created_at;
+      // Admins can update any entry
+      allow update: if isAdmin();
+      // Only admins can delete entries
+      allow delete: if isAdmin();
+    }
+    
+    // Project Steps - only admin can write
+    match /projects/{projectId}/steps/{stepId} {
+      // Anyone authenticated can read steps
+      allow read: if request.auth != null;
+      // Only admin can create, update, or delete steps
+      allow create, update, delete: if isAdmin();
+    }
+    
+    // Steps collection (if used separately)
+    match /steps/{stepId} {
+      // Anyone authenticated can read steps
+      allow read: if request.auth != null;
+      // Only admin can create, update, or delete steps
+      allow create, update, delete: if isAdmin();
+    }
+    
+    // Material Requests
+    match /materialRequests/{requestId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // PM Schedules
+    match /pmSchedules/{scheduleId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Change Orders
+    match /changeOrders/{orderId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Change Order Requests
+    match /changeOrderRequests/{requestId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null && (isAdmin() || resource.data.requested_by == request.auth.uid);
+    }
+    
+    // Schedules (separate from pmSchedules)
+    match /schedules/{scheduleId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+    
+    // Expenses
+    match /expenses/{expenseId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null && (isAdmin() || resource.data.created_by == request.auth.uid);
+    }
+    
+    // Daily Logs
+    match /daily_logs/{logId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null && (isAdmin() || resource.data.created_by == request.auth.uid);
+    }
+    
+    // Documents
+    match /documents/{documentId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null && (isAdmin() || resource.data.uploaded_by_id == request.auth.uid);
+    }
+    
+    // Sub Contractors
+    match /sub_contractors/{contractorId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && (isAdmin() || getUserRole() == 'pm' || getUserRole() == 'sales');
+      allow update: if request.auth != null && (isAdmin() || getUserRole() == 'pm' || getUserRole() == 'sales');
+      allow delete: if isAdmin();
+    }
+    
+    // Vendors
+    match /vendors/{vendorId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && (isAdmin() || getUserRole() == 'pm' || getUserRole() == 'sales');
+      allow update: if request.auth != null && (isAdmin() || getUserRole() == 'pm' || getUserRole() == 'sales');
+      allow delete: if isAdmin();
+    }
+    
+    // Chats
+    match /chats/{chatId} {
+      allow read: if request.auth != null && 
+        request.auth.uid in resource.data.participants;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && 
+        request.auth.uid in resource.data.participants;
+      allow delete: if request.auth != null && 
+        (resource.data.created_by == request.auth.uid || isAdmin());
+    }
+    
+    // Messages
+    match /messages/{messageId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && 
+        resource.data.sender_id == request.auth.uid;
+      allow delete: if request.auth != null && 
+        (resource.data.sender_id == request.auth.uid || isAdmin());
+    }
+    
+    // Projects collection - admin, sales, and office (with edit permission) can create/update
+    match /projects/{projectId} {
+      // Anyone authenticated can read projects
+      allow read: if request.auth != null;
+      
+      // Admin, Sales, and Office can create projects
+      allow create: if request.auth != null && 
+        (getUserRole() == 'admin' || getUserRole() == 'sales' || getUserRole() == 'office');
+      
+      // Sales and Office can update their own projects (status changes for approval)
+      allow update: if request.auth != null && 
+        (getUserRole() == 'sales' || getUserRole() == 'office') &&
+        resource.data.created_by == request.auth.uid;
+      
+      // Admin can update any project
+      allow update: if isAdmin();
+      
+      // Only admin can delete projects
+      allow delete: if isAdmin();
+    }
+    
+    // Users collection - special security rules
+    match /users/{userId} {
+      // Anyone can read their own user document
+      allow read: if request.auth != null && request.auth.uid == userId;
+      // Admins can read all user documents
+      allow read: if isAdmin();
+      
+      // Only admins can create new users
+      allow create: if isAdmin();
+      
+      // Users can update their own profile (but not role)
+      allow update: if request.auth != null && 
+        request.auth.uid == userId &&
+        // Prevent users from changing their own role
+        request.resource.data.role == resource.data.role;
+      
+      // Admins can update any user
+      allow update: if isAdmin();
+      
+      // Only admins can delete users
+      allow delete: if isAdmin();
+    }
+    
+    // Proposals collection - sales, admin, and office (with edit permission) can create/update
+    match /proposals/{proposalId} {
+      // Anyone authenticated can read proposals
+      allow read: if request.auth != null;
+      
+      // Sales, Admin, and Office can create proposals
+      allow create: if request.auth != null && 
+        (getUserRole() == 'sales' || getUserRole() == 'admin' || getUserRole() == 'office');
+      
+      // Sales and Office can update their own proposals
+      allow update: if request.auth != null && 
+        (getUserRole() == 'sales' || getUserRole() == 'office') &&
+        resource.data.created_by == request.auth.uid;
+      
+      // Admin can update any proposal
+      allow update: if isAdmin();
+      
+      // Only admin can delete proposals
+      allow delete: if isAdmin();
+    }
+    
+    // Invoices collection - sales, admin, and office (with edit permission) can create/update
+    match /invoices/{invoiceId} {
+      // Anyone authenticated can read invoices
+      allow read: if request.auth != null;
+      
+      // Sales, Admin, and Office can create invoices
+      allow create: if request.auth != null && 
+        (getUserRole() == 'sales' || getUserRole() == 'admin' || getUserRole() == 'office');
+      
+      // Sales and Office can update invoices
+      allow update: if request.auth != null && 
+        (getUserRole() == 'sales' || getUserRole() == 'admin' || getUserRole() == 'office');
+      
+      // Only admin can delete invoices
+      allow delete: if isAdmin();
+    }
+    
+    // Clients collection - sales, admin, and office (with edit permission) can create/update
+    match /clients/{clientId} {
+      // Admin, Sales, and Office can read clients
+      allow read: if request.auth != null && 
+        (getUserRole() == 'admin' || getUserRole() == 'sales' || getUserRole() == 'office');
+      
+      // Sales, Admin, and Office can create clients
+      allow create: if request.auth != null && 
+        (getUserRole() == 'sales' || getUserRole() == 'admin' || getUserRole() == 'office');
+      
+      // Sales, Admin, and Office can update clients
+      allow update: if request.auth != null && 
+        (getUserRole() == 'sales' || getUserRole() == 'admin' || getUserRole() == 'office');
+      
+      // Only admin can delete clients
+      allow delete: if isAdmin();
+    }
+    
+    // Leads collection - sales, admin, and office (with edit permission) can create/update
+    match /leads/{leadId} {
+      // Admin, Sales, and Office can read leads
+      allow read: if request.auth != null && 
+        (getUserRole() == 'admin' || getUserRole() == 'sales' || getUserRole() == 'office');
+      
+      // Sales, Admin, and Office can create leads
+      allow create: if request.auth != null && 
+        (getUserRole() == 'sales' || getUserRole() == 'admin' || getUserRole() == 'office');
+      
+      // Sales, Admin, and Office can update leads
+      allow update: if request.auth != null && 
+        (getUserRole() == 'sales' || getUserRole() == 'admin' || getUserRole() == 'office');
+      
+      // Only admin can delete leads
+      allow delete: if isAdmin();
+    }
+    
+    // Team collection - only admin can manage
+    match /team/{teamId} {
+      // Admin can read all team members
+      allow read: if request.auth != null && 
+        (getUserRole() == 'admin' || getUserRole() == 'pm' || getUserRole() == 'sales' || getUserRole() == 'office');
+      
+      // Only admin can create, update, or delete team members
+      allow create, update, delete: if isAdmin();
+    }
+    
+    // HR collection - only admin can manage
+    match /hr/{hrId} {
+      // Only admin can read, create, update, or delete HR records
+      allow read, write: if isAdmin();
+    }
+    
+    // Comments collection - authenticated users can read/write
+    match /comments/{commentId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && 
+        resource.data.created_by == request.auth.uid;
+      allow delete: if request.auth != null && 
+        (resource.data.created_by == request.auth.uid || isAdmin());
+    }
+    
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null && 
+        resource.data.user_id == request.auth.uid;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && 
+        resource.data.user_id == request.auth.uid;
+      allow delete: if request.auth != null && 
+        (resource.data.user_id == request.auth.uid || isAdmin());
+    }
+    
+    // Permissions collection - only admin can read/write
+    match /permissions/{permissionId} {
+      allow read, write: if isAdmin();
+    }
+    
+    // Todos collection - admin creates, admin and PM can edit, admin can delete
+    match /todos/{todoId} {
+      // Anyone authenticated can read todos for projects they have access to
+      allow read: if request.auth != null;
+      
+      // Only admin can create todos
+      allow create: if isAdmin();
+      
+      // Admin and PM can update todos (PM can mark as complete)
+      allow update: if request.auth != null && 
+        (isAdmin() || getUserRole() == 'pm');
+      
+      // Only admin can delete todos
+      allow delete: if isAdmin();
+    }
+    
+    // Default rule for all other collections - authenticated users can read/write
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+

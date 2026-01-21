@@ -1,0 +1,454 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AuthProvider {
+  EMAIL
+  PHONE
+  GOOGLE
+  APPLE
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum MeetupStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum MatchStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum ClassStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id            String        @id @default(uuid())
+  email         String?       @unique
+  phone         String?       @unique
+  password      String?
+  firstName     String
+  lastName      String
+  displayName   String?
+  avatar        String?
+  bio           String?
+  dateOfBirth   DateTime?
+  gender        String?       // e.g., 'male', 'female', 'nonbinary', 'prefer-not'
+  lookingFor    String[]      // Array of looking for options: 'friendship', 'dating', 'networking'
+  interests     String[]      // Array of interest IDs
+  photos        String[]      // Array of photo URLs
+  selfie        String?      // Selfie photo URL for verification
+  authProvider  AuthProvider  @default(EMAIL)
+  providerId    String?       // For OAuth providers
+  isVerified    Boolean       @default(false)
+  status        UserStatus    @default(ACTIVE)
+  latitude      Float?
+  longitude     Float?
+  lastSeen      DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  createdMeetups Meetup[]     @relation("MeetupCreator")
+  joinedMeetups  MeetupMember[]
+  sentMessages   Message[]    @relation("MessageSender")
+  receivedMatches Match[]     @relation("MatchReceiver")
+  sentMatches     Match[]     @relation("MatchSender")
+  chats           ChatMember[]
+  enrolledClasses ClassEnrollment[]
+  stories         Story[]     @relation("UserStories")
+  storyViews      StoryView[]  @relation("UserStoryViews")
+  posts           Post[]       @relation("UserPosts")
+  postLikes       PostLike[]   @relation("UserPostLikes")
+  postComments    PostComment[] @relation("UserPostComments")
+  badges          UserBadge[]  @relation("UserBadges")
+  notifications   Notification[] @relation("UserNotifications")
+
+  @@index([email])
+  @@index([phone])
+  @@index([latitude, longitude])
+  @@map("users")
+}
+
+model Venue {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  address     String
+  city        String
+  state       String?
+  country     String
+  zipCode     String?
+  latitude    Float
+  longitude   Float
+  image       String?
+  website     String?
+  phone       String?
+  capacity    Int?
+  amenities   String[] // Array of amenities
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  meetups     Meetup[]
+  classes     Class[]
+  stories     Story[]
+  posts       Post[]
+
+  @@index([latitude, longitude])
+  @@map("venues")
+}
+
+model Meetup {
+  id          String        @id @default(uuid())
+  title       String
+  description String?
+  image       String?
+  startTime   DateTime
+  endTime     DateTime?
+  status      MeetupStatus  @default(UPCOMING)
+  maxAttendees Int?
+  category    String?
+  tags        String[]
+  latitude    Float?
+  longitude   Float?
+  location    String?       // Location name/address
+  isPublic    Boolean       @default(true)  // Public or private event
+  isFree      Boolean       @default(true)  // Free or paid event
+  pricePerPerson Float?     // Price per person if paid
+  isBlindMeet Boolean       @default(false) // Blind meet (users can't see each other)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  creatorId   String
+  creator     User          @relation("MeetupCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  venueId     String?
+  venue       Venue?        @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  members     MeetupMember[]
+  chats       Chat[]
+  stories     Story[]
+  posts       Post[]        @relation("MeetupPosts")
+
+  @@index([creatorId])
+  @@index([venueId])
+  @@index([latitude, longitude])
+  @@index([startTime])
+  @@index([isPublic])
+  @@index([isBlindMeet])
+  @@map("meetups")
+}
+
+model MeetupMember {
+  id        String   @id @default(uuid())
+  meetupId  String
+  userId    String
+  joinedAt  DateTime @default(now())
+  status    String   @default("going") // going, maybe, not_going
+
+  // Relations
+  meetup    Meetup   @relation(fields: [meetupId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([meetupId, userId])
+  @@index([meetupId])
+  @@index([userId])
+  @@map("meetup_members")
+}
+
+model Chat {
+  id        String   @id @default(uuid())
+  name      String?
+  type      String   @default("direct") // direct, group
+  meetupId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  meetup    Meetup?  @relation(fields: [meetupId], references: [id], onDelete: Cascade)
+  members   ChatMember[]
+  messages  Message[]
+
+  @@index([meetupId])
+  @@map("chats")
+}
+
+model ChatMember {
+  id        String   @id @default(uuid())
+  chatId    String
+  userId    String
+  joinedAt  DateTime @default(now())
+  lastReadAt DateTime?
+
+  // Relations
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+  @@index([chatId])
+  @@index([userId])
+  @@map("chat_members")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  chatId    String
+  senderId  String
+  content   String
+  image     String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender    User     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([chatId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+model Match {
+  id        String      @id @default(uuid())
+  senderId  String
+  receiverId String
+  status    MatchStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // Relations
+  sender    User        @relation("MatchSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver  User        @relation("MatchReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([status])
+  @@map("matches")
+}
+
+model Class {
+  id          String        @id @default(uuid())
+  title       String
+  description String
+  skill       String        // e.g., "Tennis", "Cooking", "Yoga"
+  category    String?       // e.g., "Sports", "Arts", "Wellness"
+  image       String?
+  startTime   DateTime
+  endTime     DateTime?
+  status      ClassStatus   @default(UPCOMING)
+  maxStudents Int?
+  price       Float?        // Price for the class
+  schedule    String?       // e.g., "Every Saturday 10am-12pm"
+  latitude    Float?
+  longitude   Float?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  venueId     String
+  venue       Venue         @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  enrollments ClassEnrollment[]
+
+  @@index([venueId])
+  @@index([skill])
+  @@index([category])
+  @@index([status])
+  @@index([startTime])
+  @@index([latitude, longitude])
+  @@map("classes")
+}
+
+model ClassEnrollment {
+  id        String   @id @default(uuid())
+  classId   String
+  userId    String
+  enrolledAt DateTime @default(now())
+  status    String   @default("enrolled") // enrolled, completed, cancelled
+
+  // Relations
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, userId])
+  @@index([classId])
+  @@index([userId])
+  @@map("class_enrollments")
+}
+
+model Story {
+  id        String   @id @default(uuid())
+  userId    String
+  image     String   // Story image URL
+  venueId   String?  // Optional: if story is about a venue
+  meetupId  String?  // Optional: if story is about a meetup
+  expiresAt DateTime // Stories expire after 24 hours
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation("UserStories", fields: [userId], references: [id], onDelete: Cascade)
+  venue     Venue?   @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  meetup    Meetup?  @relation(fields: [meetupId], references: [id], onDelete: SetNull)
+  views     StoryView[]
+
+  @@index([userId])
+  @@index([venueId])
+  @@index([meetupId])
+  @@index([expiresAt])
+  @@map("stories")
+}
+
+model StoryView {
+  id        String   @id @default(uuid())
+  storyId   String
+  userId    String
+  viewedAt  DateTime @default(now())
+
+  // Relations
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  user      User     @relation("UserStoryViews", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storyId, userId])
+  @@index([storyId])
+  @@index([userId])
+  @@map("story_views")
+}
+
+model Post {
+  id        String   @id @default(uuid())
+  userId    String
+  content   String?  // Post text content
+  image     String?  // Post image URL
+  venueId   String?  // Optional: if post is about a venue
+  meetupId  String?  // Optional: if post is about a meetup
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user      User     @relation("UserPosts", fields: [userId], references: [id], onDelete: Cascade)
+  venue     Venue?   @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  meetup    Meetup?  @relation("MeetupPosts", fields: [meetupId], references: [id], onDelete: SetNull)
+  likes     PostLike[]
+  comments  PostComment[]
+
+  @@index([userId])
+  @@index([venueId])
+  @@index([meetupId])
+  @@index([createdAt])
+  @@map("posts")
+}
+
+model PostLike {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  // Relations
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation("UserPostLikes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("post_likes")
+}
+
+model PostComment {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation("UserPostComments", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([userId])
+  @@map("post_comments")
+}
+
+model Badge {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  icon        String?  // Badge icon URL or emoji
+  category    String?  // e.g., "social", "activity", "achievement"
+  createdAt   DateTime @default(now())
+
+  // Relations
+  userBadges UserBadge[]
+
+  @@index([category])
+  @@map("badges")
+}
+
+model UserBadge {
+  id        String   @id @default(uuid())
+  userId    String
+  badgeId   String
+  earnedAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation("UserBadges", fields: [userId], references: [id], onDelete: Cascade)
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@index([badgeId])
+  @@map("user_badges")
+}
+
+enum NotificationType {
+  MEETUP_JOINED
+  MEETUP_INVITATION
+  MATCH_REQUEST
+  MESSAGE
+  CLASS_ENROLLMENT
+  SYSTEM
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?            // Additional data (meetupId, matchId, etc.)
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  // Relations
+  user      User             @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  @@map("notifications")
+}
