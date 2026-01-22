@@ -3,6 +3,7 @@ services:
     name: vibe-connect-backend
     env: node
     plan: free
+    rootDir: Downloads/meetupapp/vibe-connect-main
     buildCommand: cd server && npm install && npm run build && npx prisma generate
     startCommand: cd server && npm run start
     envVars:
