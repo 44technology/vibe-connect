@@ -116,7 +116,7 @@ const SurpriseMePage = () => {
         {/* Content */}
         <div className="flex-1 flex items-center justify-center p-6">
           <div className="w-full max-w-sm">
-            {!selectedEvent ? (
+            {!selectedMeetup ? (
               <div className="text-center">
                 {/* Dice */}
                 <motion.div
