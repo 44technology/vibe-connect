@@ -1,30 +1,42 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Dice5, Users, MapPin, Calendar, Sparkles, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MobileLayout from '@/components/layout/MobileLayout';
 import BottomNav from '@/components/layout/BottomNav';
 import { Button } from '@/components/ui/button';
-
-const surpriseEvents = [
-  { id: '1', title: 'Mystery Coffee Meetup', venue: 'Secret Location in Wynwood', time: 'Tomorrow, 10 AM', category: 'Coffee ☕', attendees: 4 },
-  { id: '2', title: 'Blind Brunch Date', venue: 'Hidden Gem Restaurant', time: 'Sunday, 11 AM', category: 'Dining 🍽️', attendees: 6 },
-  { id: '3', title: 'Adventure Sports Day', venue: 'Surprise Venue', time: 'Saturday, 2 PM', category: 'Sports 🎾', attendees: 8 },
-  { id: '4', title: 'Creative Workshop', venue: 'Art District', time: 'Friday, 6 PM', category: 'Activities 🎨', attendees: 5 },
-  { id: '5', title: 'Sunset Social', venue: 'Beach Location TBA', time: 'This Evening', category: 'Events 🎉', attendees: 12 },
-];
+import { useMeetups } from '@/hooks/useMeetups';
+import { useJoinMeetup } from '@/hooks/useMeetups';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const SurpriseMePage = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [isRolling, setIsRolling] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<typeof surpriseEvents[0] | null>(null);
+  const [selectedMeetup, setSelectedMeetup] = useState<any | null>(null);
   const [diceValue, setDiceValue] = useState(1);
   const [showAd, setShowAd] = useState(false);
   const [adTimeLeft, setAdTimeLeft] = useState(10);
 
+  // Fetch blind meetups from API
+  const { data: blindMeetups, isLoading: blindMeetupsLoading } = useMeetups({
+    isBlindMeet: true,
+    status: 'UPCOMING',
+  });
+
+  const joinMeetup = useJoinMeetup();
+
+  useEffect(() => {
+    // If we have blind meetups, use them; otherwise use mock data
+    if (blindMeetups && blindMeetups.length > 0 && !selectedMeetup && !isRolling) {
+      // Blind meetups are available
+    }
+  }, [blindMeetups]);
+
   const rollDice = () => {
     setIsRolling(true);
-    setSelectedEvent(null);
+    setSelectedMeetup(null);
     
     // Animate dice rolling
     let rolls = 0;
@@ -36,10 +48,16 @@ const SurpriseMePage = () => {
       if (rolls >= maxRolls) {
         clearInterval(interval);
         setIsRolling(false);
-        // Select random event
-        const randomEvent = surpriseEvents[Math.floor(Math.random() * surpriseEvents.length)];
-        setSelectedEvent(randomEvent);
-        // Show ad for 10 seconds
+        
+        // Select random blind meetup from API or fallback to mock
+        let availableMeetups = blindMeetups && blindMeetups.length > 0 
+          ? blindMeetups 
+          : [{ id: 'sample-3', title: 'Blind Adventure', venue: { name: 'Secret Location' }, startTime: new Date().toISOString(), _count: { members: 4 } }];
+        
+        const randomMeetup = availableMeetups[Math.floor(Math.random() * availableMeetups.length)];
+        setSelectedMeetup(randomMeetup);
+        
+        // Show ad for 10 seconds (mandatory, no skip)
         setShowAd(true);
         setAdTimeLeft(10);
         
@@ -57,9 +75,25 @@ const SurpriseMePage = () => {
     }, 100);
   };
 
-  const handleJoin = () => {
-    // Navigate to blind meet detail page (sample-3 is a blind meet)
-    navigate('/meetup/sample-3');
+  const handleJoin = async () => {
+    if (!isAuthenticated) {
+      toast.error('Please login to join a vibe');
+      navigate('/login');
+      return;
+    }
+
+    if (!selectedMeetup) {
+      toast.error('No meetup selected');
+      return;
+    }
+
+    try {
+      await joinMeetup.mutateAsync({ meetupId: selectedMeetup.id });
+      toast.success('Successfully joined the blind vibe!');
+      navigate(`/meetup/${selectedMeetup.id}`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to join vibe');
+    }
   };
 
   return (
@@ -131,13 +165,6 @@ const SurpriseMePage = () => {
                     <span>Ad ends in {adTimeLeft}s</span>
                   </div>
                 </div>
-                <Button
-                  onClick={() => setShowAd(false)}
-                  variant="outline"
-                  className="w-full"
-                >
-                  Skip Ad
-                </Button>
               </motion.div>
             ) : (
               <motion.div
@@ -149,23 +176,39 @@ const SurpriseMePage = () => {
                   <Sparkles className="w-8 h-8 text-primary-foreground" />
                 </div>
 
-                <h3 className="text-xl font-bold text-foreground mb-1">{selectedEvent.title}</h3>
-                <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-                  {selectedEvent.category}
-                </span>
+                <h3 className="text-xl font-bold text-foreground mb-1">{selectedMeetup.title}</h3>
+                {selectedMeetup.category && (
+                  <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+                    {selectedMeetup.category}
+                  </span>
+                )}
 
                 <div className="space-y-2 mb-6 text-left">
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
                     <MapPin className="w-5 h-5 text-primary" />
-                    <span className="text-foreground text-sm">{selectedEvent.venue}</span>
+                    <span className="text-foreground text-sm">
+                      {selectedMeetup.venue?.name || selectedMeetup.location || 'Secret Location'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
                     <Calendar className="w-5 h-5 text-primary" />
-                    <span className="text-foreground text-sm">{selectedEvent.time}</span>
+                    <span className="text-foreground text-sm">
+                      {selectedMeetup.startTime 
+                        ? new Date(selectedMeetup.startTime).toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            month: 'short', 
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit'
+                          })
+                        : 'TBA'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
                     <Users className="w-5 h-5 text-primary" />
-                    <span className="text-foreground text-sm">{selectedEvent.attendees} mystery attendees</span>
+                    <span className="text-foreground text-sm">
+                      {selectedMeetup._count?.members || 0} mystery attendees
+                    </span>
                   </div>
                 </div>
 

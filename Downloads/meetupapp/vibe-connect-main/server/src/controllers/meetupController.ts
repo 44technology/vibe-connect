@@ -286,6 +286,7 @@ export const getMeetups = async (
       search,
       isFree,
       isPublic,
+      isBlindMeet,
       priceMin,
       priceMax,
       latitude,
@@ -311,6 +312,10 @@ export const getMeetups = async (
 
     if (isPublic !== undefined) {
       where.isPublic = isPublic === 'true';
+    }
+
+    if (isBlindMeet !== undefined) {
+      where.isBlindMeet = isBlindMeet === 'true';
     }
 
     if (priceMin || priceMax) {

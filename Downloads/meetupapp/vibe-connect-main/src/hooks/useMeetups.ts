@@ -52,6 +52,7 @@ export const useMeetups = (filters?: {
   search?: string;
   isFree?: boolean;
   isPublic?: boolean;
+  isBlindMeet?: boolean;
   priceMin?: number;
   priceMax?: number;
   latitude?: number;
@@ -67,6 +68,7 @@ export const useMeetups = (filters?: {
       if (filters?.search) params.append('search', filters.search);
       if (filters?.isFree !== undefined) params.append('isFree', filters.isFree.toString());
       if (filters?.isPublic !== undefined) params.append('isPublic', filters.isPublic.toString());
+      if (filters?.isBlindMeet !== undefined) params.append('isBlindMeet', filters.isBlindMeet.toString());
       if (filters?.priceMin) params.append('priceMin', filters.priceMin.toString());
       if (filters?.priceMax) params.append('priceMax', filters.priceMax.toString());
       if (filters?.latitude) params.append('latitude', filters.latitude.toString());
