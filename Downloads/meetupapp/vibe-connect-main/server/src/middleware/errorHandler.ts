@@ -2,9 +2,16 @@ import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
 
-export interface AppError extends Error {
-  statusCode?: number;
+export class AppError extends Error {
+  statusCode: number;
   code?: string;
+
+  constructor(message: string, statusCode: number = 500, code?: string) {
+    super(message);
+    this.statusCode = statusCode;
+    this.code = code;
+    Error.captureStackTrace(this, this.constructor);
+  }
 }
 
 export const errorHandler = (
@@ -43,7 +50,7 @@ export const errorHandler = (
   }
 
   // Custom application errors
-  const statusCode = err.statusCode || 500;
+  const statusCode = (err as AppError).statusCode || 500;
   const message = err.message || 'Internal server error';
 
   // Log error in development
@@ -57,15 +64,3 @@ export const errorHandler = (
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 };
-
-export class AppError extends Error {
-  statusCode: number;
-  code?: string;
-
-  constructor(message: string, statusCode: number = 500, code?: string) {
-    super(message);
-    this.statusCode = statusCode;
-    this.code = code;
-    Error.captureStackTrace(this, this.constructor);
-  }
-}

@@ -95,6 +95,8 @@ app.get('/api', (req, res) => {
         'POST /api/auth/google': 'Google OAuth login',
         'POST /api/auth/apple': 'Apple Sign-In',
         'GET /api/auth/me': 'Get current user (requires auth)',
+        'POST /api/auth/otp/send': 'Send OTP to phone number',
+        'POST /api/auth/otp/verify': 'Verify OTP and login/register',
       },
       users: {
         'GET /api/users': 'Search users (requires auth)',
@@ -145,10 +147,6 @@ app.get('/api', (req, res) => {
       suggestions: {
         'GET /api/suggestions/classes': 'Get class suggestions (query: skill, category)',
         'POST /api/suggestions/classes/request': 'Request a class suggestion (requires auth)',
-      },
-      auth: {
-        'POST /api/auth/otp/send': 'Send OTP to phone number',
-        'POST /api/auth/otp/verify': 'Verify OTP and login/register',
       },
       stories: {
         'POST /api/stories': 'Create story (requires auth, multipart/form-data with image)',

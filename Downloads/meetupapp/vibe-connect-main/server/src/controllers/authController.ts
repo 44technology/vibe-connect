@@ -218,15 +218,6 @@ export const googleAuth = async (
           isVerified: true,
           lastSeen: new Date(),
         },
-        select: {
-          id: true,
-          email: true,
-          phone: true,
-          firstName: true,
-          lastName: true,
-          displayName: true,
-          avatar: true,
-        },
       });
     } else {
       // Create new user
@@ -241,16 +232,11 @@ export const googleAuth = async (
           providerId: finalSub,
           isVerified: true,
         },
-        select: {
-          id: true,
-          email: true,
-          phone: true,
-          firstName: true,
-          lastName: true,
-          displayName: true,
-          avatar: true,
-        },
       });
+    }
+
+    if (!user) {
+      throw new AppError('Failed to create or update user', 500);
     }
 
     const token = generateToken(user.id);
@@ -312,15 +298,6 @@ export const appleAuth = async (
           isVerified: true,
           lastSeen: new Date(),
         },
-        select: {
-          id: true,
-          email: true,
-          phone: true,
-          firstName: true,
-          lastName: true,
-          displayName: true,
-          avatar: true,
-        },
       });
     } else {
       dbUser = await prisma.user.create({
@@ -333,16 +310,11 @@ export const appleAuth = async (
           providerId: userId,
           isVerified: true,
         },
-        select: {
-          id: true,
-          email: true,
-          phone: true,
-          firstName: true,
-          lastName: true,
-          displayName: true,
-          avatar: true,
-        },
       });
+    }
+
+    if (!dbUser) {
+      throw new AppError('Failed to create or update user', 500);
     }
 
     const token = generateToken(dbUser.id);
