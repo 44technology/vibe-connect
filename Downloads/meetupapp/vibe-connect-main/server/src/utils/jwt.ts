@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is not set');
@@ -6,11 +6,12 @@ if (!process.env.JWT_SECRET) {
 
 export const generateToken = (userId: string): string => {
   const secret = process.env.JWT_SECRET as string;
-  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+  const expiresIn = (process.env.JWT_EXPIRES_IN || '7d') as string;
+  const options: SignOptions = { expiresIn };
   return jwt.sign(
     { userId },
     secret,
-    { expiresIn }
+    options
   );
 };
 
