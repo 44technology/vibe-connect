@@ -292,18 +292,20 @@ export const mockApiRequest = async <T = any>(
   }
 
   if (pathname.includes('/auth/otp/verify')) {
-    const otps = getStorage(OTP_STORAGE_KEY, {});
-    const storedOtp = otps[body.phone];
-
-    // Accept the dummy OTP code (123456) or stored code
-    const isValidCode = storedOtp && (storedOtp.code === body.code || body.code === '123456');
+    // Always accept dummy code 123456 for easy testing
+    const isValidCode = body.code === '123456' || body.code === '000000';
     
     if (!isValidCode) {
-      return {
-        success: false,
-        message: 'Invalid OTP code. Use: 123456',
-        verified: false,
-      } as T;
+      // Still accept if OTP was sent before
+      const otps = getStorage(OTP_STORAGE_KEY, {});
+      const storedOtp = otps[body.phone];
+      if (!storedOtp || storedOtp.code !== body.code) {
+        return {
+          success: false,
+          message: 'Invalid OTP code. Use: 123456',
+          verified: false,
+        } as T;
+      }
     }
 
     // Check if user exists
