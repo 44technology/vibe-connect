@@ -125,26 +125,6 @@ const LoginPage = () => {
     }
   };
 
-  const handleVerifyOTP = async () => {
-    if (!otp || otp.length !== 6) {
-      toast.error('Please enter the 6-digit code');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const formattedPhone = phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g, '')}`;
-      await verifyOTP(formattedPhone, otp);
-      toast.success('Signed in successfully!');
-      setStep('complete');
-      setTimeout(() => navigate('/home'), 1500);
-    } catch (error: any) {
-      toast.error(error.message || 'Invalid OTP code');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const renderInput = () => {
     if (!showInput) return null;
 
