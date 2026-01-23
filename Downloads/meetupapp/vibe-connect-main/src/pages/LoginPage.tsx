@@ -29,12 +29,7 @@ const messages: Record<LoginStep, string[]> = {
   phone: [
     "Perfect!",
     "What's your phone number?",
-    "I'll send you a verification code.",
-  ],
-  otp: [
-    "Check your phone! 📱",
-    "I just sent you a code.",
-    "Enter it here to continue.",
+    "We'll verify it automatically.",
   ],
   complete: [
     "Welcome back! 🎉",
