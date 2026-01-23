@@ -4,12 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import uliMascot from '@/assets/uli-mascot.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronRight, Check, Users, Heart, Briefcase, Home, Phone, Mail, Smartphone, Camera, X, Upload, Sparkles } from 'lucide-react';
+import { ChevronRight, Check, Users, Heart, Briefcase, Home, Phone, Mail, Smartphone, Camera, X, Upload, Sparkles, Coffee, Dumbbell, Music, Gamepad2, BookOpen, Plane, UtensilsCrossed, Film, ShoppingBag, GraduationCap } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { API_ENDPOINTS, apiRequest } from '@/lib/api';
 
-type OnboardingStep = 'welcome' | 'method' | 'phone' | 'otp' | 'name' | 'birthday' | 'gender' | 'lookingFor' | 'interests' | 'photos' | 'selfie' | 'complete';
+type OnboardingStep = 'welcome' | 'method' | 'phone' | 'otp' | 'name' | 'birthday' | 'gender' | 'lookingFor' | 'interests' | 'bio' | 'photos' | 'selfie' | 'complete';
 
 const signupMethods = [
   { id: 'phone', label: 'Phone Number', icon: Phone, description: 'Sign up with OTP code' },
@@ -25,9 +25,21 @@ const genderOptions = [
 ];
 
 const lookingForOptions = [
-  { id: 'friendship', label: 'Friendship', icon: Users, color: 'friendme' },
-  { id: 'dating', label: 'Dating', icon: Heart, color: 'loveme' },
-  { id: 'networking', label: 'Networking', icon: Briefcase, color: 'connectme' },
+  { id: 'friendship', label: 'Friendship', icon: Users, emoji: '👥', color: 'friendme' },
+  { id: 'dating', label: 'Dating', icon: Heart, emoji: '💕', color: 'loveme' },
+  { id: 'networking', label: 'Networking', icon: Briefcase, emoji: '🤝', color: 'connectme' },
+  { id: 'coffee-chats', label: 'Coffee Chats', icon: Coffee, emoji: '☕', color: 'friendme' },
+  { id: 'workout-buddies', label: 'Workout Buddies', icon: Dumbbell, emoji: '💪', color: 'friendme' },
+  { id: 'music-lovers', label: 'Music Lovers', icon: Music, emoji: '🎵', color: 'friendme' },
+  { id: 'gaming', label: 'Gaming', icon: Gamepad2, emoji: '🎮', color: 'friendme' },
+  { id: 'book-club', label: 'Book Club', icon: BookOpen, emoji: '📚', color: 'friendme' },
+  { id: 'travel-companions', label: 'Travel', icon: Plane, emoji: '✈️', color: 'friendme' },
+  { id: 'foodies', label: 'Foodies', icon: UtensilsCrossed, emoji: '🍽️', color: 'friendme' },
+  { id: 'movie-buddies', label: 'Movies', icon: Film, emoji: '🎬', color: 'friendme' },
+  { id: 'shopping', label: 'Shopping', icon: ShoppingBag, emoji: '🛍️', color: 'friendme' },
+  { id: 'study-partners', label: 'Study Partners', icon: GraduationCap, emoji: '📖', color: 'friendme' },
+  { id: 'adventure', label: 'Adventure', icon: Users, emoji: '🏔️', color: 'friendme' },
+  { id: 'nightlife', label: 'Nightlife', icon: Music, emoji: '🌃', color: 'friendme' },
 ];
 
 const interestOptions = [
@@ -159,18 +171,24 @@ const messages: Record<OnboardingStep, string[]> = {
     "How do you identify?",
   ],
   lookingFor: [
-    "Almost there!",
-    "What brings you to ULIKME? Select all that apply! ✨",
+    "Great!",
+    "What are you looking for?",
+    "Select all that apply! Find your vibe! ✨",
   ],
   interests: [
     "Awesome!",
     "What are you passionate about?",
     "Select up to 10 interests! Pick your hobbies and passions! 🎨",
   ],
+  bio: [
+    "Great!",
+    "Tell us about yourself.",
+    "Share a bit about who you are and what you love! 💫",
+  ],
   photos: [
     "Awesome!",
-    "Let's add some photos to your profile.",
-    "Add at least 2 photos so people can see the real you! 📸",
+    "Let's add photos and videos to your profile.",
+    "Add at least 2 photos/videos (up to 15) so people can see the real you! 📸🎥",
   ],
   selfie: [
     "Last step!",
@@ -199,6 +217,7 @@ const OnboardingPage = () => {
   const [gender, setGender] = useState('');
   const [lookingFor, setLookingFor] = useState<string[]>([]);
   const [interests, setInterests] = useState<string[]>([]);
+  const [bio, setBio] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [selfie, setSelfie] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -262,50 +281,10 @@ const OnboardingPage = () => {
     try {
       const formattedPhone = phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g, '')}`;
       
-      // Call API using apiRequest helper
-      const data = await apiRequest<{ success: boolean; message: string; otp?: string }>(
-        API_ENDPOINTS.AUTH.SEND_OTP,
-        {
-          method: 'POST',
-          body: JSON.stringify({ phone: formattedPhone }),
-        }
-      );
+      // Skip OTP verification - directly verify with dummy code
+      const response = await verifyOTP(formattedPhone, '123456');
       
-      // Show OTP code in development
-      if (data.otp) {
-        toast.success(`OTP Code: ${data.otp}`, { 
-          duration: 15000,
-          description: 'Copy this code to verify your phone number'
-        });
-      } else {
-        toast.success('OTP code sent! Check backend console for the code.');
-      }
-      
-      setStep('otp');
-    } catch (error: any) {
-      console.error('OTP send error:', error);
-      if (error.message?.includes('Failed to fetch') || error.message?.includes('ERR_CONNECTION_REFUSED')) {
-        toast.error('Cannot connect to server. Please make sure the backend is running on port 5000.');
-      } else {
-        toast.error(error.message || 'Failed to send OTP');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (!otp || otp.length !== 6) {
-      toast.error('Please enter the 6-digit code');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const formattedPhone = phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g, '')}`;
-      const response = await verifyOTP(formattedPhone, otp);
-      
-      // If user was created/authenticated, save token and go to home
+      // If user was created/authenticated, save token
       if (response && 'data' in response && response.data?.token) {
         setOtpVerified(true);
         toast.success('Phone verified!');
@@ -318,11 +297,14 @@ const OnboardingPage = () => {
         setStep('name');
       }
     } catch (error: any) {
-      toast.error(error.message || 'Invalid OTP code');
+      console.error('Phone verification error:', error);
+      toast.error(error.message || 'Failed to verify phone number');
     } finally {
       setLoading(false);
     }
   };
+
+  // OTP verification removed - phone number is automatically verified
 
   const handleNameNext = () => {
     // Split name into first and last name
@@ -433,6 +415,7 @@ const OnboardingPage = () => {
           gender,
           lookingFor,
           interests,
+          bio,
           photos: uploadedPhotos,
           selfie: uploadedSelfie,
         }),
@@ -450,7 +433,7 @@ const OnboardingPage = () => {
   };
 
   const handleNext = () => {
-    const steps: OnboardingStep[] = ['welcome', 'method', 'phone', 'otp', 'name', 'birthday', 'gender', 'lookingFor', 'interests', 'photos', 'selfie', 'complete'];
+    const steps: OnboardingStep[] = ['welcome', 'method', 'phone', 'otp', 'name', 'birthday', 'gender', 'lookingFor', 'interests', 'bio', 'photos', 'selfie', 'complete'];
     const currentIndex = steps.indexOf(step);
     if (currentIndex < steps.length - 1) {
       const nextStep = steps[currentIndex + 1];
@@ -482,7 +465,29 @@ const OnboardingPage = () => {
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-      Array.from(files).slice(0, 6 - photos.length).forEach((file) => {
+      const remainingSlots = 15 - photos.length;
+      if (remainingSlots <= 0) {
+        toast.error('Maximum 15 photos/videos allowed');
+        return;
+      }
+      
+      Array.from(files).slice(0, remainingSlots).forEach((file) => {
+        // Check file type
+        const isVideo = file.type.startsWith('video/');
+        const isImage = file.type.startsWith('image/');
+        
+        if (!isVideo && !isImage) {
+          toast.error(`${file.name} is not a valid image or video file`);
+          return;
+        }
+        
+        // Check file size (max 50MB for videos, 10MB for images)
+        const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+        if (file.size > maxSize) {
+          toast.error(`${file.name} is too large. Max size: ${isVideo ? '50MB' : '10MB'}`);
+          return;
+        }
+        
         const reader = new FileReader();
         reader.onload = (e) => {
           if (e.target?.result) {
@@ -555,7 +560,7 @@ const OnboardingPage = () => {
               disabled={loading || !phone}
               className="w-full bg-gradient-primary h-12 text-lg font-semibold"
             >
-              {loading ? 'Sending...' : 'Send Code'}
+              {loading ? 'Verifying...' : 'Continue'}
             </Button>
             <button
               onClick={() => setStep('welcome')}
@@ -566,73 +571,7 @@ const OnboardingPage = () => {
           </div>
         );
 
-      case 'otp':
-        return (
-          <div className="space-y-4 mt-4">
-            <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 text-center">
-              <p className="text-sm text-muted-foreground mb-1">Development Mode</p>
-              <p className="text-xs text-foreground">Check the toast notification above for your OTP code</p>
-              <p className="text-xs text-muted-foreground mt-1">Or check backend console</p>
-            </div>
-            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3">
-              <p className="text-xs font-medium text-yellow-600 dark:text-yellow-400 mb-2">Test Mode</p>
-              <p className="text-xs text-muted-foreground mb-2">If OTP didn't arrive, use test code:</p>
-              <div className="flex gap-2 justify-center">
-                {['123456', '000000'].map((testCode) => (
-                  <motion.button
-                    key={testCode}
-                    onClick={() => {
-                      setOtp(testCode);
-                      toast.info(`Test code ${testCode} entered`);
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-700 dark:text-yellow-300 text-xs font-medium transition-colors"
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    Use {testCode}
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Input
-                type="text"
-                placeholder="Enter 6-digit code"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                className="h-12 rounded-xl text-center text-2xl tracking-widest"
-                maxLength={6}
-                disabled={loading}
-                autoFocus
-              />
-            </div>
-            <Button
-              onClick={handleVerifyOTP}
-              disabled={loading || otp.length !== 6}
-              className="w-full bg-gradient-primary h-12 text-lg font-semibold"
-            >
-              {loading ? 'Verifying...' : 'Verify Code'}
-          </Button>
-            <div className="flex gap-2 justify-center text-sm">
-              <button
-                onClick={() => {
-                  setOtp('');
-                  setStep('phone');
-                }}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                Change number
-              </button>
-              <span className="text-muted-foreground">•</span>
-              <button
-                onClick={handleSendOTP}
-                disabled={loading}
-                className="text-primary hover:underline"
-              >
-                Resend code
-              </button>
-            </div>
-          </div>
-        );
+      // OTP step removed - phone verification is automatic
 
       case 'name':
         return (
@@ -705,7 +644,12 @@ const OnboardingPage = () => {
       case 'lookingFor':
         return (
           <div className="space-y-4 mt-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="text-center mb-2">
+              <p className="text-sm text-muted-foreground">
+                Selected: {lookingFor.length} (select all that apply)
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-3 max-h-[60vh] overflow-y-auto">
               {lookingForOptions.map((option) => {
                 const Icon = option.icon;
                 const isSelected = lookingFor.includes(option.id);
@@ -715,18 +659,25 @@ const OnboardingPage = () => {
                     onClick={() => toggleLookingFor(option.id)}
                     className={`p-4 rounded-2xl border-2 transition-all relative ${
                       isSelected 
-                        ? 'border-primary bg-primary/10' 
-                        : 'border-border bg-card'
+                        ? 'border-primary bg-gradient-to-br from-primary/20 to-primary/10 shadow-md' 
+                        : 'border-border bg-card hover:border-primary/30'
                     }`}
                     whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.02 }}
                   >
                     {isSelected && (
-                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                        <Check className="w-3 h-3 text-primary-foreground" />
-                      </div>
+                      <motion.div 
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute top-2 right-2 w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-md"
+                      >
+                        <Check className="w-4 h-4 text-primary-foreground" />
+                      </motion.div>
                     )}
-                    <Icon className="w-8 h-8 mx-auto text-primary" />
-                    <p className="mt-2 font-medium text-sm">{option.label}</p>
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="text-3xl">{option.emoji}</span>
+                      <p className="font-medium text-xs text-center leading-tight">{option.label}</p>
+                    </div>
                   </motion.button>
                 );
               })}
@@ -738,6 +689,11 @@ const OnboardingPage = () => {
             >
               Continue <ChevronRight className="ml-2" />
             </Button>
+            {lookingFor.length === 0 && (
+              <p className="text-xs text-center text-muted-foreground">
+                Please select at least one option
+              </p>
+            )}
           </div>
         );
 
@@ -779,7 +735,7 @@ const OnboardingPage = () => {
               })}
             </div>
             <Button 
-              onClick={() => setStep('photos')} 
+              onClick={() => setStep('bio')} 
               disabled={interests.length === 0 || loading}
               className="w-full bg-gradient-primary h-14 text-lg font-semibold shadow-glow disabled:opacity-50"
             >
@@ -788,21 +744,62 @@ const OnboardingPage = () => {
           </div>
         );
 
+      case 'bio':
+        return (
+          <div className="space-y-4 mt-4">
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Tell us about yourself... What do you love? What are you passionate about?"
+              rows={6}
+              maxLength={500}
+              className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+            />
+            <p className="text-xs text-muted-foreground text-right">
+              {bio.length} / 500 characters
+            </p>
+            <Button 
+              onClick={() => setStep('photos')} 
+              disabled={loading}
+              className="w-full bg-gradient-primary h-14 text-lg font-semibold shadow-glow disabled:opacity-50"
+            >
+              Continue <ChevronRight className="ml-2" />
+            </Button>
+            <p className="text-xs text-center text-muted-foreground">
+              You can skip this and add it later
+            </p>
+          </div>
+        );
+
       case 'photos':
         return (
           <div className="space-y-4 mt-4">
-            <div className="grid grid-cols-3 gap-2">
-              {[...Array(6)].map((_, index) => (
-                <div key={index} className="aspect-square rounded-xl overflow-hidden border-2 border-dashed border-border bg-muted flex items-center justify-center">
+            <div className="text-center mb-2">
+              <p className="text-sm text-muted-foreground">
+                Added: {photos.length} / 15 (minimum 2 required)
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-2 max-h-[50vh] overflow-y-auto">
+              {[...Array(15)].map((_, index) => (
+                <div key={index} className="aspect-square rounded-xl overflow-hidden border-2 border-dashed border-border bg-muted flex items-center justify-center relative">
                   {photos[index] ? (
                     <div className="relative w-full h-full">
-                      <img src={photos[index]} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                      {photos[index].startsWith('data:video') ? (
+                        <video src={photos[index]} className="w-full h-full object-cover" controls />
+                      ) : (
+                        <img src={photos[index]} alt={`Media ${index + 1}`} className="w-full h-full object-cover" />
+                      )}
                       <button
                         onClick={() => removePhoto(index)}
-                        className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-destructive-foreground"
+                        className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-destructive-foreground shadow-md"
                       >
                         <X className="w-3 h-3" />
                       </button>
+                      {photos[index].startsWith('data:video') && (
+                        <div className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/50 text-white text-xs">
+                          🎥 Video
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <Upload className="w-6 h-6 text-muted-foreground" />
@@ -812,7 +809,7 @@ const OnboardingPage = () => {
             </div>
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,video/*"
               multiple
               onChange={handlePhotoUpload}
               className="hidden"
@@ -824,9 +821,10 @@ const OnboardingPage = () => {
                 variant="outline"
                 className="w-full h-12"
                 onClick={() => document.getElementById('photo-upload')?.click()}
+                disabled={photos.length >= 15}
               >
                 <Upload className="w-4 h-4 mr-2" />
-                Add Photos
+                Add Photos & Videos
               </Button>
             </label>
             <Button 
@@ -838,7 +836,7 @@ const OnboardingPage = () => {
             </Button>
             {photos.length < 2 && (
               <p className="text-xs text-center text-muted-foreground">
-                Please add at least 2 photos
+                Please add at least 2 photos or videos
               </p>
             )}
           </div>

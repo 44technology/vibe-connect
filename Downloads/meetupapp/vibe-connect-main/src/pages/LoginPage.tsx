@@ -9,10 +9,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { API_ENDPOINTS, apiRequest } from '@/lib/api';
 
-type LoginStep = 'welcome' | 'method' | 'phone' | 'otp' | 'complete';
+type LoginStep = 'welcome' | 'method' | 'phone' | 'complete';
 
 const loginMethods = [
-  { id: 'phone', label: 'Phone Number', icon: Phone, description: 'Sign in with OTP code' },
+  { id: 'phone', label: 'Phone Number', icon: Phone, description: 'Sign in with phone number' },
   { id: 'google', label: 'Google', icon: Mail, description: 'Continue with Google' },
   { id: 'apple', label: 'Apple ID', icon: Smartphone, description: 'Continue with Apple' },
 ];
@@ -51,9 +51,7 @@ const LoginPage = () => {
   const [showInput, setShowInput] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<string>('');
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
 
   const currentMessages = messages[step];
 
@@ -115,34 +113,14 @@ const LoginPage = () => {
     try {
       const formattedPhone = phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g, '')}`;
       
-      // Call API using apiRequest helper
-      const data = await apiRequest<{ success: boolean; message: string; otp?: string }>(
-        API_ENDPOINTS.AUTH.SEND_OTP,
-        {
-          method: 'POST',
-          body: JSON.stringify({ phone: formattedPhone }),
-        }
-      );
-      
-      // Show OTP code in development
-      if (data.otp) {
-        toast.success(`OTP Code: ${data.otp}`, { 
-          duration: 15000,
-          description: 'Copy this code to verify your phone number'
-        });
-      } else {
-        toast.success('OTP code sent! Check backend console for the code.');
-      }
-      
-      setOtpSent(true);
-      setStep('otp');
+      // Skip OTP verification - directly verify with dummy code
+      await verifyOTP(formattedPhone, '123456');
+      toast.success('Signed in successfully!');
+      setStep('complete');
+      setTimeout(() => navigate('/home'), 1500);
     } catch (error: any) {
-      console.error('OTP send error:', error);
-      if (error.message?.includes('Failed to fetch') || error.message?.includes('ERR_CONNECTION_REFUSED')) {
-        toast.error('Cannot connect to server. Please make sure the backend is running on port 5000.');
-      } else {
-        toast.error(error.message || 'Failed to send OTP');
-      }
+      console.error('Phone verification error:', error);
+      toast.error(error.message || 'Failed to verify phone number');
     } finally {
       setLoading(false);
     }
@@ -219,7 +197,7 @@ const LoginPage = () => {
               disabled={loading || !phone}
               className="w-full bg-gradient-primary h-12 text-lg font-semibold"
             >
-              {loading ? 'Sending...' : 'Send Code'}
+              {loading ? 'Verifying...' : 'Continue'}
             </Button>
             <button
               onClick={() => setStep('welcome')}
