@@ -129,6 +129,14 @@ export const useChatSocket = (chatId: string | null, onNewMessage?: (message: Me
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    // Skip socket connection in dummy mode (USE_DUMMY_DATA is always true)
+    // Real-time features won't work but messages will still be sent via API
+    const USE_DUMMY_DATA = true;
+    if (USE_DUMMY_DATA) {
+      console.log('Socket.io disabled in dummy mode - using API for messages');
+      return;
+    }
+
     const token = getAuthToken();
     if (!token || !chatId) return;
 
@@ -185,8 +193,9 @@ export const useChatSocket = (chatId: string | null, onNewMessage?: (message: Me
   }, [chatId, queryClient, onNewMessage]);
 
   const sendMessage = (content: string) => {
-    if (!socketRef.current || !chatId) return;
-    socketRef.current.emit('send-message', { chatId, content });
+    // In dummy mode, messages are sent via API, not socket
+    if (!chatId) return;
+    // This will be handled by useSendMessage hook instead
   };
 
   return { sendMessage, socket: socketRef.current };

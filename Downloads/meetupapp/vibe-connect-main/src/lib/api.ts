@@ -3,6 +3,10 @@
  * Backend API base URL configuration
  */
 
+// DUMMY MODE: Set to true to use mock data instead of real backend
+// This allows the app to work without a backend server
+const USE_DUMMY_DATA = true; // Set to false to use real backend
+
 // Auto-detect API URL based on current host
 const getApiBaseUrl = (): string => {
   // If VITE_API_URL is set, use it
@@ -150,6 +154,12 @@ export const apiRequest = async <T = any>(
   url: string,
   options: RequestInit = {}
 ): Promise<T> => {
+  // Use mock API if dummy mode is enabled
+  if (USE_DUMMY_DATA) {
+    const { mockApiRequest } = await import('./mockApi');
+    return mockApiRequest<T>(url, options);
+  }
+
   const token = getAuthToken();
   
   const headers: HeadersInit = {
@@ -192,6 +202,12 @@ export const apiUpload = async <T = any>(
   file: File,
   additionalData?: Record<string, any>
 ): Promise<T> => {
+  // Use mock API if dummy mode is enabled
+  if (USE_DUMMY_DATA) {
+    const { mockApiUpload } = await import('./mockApi');
+    return mockApiUpload<T>(url, file, additionalData);
+  }
+
   const token = getAuthToken();
   
   const formData = new FormData();
