@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Phone, Mail, Smartphone } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { API_ENDPOINTS, apiRequest } from '@/lib/api';
 
 type LoginStep = 'welcome' | 'method' | 'phone' | 'complete';
 
@@ -45,7 +44,7 @@ const messages: Record<LoginStep, string[]> = {
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { sendOTP, verifyOTP, loginWithGoogle, loginWithApple } = useAuth();
+  const { verifyOTP, loginWithGoogle, loginWithApple } = useAuth();
   const [step, setStep] = useState<LoginStep>('welcome');
   const [messageIndex, setMessageIndex] = useState(0);
   const [showInput, setShowInput] = useState(false);
@@ -208,73 +207,7 @@ const LoginPage = () => {
           </div>
         );
 
-      case 'otp':
-        return (
-          <div className="space-y-4 mt-4">
-            <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 text-center">
-              <p className="text-sm text-muted-foreground mb-1">Development Mode</p>
-              <p className="text-xs text-foreground">Check the toast notification above for your OTP code</p>
-              <p className="text-xs text-muted-foreground mt-1">Or check backend console</p>
-            </div>
-            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3">
-              <p className="text-xs font-medium text-yellow-600 dark:text-yellow-400 mb-2">Test Mode</p>
-              <p className="text-xs text-muted-foreground mb-2">If OTP didn't arrive, use test code:</p>
-              <div className="flex gap-2 justify-center">
-                {['123456', '000000'].map((testCode) => (
-                  <motion.button
-                    key={testCode}
-                    onClick={() => {
-                      setOtp(testCode);
-                      toast.info(`Test code ${testCode} entered`);
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-700 dark:text-yellow-300 text-xs font-medium transition-colors"
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    Use {testCode}
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Input
-                type="text"
-                placeholder="Enter 6-digit code"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                className="h-12 rounded-xl text-center text-2xl tracking-widest"
-                maxLength={6}
-                disabled={loading}
-                autoFocus
-              />
-            </div>
-            <Button
-              onClick={handleVerifyOTP}
-              disabled={loading || otp.length !== 6}
-              className="w-full bg-gradient-primary h-12 text-lg font-semibold"
-            >
-              {loading ? 'Verifying...' : 'Verify Code'}
-            </Button>
-            <div className="flex gap-2 justify-center text-sm">
-              <button
-                onClick={() => {
-                  setOtp('');
-                  setStep('phone');
-                }}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                Change number
-              </button>
-              <span className="text-muted-foreground">•</span>
-              <button
-                onClick={handleSendOTP}
-                disabled={loading}
-                className="text-primary hover:underline"
-              >
-                Resend code
-              </button>
-            </div>
-          </div>
-        );
+      // OTP step removed - phone verification is automatic
 
       default:
         return null;
