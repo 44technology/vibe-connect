@@ -47,21 +47,28 @@ const generateId = (): string => {
 };
 
 // Dummy user data
-const getDummyUser = (id: string, data?: any) => ({
-  id,
-  firstName: data?.firstName || 'John',
-  lastName: data?.lastName || 'Doe',
-  displayName: data?.displayName || `${data?.firstName || 'John'} ${data?.lastName || 'Doe'}`,
-  email: data?.email || `user${id}@example.com`,
-  phone: data?.phone || '+1234567890',
-  avatar: data?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
-  bio: data?.bio || 'New to the app!',
-  photos: data?.photos || [],
-  interests: data?.interests || [],
-  lookingFor: data?.lookingFor || [],
-  isVerified: true,
-  createdAt: new Date().toISOString(),
-});
+const getDummyUser = (id: string, data?: any) => {
+  // Default interests for users
+  const defaultInterests = id === 'current-user' 
+    ? ['coffee', 'tennis', 'yoga', 'music', 'travel', 'fitness']
+    : ['coffee', 'fitness', 'music', 'art', 'travel'];
+  
+  return {
+    id,
+    firstName: data?.firstName || 'John',
+    lastName: data?.lastName || 'Doe',
+    displayName: data?.displayName || `${data?.firstName || 'John'} ${data?.lastName || 'Doe'}`,
+    email: data?.email || `user${id}@example.com`,
+    phone: data?.phone || '+1234567890',
+    avatar: data?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
+    bio: data?.bio || 'New to the app!',
+    photos: data?.photos || [],
+    interests: data?.interests || defaultInterests,
+    lookingFor: data?.lookingFor || ['friendship', 'networking'],
+    isVerified: true,
+    createdAt: new Date().toISOString(),
+  };
+};
 
 // Initialize dummy data
 const initDummyData = () => {
@@ -210,6 +217,220 @@ const initDummyData = () => {
     ];
     setStorage(NOTIFICATION_STORAGE_KEY, dummyNotifications);
   }
+
+  // Initialize matches (connections) if empty
+  const matches = getStorage(MATCH_STORAGE_KEY, []);
+  if (matches.length === 0) {
+    const user1 = getDummyUser('user-1', {
+      firstName: 'Sarah',
+      lastName: 'Miller',
+      displayName: 'Sarah M.',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+      interests: ['coffee', 'yoga', 'music', 'travel', 'fitness'],
+    });
+    const user2 = getDummyUser('user-2', {
+      firstName: 'James',
+      lastName: 'Keller',
+      displayName: 'James K.',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+      interests: ['tennis', 'fitness', 'coffee', 'networking'],
+    });
+    const user3 = getDummyUser('user-3', {
+      firstName: 'Emma',
+      lastName: 'Wilson',
+      displayName: 'Emma W.',
+      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150',
+      interests: ['art', 'music', 'travel', 'foodie'],
+    });
+    
+    setStorage(`${USER_STORAGE_KEY}_user-1`, user1);
+    setStorage(`${USER_STORAGE_KEY}_user-2`, user2);
+    setStorage(`${USER_STORAGE_KEY}_user-3`, user3);
+
+    const dummyMatches = [
+      {
+        id: 'match-1',
+        status: 'ACCEPTED' as const,
+        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        user: {
+          id: user1.id,
+          firstName: user1.firstName,
+          lastName: user1.lastName,
+          displayName: user1.displayName,
+          avatar: user1.avatar,
+          bio: user1.bio,
+        },
+        isSender: false,
+      },
+      {
+        id: 'match-2',
+        status: 'ACCEPTED' as const,
+        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        user: {
+          id: user2.id,
+          firstName: user2.firstName,
+          lastName: user2.lastName,
+          displayName: user2.displayName,
+          avatar: user2.avatar,
+          bio: user2.bio,
+        },
+        isSender: true,
+      },
+      {
+        id: 'match-3',
+        status: 'PENDING' as const,
+        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        user: {
+          id: user3.id,
+          firstName: user3.firstName,
+          lastName: user3.lastName,
+          displayName: user3.displayName,
+          avatar: user3.avatar,
+          bio: user3.bio,
+        },
+        isSender: true,
+      },
+    ];
+    setStorage(MATCH_STORAGE_KEY, dummyMatches);
+  }
+
+  // Initialize current-user with default interests if not exists
+  const currentUser = getStorage(`${USER_STORAGE_KEY}_current-user`, null);
+  if (currentUser && (!currentUser.interests || currentUser.interests.length === 0)) {
+    currentUser.interests = ['coffee', 'tennis', 'yoga', 'music', 'travel', 'fitness'];
+    setStorage(`${USER_STORAGE_KEY}_current-user`, currentUser);
+  }
+
+  // Add current-user to some meetups (My Vibes)
+  const allMeetups = getStorage(MEETUP_STORAGE_KEY, []);
+  const currentUserId = 'current-user';
+  const currentUserData = getStorage(`${USER_STORAGE_KEY}_current-user`, getDummyUser(currentUserId));
+  
+  // Create additional meetups for current-user
+  const userMeetup1 = {
+    id: 'user-meetup-1',
+    title: 'Morning Yoga Session',
+    description: 'Start your day with a peaceful yoga session',
+    image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400',
+    startTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+    endTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + 1.5 * 60 * 60 * 1000).toISOString(),
+    status: 'UPCOMING' as const,
+    maxAttendees: 15,
+    category: 'Wellness',
+    tags: ['yoga', 'wellness', 'morning'],
+    latitude: 25.7617,
+    longitude: -80.1918,
+    creator: {
+      id: currentUserData.id,
+      firstName: currentUserData.firstName,
+      lastName: currentUserData.lastName,
+      displayName: currentUserData.displayName,
+      avatar: currentUserData.avatar,
+    },
+    venue: {
+      id: 'venue-3',
+      name: 'Bayfront Park',
+      address: '301 Biscayne Blvd, Miami',
+      city: 'Miami',
+      latitude: 25.7753,
+      longitude: -80.1889,
+    },
+    members: [],
+    _count: { members: 0 },
+  };
+
+  const userMeetup2 = {
+    id: 'user-meetup-2',
+    title: 'Coffee & Networking',
+    description: 'Meet like-minded professionals over coffee',
+    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400',
+    startTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    endTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
+    status: 'UPCOMING' as const,
+    maxAttendees: 8,
+    category: 'Networking',
+    tags: ['coffee', 'networking', 'business'],
+    latitude: 25.7617,
+    longitude: -80.1918,
+    creator: {
+      id: currentUserData.id,
+      firstName: currentUserData.firstName,
+      lastName: currentUserData.lastName,
+      displayName: currentUserData.displayName,
+      avatar: currentUserData.avatar,
+    },
+    venue: {
+      id: 'venue-1',
+      name: 'Panther Coffee',
+      address: '2390 NW 2nd Ave, Miami',
+      city: 'Miami',
+      latitude: 25.7617,
+      longitude: -80.1918,
+    },
+    members: [],
+    _count: { members: 0 },
+  };
+
+  const pastMeetup = {
+    id: 'user-meetup-past',
+    title: 'Beach Volleyball',
+    description: 'Fun volleyball game at the beach',
+    image: 'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=400',
+    startTime: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    endTime: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
+    status: 'COMPLETED' as const,
+    maxAttendees: 12,
+    category: 'Sports',
+    tags: ['volleyball', 'beach', 'sports'],
+    latitude: 25.7907,
+    longitude: -80.1300,
+    creator: {
+      id: currentUserData.id,
+      firstName: currentUserData.firstName,
+      lastName: currentUserData.lastName,
+      displayName: currentUserData.displayName,
+      avatar: currentUserData.avatar,
+    },
+    venue: {
+      id: 'venue-4',
+      name: 'South Beach',
+      address: 'South Beach, Miami Beach',
+      city: 'Miami Beach',
+      latitude: 25.7907,
+      longitude: -80.1300,
+    },
+    members: [],
+    _count: { members: 0 },
+  };
+
+  // Add user meetups if they don't exist
+  const existingIds = allMeetups.map((m: any) => m.id);
+  if (!existingIds.includes('user-meetup-1')) allMeetups.push(userMeetup1);
+  if (!existingIds.includes('user-meetup-2')) allMeetups.push(userMeetup2);
+  if (!existingIds.includes('user-meetup-past')) allMeetups.push(pastMeetup);
+
+  // Add current-user as member to first meetup
+  allMeetups.forEach((meetup: any) => {
+    if (meetup.id === '1' && !meetup.members.find((m: any) => m.user?.id === currentUserId)) {
+      meetup.members.push({
+        id: generateId(),
+        user: {
+          id: currentUserData.id,
+          firstName: currentUserData.firstName,
+          lastName: currentUserData.lastName,
+          displayName: currentUserData.displayName,
+          avatar: currentUserData.avatar,
+        },
+        status: 'going',
+      });
+      meetup._count.members = meetup.members.length;
+    }
+  });
+  
+  setStorage(MEETUP_STORAGE_KEY, allMeetups);
 };
 
 // Initialize on import
@@ -235,7 +456,10 @@ export const mockApiRequest = async <T = any>(
   // Auth endpoints
   if (pathname.includes('/auth/register')) {
     const userId = 'current-user';
-    const user = getDummyUser(userId, body);
+    const user = getDummyUser(userId, {
+      ...body,
+      interests: body.interests || ['coffee', 'tennis', 'yoga', 'music', 'travel', 'fitness'],
+    });
     const newToken = `dummy_token_${Date.now()}`;
     setStorage('authToken', newToken);
     setStorage(`${USER_STORAGE_KEY}_${userId}`, user);
@@ -258,7 +482,8 @@ export const mockApiRequest = async <T = any>(
         email: body.email, 
         phone: body.phone,
         firstName: body.email?.split('@')[0] || 'User',
-        lastName: 'Name'
+        lastName: 'Name',
+        interests: ['coffee', 'tennis', 'yoga', 'music', 'travel', 'fitness'],
       });
       setStorage(`${USER_STORAGE_KEY}_current-user`, user);
     }
@@ -384,11 +609,25 @@ export const mockApiRequest = async <T = any>(
     // Check if it's /users/stats
     if (lastPart === 'stats') {
       if (!currentUserId) throw new Error('Unauthorized');
+      
+      // Calculate real stats from storage
+      const matches = getStorage(MATCH_STORAGE_KEY, []);
+      const acceptedMatches = matches.filter((m: any) => m.status === 'ACCEPTED');
+      
+      const meetups = getStorage(MEETUP_STORAGE_KEY, []);
+      const userMeetups = meetups.filter((m: any) => {
+        // Check if user is creator
+        if (m.creator?.id === currentUserId) return true;
+        // Check if user is a member
+        if (m.members?.some((mem: any) => mem.user?.id === currentUserId)) return true;
+        return false;
+      });
+      
       return {
         success: true,
         data: {
-          connections: 24,
-          meetups: 8,
+          connections: acceptedMatches.length,
+          meetups: userMeetups.length,
           badges: 3,
           classes: 2,
         },
