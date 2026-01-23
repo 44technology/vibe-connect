@@ -9,10 +9,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { API_ENDPOINTS, apiRequest } from '@/lib/api';
 
-type OnboardingStep = 'welcome' | 'method' | 'phone' | 'otp' | 'name' | 'birthday' | 'gender' | 'lookingFor' | 'interests' | 'bio' | 'photos' | 'selfie' | 'complete';
+type OnboardingStep = 'welcome' | 'method' | 'phone' | 'name' | 'birthday' | 'gender' | 'lookingFor' | 'interests' | 'bio' | 'photos' | 'selfie' | 'complete';
 
 const signupMethods = [
-  { id: 'phone', label: 'Phone Number', icon: Phone, description: 'Sign up with OTP code' },
+  { id: 'phone', label: 'Phone Number', icon: Phone, description: 'Sign up with phone number' },
   { id: 'google', label: 'Google', icon: Mail, description: 'Continue with Google' },
   { id: 'apple', label: 'Apple ID', icon: Smartphone, description: 'Continue with Apple' },
 ];
@@ -151,12 +151,7 @@ const messages: Record<OnboardingStep, string[]> = {
   phone: [
     "Perfect!",
     "What's your phone number?",
-    "I'll send you a verification code.",
-  ],
-  otp: [
-    "Check your phone! 📱",
-    "I just sent you a code.",
-    "Enter it here to verify your number.",
+    "We'll verify it automatically.",
   ],
   name: [
     "Perfect! Let's start with the basics.",
@@ -203,13 +198,12 @@ const messages: Record<OnboardingStep, string[]> = {
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
-  const { register, sendOTP, verifyOTP, loginWithGoogle, loginWithApple } = useAuth();
+  const { register, verifyOTP, loginWithGoogle, loginWithApple } = useAuth();
   const [step, setStep] = useState<OnboardingStep>('welcome');
   const [messageIndex, setMessageIndex] = useState(0);
   const [showInput, setShowInput] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<string>('');
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
   const [name, setName] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -221,7 +215,6 @@ const OnboardingPage = () => {
   const [photos, setPhotos] = useState<string[]>([]);
   const [selfie, setSelfie] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
 
   const currentMessages = messages[step];
 
@@ -286,13 +279,11 @@ const OnboardingPage = () => {
       
       // If user was created/authenticated, save token
       if (response && 'data' in response && response.data?.token) {
-        setOtpVerified(true);
         toast.success('Phone verified!');
         // User already exists and is logged in, go to home
         setTimeout(() => navigate('/home'), 1000);
       } else {
-        // OTP verified but user not created yet, continue to profile setup
-        setOtpVerified(true);
+        // Phone verified but user not created yet, continue to profile setup
         toast.success('Phone verified! Please complete your profile.');
         setStep('name');
       }
@@ -353,10 +344,6 @@ const OnboardingPage = () => {
   };
 
   const handleComplete = async () => {
-    if (selectedMethod === 'phone' && !otpVerified) {
-      toast.error('Please verify your phone number first');
-      return;
-    }
 
     setLoading(true);
     try {
@@ -433,7 +420,7 @@ const OnboardingPage = () => {
   };
 
   const handleNext = () => {
-    const steps: OnboardingStep[] = ['welcome', 'method', 'phone', 'otp', 'name', 'birthday', 'gender', 'lookingFor', 'interests', 'bio', 'photos', 'selfie', 'complete'];
+    const steps: OnboardingStep[] = ['welcome', 'method', 'phone', 'name', 'birthday', 'gender', 'lookingFor', 'interests', 'bio', 'photos', 'selfie', 'complete'];
     const currentIndex = steps.indexOf(step);
     if (currentIndex < steps.length - 1) {
       const nextStep = steps[currentIndex + 1];

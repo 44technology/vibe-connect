@@ -330,9 +330,12 @@ export const mockApiRequest = async <T = any>(
     const newToken = `dummy_token_${Date.now()}`;
     setStorage('authToken', newToken);
     
-    // Clear OTP
-    delete otps[body.phone];
-    setStorage(OTP_STORAGE_KEY, otps);
+    // Clear OTP (if it exists)
+    const otps = getStorage(OTP_STORAGE_KEY, {});
+    if (otps[body.phone]) {
+      delete otps[body.phone];
+      setStorage(OTP_STORAGE_KEY, otps);
+    }
 
     return {
       success: true,
