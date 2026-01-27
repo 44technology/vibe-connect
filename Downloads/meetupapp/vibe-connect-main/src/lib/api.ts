@@ -98,6 +98,11 @@ export const API_ENDPOINTS = {
     ENROLL: (id: string) => `${API_BASE_URL}/classes/${id}/enroll`,
     CANCEL_ENROLLMENT: (id: string) => `${API_BASE_URL}/classes/${id}/enroll`,
   },
+  // Mentors
+  MENTORS: {
+    LIST: `${API_BASE_URL}/mentors`,
+    DETAIL: (id: string) => `${API_BASE_URL}/mentors/${id}`,
+  },
   // Suggestions
   SUGGESTIONS: {
     CLASSES: `${API_BASE_URL}/suggestions/classes`,

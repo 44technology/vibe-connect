@@ -158,50 +158,101 @@ const ConnectionsPage = () => {
                 <p className="text-muted-foreground">No connections yet</p>
               </div>
             ) : (
-              filteredConnections.map((match, index) => (
-                <motion.div
-                  key={match.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="card-elevated p-4 flex items-center gap-4"
-                >
-                  <motion.button
-                    onClick={() => navigate(`/user/${match.user.id}`)}
-                    whileTap={{ scale: 0.95 }}
+              filteredConnections.map((match, index) => {
+                const userPhotos = match.user.photos || [];
+                const previewPhotos = userPhotos.slice(0, 4); // Show first 4 photos/videos
+                
+                return (
+                  <motion.div
+                    key={match.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="card-elevated p-4"
                   >
-                    <UserAvatar 
-                      src={match.user.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'} 
-                      alt={match.user.displayName || `${match.user.firstName} ${match.user.lastName}`} 
-                      size="lg" 
-                    />
-                  </motion.button>
-                  
-                  <div className="flex-1 min-w-0">
-                    <motion.button
-                      onClick={() => navigate(`/user/${match.user.id}`)}
-                      className="text-left w-full"
-                    >
-                      <h3 className="font-semibold text-foreground truncate">
-                        {match.user.displayName || `${match.user.firstName} ${match.user.lastName}`}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        Connected {formatDistanceToNow(new Date(match.createdAt), { addSuffix: true })}
-                      </p>
-                    </motion.button>
-                  </div>
+                    <div className="flex items-center gap-4 mb-3">
+                      <motion.button
+                        onClick={() => navigate(`/user/${match.user.id}`)}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <UserAvatar 
+                          src={match.user.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'} 
+                          alt={match.user.displayName || `${match.user.firstName} ${match.user.lastName}`} 
+                          size="lg" 
+                        />
+                      </motion.button>
+                      
+                      <div className="flex-1 min-w-0">
+                        <motion.button
+                          onClick={() => navigate(`/user/${match.user.id}`)}
+                          className="text-left w-full"
+                        >
+                          <h3 className="font-semibold text-foreground truncate">
+                            {match.user.displayName || `${match.user.firstName} ${match.user.lastName}`}
+                          </h3>
+                          <p className="text-xs text-muted-foreground">
+                            Connected {formatDistanceToNow(new Date(match.createdAt), { addSuffix: true })}
+                          </p>
+                        </motion.button>
+                      </div>
 
-                  <div className="flex gap-2">
-                    <motion.button
-                      className="p-2 rounded-full bg-primary/10 text-primary"
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => handleMessage(match.user.id)}
-                    >
-                      <MessageCircle className="w-5 h-5" />
-                    </motion.button>
-                  </div>
-                </motion.div>
-              ))
+                      <div className="flex gap-2">
+                        <motion.button
+                          className="p-2 rounded-full bg-primary/10 text-primary"
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleMessage(match.user.id)}
+                        >
+                          <MessageCircle className="w-5 h-5" />
+                        </motion.button>
+                      </div>
+                    </div>
+
+                    {/* Photo/Video Grid Preview */}
+                    {previewPhotos.length > 0 && (
+                      <motion.div
+                        onClick={() => navigate(`/user/${match.user.id}`)}
+                        className="grid grid-cols-4 gap-1.5 mt-3"
+                      >
+                        {previewPhotos.map((url: string, photoIndex: number) => {
+                          const isVideo = url.startsWith('data:video');
+                          return (
+                            <motion.div
+                              key={photoIndex}
+                              className="aspect-square rounded-lg overflow-hidden relative group"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              {isVideo ? (
+                                <>
+                                  <video
+                                    src={url.startsWith('data:video;') ? url.replace('data:video;', '') : url}
+                                    className="w-full h-full object-cover"
+                                    muted
+                                  />
+                                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                    <Play className="w-4 h-4 text-white drop-shadow-lg" />
+                                  </div>
+                                </>
+                              ) : (
+                                <img
+                                  src={url}
+                                  alt={`Photo ${photoIndex + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              )}
+                              {photoIndex === 3 && userPhotos.length > 4 && (
+                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                  <span className="text-white text-xs font-semibold">+{userPhotos.length - 4}</span>
+                                </div>
+                              )}
+                            </motion.div>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </motion.div>
+                );
+              })
             )}
           </>
         )}
@@ -274,59 +325,110 @@ const ConnectionsPage = () => {
                 <p className="text-muted-foreground">No connection requests</p>
               </div>
             ) : (
-              filteredRequests.map((match, index) => (
-                <motion.div
-                  key={match.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="card-elevated p-4 flex items-center gap-4"
-                >
-                  <motion.button
-                    onClick={() => navigate(`/user/${match.user.id}`)}
-                    whileTap={{ scale: 0.95 }}
+              filteredRequests.map((match, index) => {
+                const userPhotos = match.user.photos || [];
+                const previewPhotos = userPhotos.slice(0, 4);
+                
+                return (
+                  <motion.div
+                    key={match.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="card-elevated p-4"
                   >
-                    <UserAvatar 
-                      src={match.user.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'} 
-                      alt={match.user.displayName || `${match.user.firstName} ${match.user.lastName}`} 
-                      size="lg" 
-                    />
-                  </motion.button>
-                  
-                  <div className="flex-1 min-w-0">
-                    <motion.button
-                      onClick={() => navigate(`/user/${match.user.id}`)}
-                      className="text-left w-full"
-                    >
-                      <h3 className="font-semibold text-foreground truncate">
-                        {match.user.displayName || `${match.user.firstName} ${match.user.lastName}`}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        Wants to connect
-                      </p>
-                    </motion.button>
-                  </div>
+                    <div className="flex items-center gap-4 mb-3">
+                      <motion.button
+                        onClick={() => navigate(`/user/${match.user.id}`)}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <UserAvatar 
+                          src={match.user.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'} 
+                          alt={match.user.displayName || `${match.user.firstName} ${match.user.lastName}`} 
+                          size="lg" 
+                        />
+                      </motion.button>
+                      
+                      <div className="flex-1 min-w-0">
+                        <motion.button
+                          onClick={() => navigate(`/user/${match.user.id}`)}
+                          className="text-left w-full"
+                        >
+                          <h3 className="font-semibold text-foreground truncate">
+                            {match.user.displayName || `${match.user.firstName} ${match.user.lastName}`}
+                          </h3>
+                          <p className="text-xs text-muted-foreground">
+                            Wants to connect
+                          </p>
+                        </motion.button>
+                      </div>
 
-                  <div className="flex gap-2">
-                    <motion.button
-                      className="p-2 rounded-full bg-destructive/10 text-destructive"
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => handleRejectRequest(match.id)}
-                      disabled={updateMatch.isPending}
-                    >
-                      <X className="w-5 h-5" />
-                    </motion.button>
-                    <motion.button
-                      className="p-2 rounded-full bg-primary/10 text-primary"
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => handleAcceptRequest(match.id)}
-                      disabled={updateMatch.isPending}
-                    >
-                      <Check className="w-5 h-5" />
-                    </motion.button>
-                  </div>
-                </motion.div>
-              ))
+                      <div className="flex gap-2">
+                        <motion.button
+                          className="p-2 rounded-full bg-destructive/10 text-destructive"
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleRejectRequest(match.id)}
+                          disabled={updateMatch.isPending}
+                        >
+                          <X className="w-5 h-5" />
+                        </motion.button>
+                        <motion.button
+                          className="p-2 rounded-full bg-primary/10 text-primary"
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleAcceptRequest(match.id)}
+                          disabled={updateMatch.isPending}
+                        >
+                          <Check className="w-5 h-5" />
+                        </motion.button>
+                      </div>
+                    </div>
+
+                    {/* Photo/Video Grid Preview */}
+                    {previewPhotos.length > 0 && (
+                      <motion.div
+                        onClick={() => navigate(`/user/${match.user.id}`)}
+                        className="grid grid-cols-4 gap-1.5 mt-3"
+                      >
+                        {previewPhotos.map((url: string, photoIndex: number) => {
+                          const isVideo = url.startsWith('data:video');
+                          return (
+                            <motion.div
+                              key={photoIndex}
+                              className="aspect-square rounded-lg overflow-hidden relative group"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              {isVideo ? (
+                                <>
+                                  <video
+                                    src={url.startsWith('data:video;') ? url.replace('data:video;', '') : url}
+                                    className="w-full h-full object-cover"
+                                    muted
+                                  />
+                                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                    <Play className="w-4 h-4 text-white drop-shadow-lg" />
+                                  </div>
+                                </>
+                              ) : (
+                                <img
+                                  src={url}
+                                  alt={`Photo ${photoIndex + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              )}
+                              {photoIndex === 3 && userPhotos.length > 4 && (
+                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                  <span className="text-white text-xs font-semibold">+{userPhotos.length - 4}</span>
+                                </div>
+                              )}
+                            </motion.div>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </motion.div>
+                );
+              })
             )}
           </>
         )}

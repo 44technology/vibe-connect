@@ -24,8 +24,16 @@ export const getProfile = async (
         avatar: true,
         bio: true,
         dateOfBirth: true,
+        gender: true,
+        lookingFor: true,
+        interests: true,
+        photos: true,
+        selfie: true,
         latitude: true,
         longitude: true,
+        isVerified: true,
+        spotifyConnected: true,
+        spotifyLastTrack: true,
         createdAt: true,
  // Exclude password
       },
@@ -98,6 +106,9 @@ export const updateProfile = async (
         selfie: true,
         latitude: true,
         longitude: true,
+        isVerified: true,
+        spotifyConnected: true,
+        spotifyLastTrack: true,
       },
     });
 

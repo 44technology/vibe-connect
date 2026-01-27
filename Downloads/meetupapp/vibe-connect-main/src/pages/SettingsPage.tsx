@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Bell, Shield, HelpCircle, LogOut, Trash2, User, Mail, Phone } from 'lucide-react';
+import { ArrowLeft, Bell, Shield, HelpCircle, LogOut, Trash2, User, Mail, Phone, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MobileLayout from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -16,12 +17,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showLanguageDialog, setShowLanguageDialog] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -35,24 +45,31 @@ const SettingsPage = () => {
     setShowDeleteDialog(false);
   };
 
+  const handleLanguageChange = (lang: 'en' | 'es') => {
+    setLanguage(lang);
+    setShowLanguageDialog(false);
+    toast.success(lang === 'es' ? 'Idioma cambiado a español' : 'Language changed to English');
+  };
+
   const settingsSections = [
     {
-      title: 'Account',
+      title: t('account'),
       items: [
         { icon: User, label: 'Edit Profile', onClick: () => navigate('/profile') },
         { icon: Mail, label: 'Email Settings', onClick: () => toast.info('Coming soon') },
         { icon: Phone, label: 'Phone Number', onClick: () => toast.info('Coming soon') },
+        { icon: Globe, label: t('language'), onClick: () => setShowLanguageDialog(true) },
       ],
     },
     {
-      title: 'Privacy & Security',
+      title: t('privacy'),
       items: [
         { icon: Shield, label: 'Privacy Settings', onClick: () => toast.info('Coming soon') },
         { icon: Bell, label: 'Notifications', onClick: () => toast.info('Coming soon') },
       ],
     },
     {
-      title: 'Support',
+      title: t('support'),
       items: [
         { icon: HelpCircle, label: 'Help Center', onClick: () => toast.info('Coming soon') },
         { icon: Mail, label: 'Contact Us', onClick: () => toast.info('Coming soon') },
@@ -72,7 +89,7 @@ const SettingsPage = () => {
           >
             <ArrowLeft className="w-6 h-6 text-foreground" />
           </motion.button>
-          <h1 className="text-xl font-bold text-foreground">Settings</h1>
+          <h1 className="text-xl font-bold text-foreground">{t('settings')}</h1>
         </div>
       </div>
 
@@ -201,6 +218,64 @@ const SettingsPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Language Selection Dialog */}
+      <Dialog open={showLanguageDialog} onOpenChange={setShowLanguageDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('language')}</DialogTitle>
+            <DialogDescription>
+              Select your preferred language
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 mt-4">
+            <motion.button
+              onClick={() => handleLanguageChange('en')}
+              className={`w-full p-4 rounded-xl text-left transition-all ${
+                language === 'en'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-foreground'
+              }`}
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{t('english')}</span>
+                {language === 'en' && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="w-5 h-5 rounded-full bg-primary-foreground flex items-center justify-center"
+                  >
+                    <span className="text-primary text-xs">✓</span>
+                  </motion.div>
+                )}
+              </div>
+            </motion.button>
+            <motion.button
+              onClick={() => handleLanguageChange('es')}
+              className={`w-full p-4 rounded-xl text-left transition-all ${
+                language === 'es'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-foreground'
+              }`}
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{t('spanish')}</span>
+                {language === 'es' && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="w-5 h-5 rounded-full bg-primary-foreground flex items-center justify-center"
+                  >
+                    <span className="text-primary text-xs">✓</span>
+                  </motion.div>
+                )}
+              </div>
+            </motion.button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MobileLayout>
   );
 };

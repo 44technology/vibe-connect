@@ -26,6 +26,9 @@ export const updateProfileSchema = z.object({
   displayName: z.string().optional(),
   bio: z.string().max(500).optional(),
   dateOfBirth: z.string().datetime().optional(),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']).optional(),
+  lookingFor: z.array(z.string()).optional(),
+  interests: z.array(z.string()).max(10).optional(),
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
 });

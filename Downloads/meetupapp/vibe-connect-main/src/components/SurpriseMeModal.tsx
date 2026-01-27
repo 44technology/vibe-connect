@@ -44,12 +44,13 @@ const SurpriseMeModal = ({ isOpen, onClose }: SurpriseMeModalProps) => {
         clearInterval(interval);
         setIsRolling(false);
         
-        // Select random blind meetup from API or fallback to mock
-        let availableMeetups = blindMeetups && blindMeetups.length > 0 
-          ? blindMeetups 
-          : [{ id: 'sample-3', title: 'Blind Adventure', venue: { name: 'Secret Location' }, startTime: new Date().toISOString(), _count: { members: 4 } }];
+        // Select random blind meetup from API
+        if (!blindMeetups || blindMeetups.length === 0) {
+          toast.error('No blind meetups available. Create one first!');
+          return;
+        }
         
-        const randomMeetup = availableMeetups[Math.floor(Math.random() * availableMeetups.length)];
+        const randomMeetup = blindMeetups[Math.floor(Math.random() * blindMeetups.length)];
         setSelectedMeetup(randomMeetup);
         
         // Show ad for 10 seconds (mandatory, no skip)

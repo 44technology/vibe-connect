@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Search, MapPin, Filter, Star, ChevronRight, GraduationCap, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -18,9 +18,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { useMeetups } from '@/hooks/useMeetups';
 import { useVenues } from '@/hooks/useVenues';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePersonalization } from '@/hooks/usePersonalization';
+import { toast } from 'sonner';
 
 const DiscoverPage = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
+  const { personalize, trackJoin } = usePersonalization();
+  const joinMeetup = useJoinMeetup();
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [filters, setFilters] = useState({
@@ -57,8 +63,45 @@ const DiscoverPage = () => {
   });
 
   // Use API data if available, otherwise fall back to mock data
-  const meetups = meetupsData && meetupsData.length > 0 ? meetupsData : mockMeetups;
+  const rawMeetups = meetupsData && meetupsData.length > 0 ? meetupsData : mockMeetups;
+  
+  // Personalize meetups based on user behavior, location, time, interests, and context
+  const meetups = useMemo(() => {
+    if (!isAuthenticated || !user) return rawMeetups;
+    
+    const userLocation = filters.distance ? { latitude: userLat, longitude: userLon } : undefined;
+    
+    // If search or filters are active, use filtered results
+    if (searchQuery || filters.category || filters.distance || filters.priceRange) {
+      return rawMeetups; // Keep filters as-is
+    }
+    
+    // Otherwise, apply personalization
+    return personalize(rawMeetups, userLocation);
+  }, [rawMeetups, isAuthenticated, user, filters, searchQuery, userLat, userLon, personalize]);
+  
   const venues = venuesData && venuesData.length > 0 ? venuesData : mockVenues;
+
+  const handleJoinVibe = async (meetupId: string, meetup: any) => {
+    if (!isAuthenticated) {
+      toast.error('Please login to join a vibe');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      await joinMeetup.mutateAsync({ meetupId, status: 'going' });
+      
+      // Track for personalization
+      if (user) {
+        trackJoin(meetup);
+      }
+      
+      toast.success('Joined the vibe!');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to join vibe');
+    }
+  };
 
   return (
     <MobileLayout>
@@ -131,6 +174,8 @@ const DiscoverPage = () => {
                   key={meetup.id} 
                   {...meetup} 
                   onPress={() => navigate(`/meetup/${meetup.id}`)}
+                  onJoin={(e) => handleJoinVibe(meetup.id, meetup)}
+                  showJoinButton={true}
                 />
               ))
             ) : (

@@ -1,6 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest, API_ENDPOINTS } from '@/lib/api';
 
+export interface SpotifyTrack {
+  name: string;
+  artist: string;
+  album?: string;
+  image?: string;
+  url?: string;
+  playedAt?: string;
+}
+
 export interface User {
   id: string;
   firstName: string;
@@ -13,7 +22,10 @@ export interface User {
   location?: string;
   interests?: string[];
   lookingFor?: string[];
+  photos?: string[];
   isVerified: boolean;
+  spotifyConnected?: boolean;
+  spotifyLastTrack?: SpotifyTrack;
   createdAt: string;
 }
 

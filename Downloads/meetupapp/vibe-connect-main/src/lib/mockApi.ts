@@ -53,6 +53,72 @@ const getDummyUser = (id: string, data?: any) => {
     ? ['coffee', 'tennis', 'yoga', 'music', 'travel', 'fitness']
     : ['coffee', 'fitness', 'music', 'art', 'travel'];
   
+  // Default photos and videos for users
+  const defaultPhotos = id === 'current-user' 
+    ? [
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
+        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
+        'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400',
+        'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400',
+        'https://images.unsplash.com/photo-1521119989659-a83eee488004?w=400',
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+        'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400',
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+      ]
+    : id === 'user-1'
+    ? [
+        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
+        'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',
+        'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400',
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+        'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400',
+        'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400',
+      ]
+    : id === 'user-2'
+    ? [
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
+        'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400',
+        'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400',
+        'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400',
+      ]
+    : id === 'user-3'
+    ? [
+        'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',
+        'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400',
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+        'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400',
+        'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400',
+        'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400',
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+      ]
+    : [];
+  
+  // Add some videos (using data:video prefix for ProfilePage detection)
+  const defaultVideos = id === 'current-user'
+    ? [
+        'data:video;https://videos.unsplash.com/video-1522202176988-66273c2fd55f?w=400',
+        'data:video;https://videos.unsplash.com/video-1535378629546-c9b8f0c8b5b1?w=400',
+      ]
+    : id === 'user-1'
+    ? [
+        'data:video;https://videos.unsplash.com/video-1522202176988-66273c2fd55f?w=400',
+      ]
+    : id === 'user-2'
+    ? [
+        'data:video;https://videos.unsplash.com/video-1522202176988-66273c2fd55f?w=400',
+        'data:video;https://videos.unsplash.com/video-1535378629546-c9b8f0c8b5b1?w=400',
+      ]
+    : id === 'user-3'
+    ? [
+        'data:video;https://videos.unsplash.com/video-1522202176988-66273c2fd55f?w=400',
+      ]
+    : [];
+  
+  // Combine photos and videos
+  const allMedia = [...(data?.photos || defaultPhotos), ...defaultVideos];
+  
   return {
     id,
     firstName: data?.firstName || 'John',
@@ -62,7 +128,7 @@ const getDummyUser = (id: string, data?: any) => {
     phone: data?.phone || '+1234567890',
     avatar: data?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
     bio: data?.bio || 'New to the app!',
-    photos: data?.photos || [],
+    photos: allMedia.length > 0 ? allMedia : (data?.photos || []),
     interests: data?.interests || defaultInterests,
     lookingFor: data?.lookingFor || ['friendship', 'networking'],
     isVerified: true,
@@ -218,29 +284,229 @@ const initDummyData = () => {
     setStorage(NOTIFICATION_STORAGE_KEY, dummyNotifications);
   }
 
+  // Initialize classes if empty
+  let classes = getStorage(CLASS_STORAGE_KEY, []);
+  if (classes.length === 0) {
+    const dummyClasses = [
+      {
+        id: 'class-1',
+        title: 'Yoga Flow for Beginners',
+        description: 'A gentle introduction to yoga with focus on breathing and basic poses. Perfect for those new to yoga or looking to refresh their practice.',
+        skill: 'Yoga',
+        category: 'Wellness',
+        image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800',
+        startTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+        endTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString(),
+        status: 'UPCOMING',
+        maxStudents: 15,
+        price: 50,
+        schedule: 'Every Saturday 10am-11am',
+        venue: {
+          id: 'venue-1',
+          name: 'Panther Coffee',
+          address: '2390 NW 2nd Ave, Miami',
+          city: 'Miami',
+          image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400',
+        },
+        enrollments: [],
+        _count: { enrollments: 0 },
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: 'class-2',
+        title: 'Tennis Fundamentals',
+        description: 'Learn the basics of tennis including proper grip, stance, and basic strokes. Suitable for beginners.',
+        skill: 'Tennis',
+        category: 'Sports',
+        image: 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800',
+        startTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        endTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 90 * 60 * 1000).toISOString(),
+        status: 'UPCOMING',
+        maxStudents: 8,
+        price: 50,
+        schedule: 'Every Sunday 2pm-3:30pm',
+        venue: {
+          id: 'venue-2',
+          name: 'Flamingo Park Tennis',
+          address: '1200 Jefferson Ave, Miami Beach',
+          city: 'Miami Beach',
+          image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400',
+        },
+        enrollments: [],
+        _count: { enrollments: 0 },
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: 'class-3',
+        title: 'Salsa Dancing Basics',
+        description: 'Learn the fundamentals of salsa dancing in a fun and social environment. No partner needed!',
+        skill: 'Dancing',
+        category: 'Arts',
+        image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800',
+        startTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+        endTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 90 * 60 * 1000).toISOString(),
+        status: 'UPCOMING',
+        maxStudents: 20,
+        price: 50,
+        schedule: 'Every Friday 7pm-8:30pm',
+        venue: {
+          id: 'venue-1',
+          name: 'Panther Coffee',
+          address: '2390 NW 2nd Ave, Miami',
+          city: 'Miami',
+          image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400',
+        },
+        enrollments: [],
+        _count: { enrollments: 0 },
+        createdAt: new Date().toISOString(),
+      },
+    ];
+    setStorage(CLASS_STORAGE_KEY, dummyClasses);
+  } else {
+    // Update existing classes to have $50 price if they don't have one or are free
+    classes = classes.map((c: any) => ({
+      ...c,
+      price: c.price === 0 || c.price === undefined || c.price === null ? 50 : c.price,
+    }));
+    setStorage(CLASS_STORAGE_KEY, classes);
+  }
+
+  // Initialize posts with common interests (users already created in matches section)
+  const posts = getStorage(POST_STORAGE_KEY, []);
+  if (posts.length === 0) {
+    // Get users that were created in matches section (they have common interests)
+    const user1 = getStorage(`${USER_STORAGE_KEY}_user-1`, getDummyUser('user-1', {
+      firstName: 'Sarah',
+      lastName: 'Miller',
+      displayName: 'Sarah M.',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+      interests: ['coffee', 'yoga', 'music', 'travel', 'fitness'], // Common with current-user: coffee, yoga, music, travel, fitness (5)
+    }));
+    const user2 = getStorage(`${USER_STORAGE_KEY}_user-2`, getDummyUser('user-2', {
+      firstName: 'James',
+      lastName: 'Keller',
+      displayName: 'James K.',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+      interests: ['tennis', 'fitness', 'coffee', 'networking'], // Common with current-user: tennis, fitness, coffee (3)
+    }));
+    const user3 = getStorage(`${USER_STORAGE_KEY}_user-3`, getDummyUser('user-3', {
+      firstName: 'Emma',
+      lastName: 'Wilson',
+      displayName: 'Emma W.',
+      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150',
+      interests: ['art', 'music', 'travel', 'foodie'], // Common with current-user: music, travel (2)
+    }));
+
+    const dummyPosts = [
+      {
+        id: 'post-1',
+        userId: user1.id, // Store userId for privacy checks
+        content: 'Amazing yoga session this morning! 🧘✨',
+        image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800',
+        user: {
+          id: user1.id,
+          firstName: user1.firstName,
+          lastName: user1.lastName,
+          displayName: user1.displayName,
+          avatar: user1.avatar,
+          interests: user1.interests,
+        },
+        venue: null,
+        likes: 0,
+        comments: [],
+        commentsCount: 0,
+        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        _count: { likes: 142, comments: 23 },
+      },
+      {
+        id: 'post-2',
+        userId: user2.id,
+        content: 'Great tennis match today! 🎾',
+        image: 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800',
+        user: {
+          id: user2.id,
+          firstName: user2.firstName,
+          lastName: user2.lastName,
+          displayName: user2.displayName,
+          avatar: user2.avatar,
+          interests: user2.interests,
+        },
+        venue: null,
+        likes: 0,
+        comments: [],
+        commentsCount: 0,
+        createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+        _count: { likes: 89, comments: 12 },
+      },
+      {
+        id: 'post-3',
+        userId: user3.id,
+        content: 'Beautiful sunset from my travel! ✈️🌅',
+        image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800',
+        user: {
+          id: user3.id,
+          firstName: user3.firstName,
+          lastName: user3.lastName,
+          displayName: user3.displayName,
+          avatar: user3.avatar,
+          interests: user3.interests,
+        },
+        venue: null,
+        likes: 0,
+        comments: [],
+        commentsCount: 0,
+        createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
+        _count: { likes: 67, comments: 8 },
+      },
+      {
+        id: 'post-4',
+        userId: user1.id,
+        content: 'Coffee and good vibes! ☕',
+        image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800',
+        user: {
+          id: user1.id,
+          firstName: user1.firstName,
+          lastName: user1.lastName,
+          displayName: user1.displayName,
+          avatar: user1.avatar,
+          interests: user1.interests,
+        },
+        venue: null,
+        likes: 0,
+        comments: [],
+        commentsCount: 0,
+        createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+        _count: { likes: 156, comments: 34 },
+      },
+    ];
+    setStorage(POST_STORAGE_KEY, dummyPosts);
+  }
+
   // Initialize matches (connections) if empty
   const matches = getStorage(MATCH_STORAGE_KEY, []);
   if (matches.length === 0) {
+    // Create users with common interests (for LifePage star indicators)
+    // Current-user interests: ['coffee', 'tennis', 'yoga', 'music', 'travel', 'fitness']
     const user1 = getDummyUser('user-1', {
       firstName: 'Sarah',
       lastName: 'Miller',
       displayName: 'Sarah M.',
       avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-      interests: ['coffee', 'yoga', 'music', 'travel', 'fitness'],
+      interests: ['coffee', 'yoga', 'music', 'travel', 'fitness'], // Common: coffee, yoga, music, travel, fitness (5)
     });
     const user2 = getDummyUser('user-2', {
       firstName: 'James',
       lastName: 'Keller',
       displayName: 'James K.',
       avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-      interests: ['tennis', 'fitness', 'coffee', 'networking'],
+      interests: ['tennis', 'fitness', 'coffee', 'networking'], // Common: tennis, fitness, coffee (3)
     });
     const user3 = getDummyUser('user-3', {
       firstName: 'Emma',
       lastName: 'Wilson',
       displayName: 'Emma W.',
       avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150',
-      interests: ['art', 'music', 'travel', 'foodie'],
+      interests: ['art', 'music', 'travel', 'foodie'], // Common: music, travel (2)
     });
     
     setStorage(`${USER_STORAGE_KEY}_user-1`, user1);
@@ -297,11 +563,36 @@ const initDummyData = () => {
     setStorage(MATCH_STORAGE_KEY, dummyMatches);
   }
 
-  // Initialize current-user with default interests if not exists
+  // Initialize current-user with default interests and photos if not exists
   const currentUser = getStorage(`${USER_STORAGE_KEY}_current-user`, null);
-  if (currentUser && (!currentUser.interests || currentUser.interests.length === 0)) {
-    currentUser.interests = ['coffee', 'tennis', 'yoga', 'music', 'travel', 'fitness'];
-    setStorage(`${USER_STORAGE_KEY}_current-user`, currentUser);
+  if (currentUser) {
+    let updated = false;
+    if (!currentUser.interests || currentUser.interests.length === 0) {
+      currentUser.interests = ['coffee', 'tennis', 'yoga', 'music', 'travel', 'fitness'];
+      updated = true;
+    }
+    if (!currentUser.photos || currentUser.photos.length === 0) {
+      const defaultPhotos = [
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
+        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
+        'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400',
+        'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400',
+        'https://images.unsplash.com/photo-1521119989659-a83eee488004?w=400',
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
+        'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400',
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+      ];
+      const defaultVideos = [
+        'data:video;https://videos.unsplash.com/video-1522202176988-66273c2fd55f?w=400',
+        'data:video;https://videos.unsplash.com/video-1535378629546-c9b8f0c8b5b1?w=400',
+      ];
+      currentUser.photos = [...defaultPhotos, ...defaultVideos];
+      updated = true;
+    }
+    if (updated) {
+      setStorage(`${USER_STORAGE_KEY}_current-user`, currentUser);
+    }
   }
 
   // Add current-user to some meetups (My Vibes)
@@ -605,28 +896,51 @@ export const mockApiRequest = async <T = any>(
   if (pathname.includes('/users') && method === 'GET') {
     const pathParts = pathname.split('/').filter(p => p);
     const lastPart = pathParts[pathParts.length - 1];
+    const secondLastPart = pathParts[pathParts.length - 2];
     
-    // Check if it's /users/stats
-    if (lastPart === 'stats') {
-      if (!currentUserId) throw new Error('Unauthorized');
+    // Check if it's /users/stats or /users/stats/:userId
+    if (lastPart === 'stats' || (secondLastPart === 'stats' && lastPart)) {
+      const targetUserId = lastPart === 'stats' ? currentUserId : lastPart;
       
-      // Calculate real stats from storage
+      if (!targetUserId) throw new Error('User ID is required');
+      
+      // Calculate real stats from storage for the target user
       const matches = getStorage(MATCH_STORAGE_KEY, []);
-      const acceptedMatches = matches.filter((m: any) => m.status === 'ACCEPTED');
+      
+      // Count accepted matches for the target user
+      let connectionsCount = 0;
+      if (targetUserId === currentUserId) {
+        // Count all accepted matches for current user
+        connectionsCount = matches.filter((m: any) => m.status === 'ACCEPTED').length;
+      } else {
+        // For other users, we need to simulate their connections count
+        // In mock mode, we'll return a dummy count based on user ID for consistency
+        // Check if there's a match between current user and target user
+        const matchWithTarget = matches.find((m: any) => 
+          m.user?.id === targetUserId && m.status === 'ACCEPTED'
+        );
+        
+        // Generate consistent dummy count based on userId hash
+        const userIdHash = targetUserId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const dummyCount = (userIdHash % 10) + 5; // Between 5-14
+        
+        // If there's a match with current user, include it
+        connectionsCount = matchWithTarget ? dummyCount + 1 : dummyCount;
+      }
       
       const meetups = getStorage(MEETUP_STORAGE_KEY, []);
       const userMeetups = meetups.filter((m: any) => {
         // Check if user is creator
-        if (m.creator?.id === currentUserId) return true;
+        if (m.creator?.id === targetUserId) return true;
         // Check if user is a member
-        if (m.members?.some((mem: any) => mem.user?.id === currentUserId)) return true;
+        if (m.members?.some((mem: any) => mem.user?.id === targetUserId)) return true;
         return false;
       });
       
       return {
         success: true,
         data: {
-          connections: acceptedMatches.length,
+          connections: connectionsCount,
           meetups: userMeetups.length,
           badges: 3,
           classes: 2,
@@ -770,6 +1084,7 @@ export const mockApiRequest = async <T = any>(
     }
   }
 
+  // Join meetup endpoint
   if (pathname.includes('/meetups') && pathname.includes('/join')) {
     if (!currentUserId) throw new Error('Unauthorized');
     const meetupId = pathname.split('/')[pathname.split('/').length - 2];
@@ -966,9 +1281,19 @@ export const mockApiRequest = async <T = any>(
     const posts = getStorage(POST_STORAGE_KEY, []);
 
     if (method === 'GET') {
+      // Ensure posts have user.interests for common interests calculation
+      const postsWithInterests = posts.map((p: any) => {
+        if (p.user && !p.user.interests) {
+          const postUser = getStorage(`${USER_STORAGE_KEY}_${p.user.id}`, null);
+          if (postUser) {
+            p.user.interests = postUser.interests || [];
+          }
+        }
+        return p;
+      });
       return {
         success: true,
-        data: posts,
+        data: postsWithInterests,
       } as T;
     }
 
@@ -978,6 +1303,7 @@ export const mockApiRequest = async <T = any>(
       const newPost = {
         id: generateId(),
         ...body,
+        userId: user.id, // Store userId for privacy checks (like/comment notifications)
         creator: {
           id: user.id,
           firstName: user.firstName,
@@ -985,8 +1311,17 @@ export const mockApiRequest = async <T = any>(
           displayName: user.displayName,
           avatar: user.avatar,
         },
+        user: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          displayName: user.displayName,
+          avatar: user.avatar,
+          interests: user.interests || [],
+        },
         likes: 0,
         comments: [],
+        commentsCount: 0,
         createdAt: new Date().toISOString(),
       };
       posts.push(newPost);
@@ -1002,8 +1337,29 @@ export const mockApiRequest = async <T = any>(
       const postId = pathname.split('/')[pathname.split('/').length - 2];
       const post = posts.find((p: any) => p.id === postId);
       if (post) {
+        const currentUser = getStorage(`${USER_STORAGE_KEY}_current-user`, getDummyUser('current-user'));
+        const postOwnerId = post.userId || post.user?.id || post.creator?.id;
+        
+        // Increment like count
         post.likes = (post.likes || 0) + 1;
         setStorage(POST_STORAGE_KEY, posts);
+        
+        // Send notification to post owner (only if not liking own post)
+        if (postOwnerId && postOwnerId !== currentUserId) {
+          const notifications = getStorage(NOTIFICATION_STORAGE_KEY, []);
+          const notification = {
+            id: generateId(),
+            type: 'POST_LIKE',
+            title: 'New like on your post',
+            message: `${currentUser.displayName || `${currentUser.firstName} ${currentUser.lastName}`} liked your post`,
+            userId: postOwnerId,
+            postId: postId,
+            read: false,
+            createdAt: new Date().toISOString(),
+          };
+          notifications.push(notification);
+          setStorage(NOTIFICATION_STORAGE_KEY, notifications);
+        }
       }
       return {
         success: true,
@@ -1043,9 +1399,44 @@ export const mockApiRequest = async <T = any>(
     if (pathname.includes('/comments')) {
       const postId = pathname.split('/')[pathname.split('/').length - 2];
       const post = posts.find((p: any) => p.id === postId);
+      const postOwnerId = post?.userId || post?.user?.id || post?.creator?.id;
+      
+      // Only post owner can see who commented (WhatsApp status style)
+      // Others see anonymous comments
+      let comments = post?.comments || [];
+      if (postOwnerId !== currentUserId) {
+        // Hide user info for non-owners
+        comments = comments.map((comment: any) => ({
+          id: comment.id,
+          content: comment.content,
+          createdAt: comment.createdAt,
+          user: {
+            id: 'anonymous',
+            firstName: 'Anonymous',
+            lastName: '',
+            displayName: 'Anonymous',
+            avatar: undefined,
+          },
+        }));
+      } else {
+        // Post owner sees full user info
+        comments = comments.map((comment: any) => ({
+          id: comment.id,
+          content: comment.content,
+          createdAt: comment.createdAt,
+          user: comment.creator || comment.user || {
+            id: comment.userId || 'unknown',
+            firstName: 'Unknown',
+            lastName: '',
+            displayName: 'Unknown',
+            avatar: undefined,
+          },
+        }));
+      }
+      
       return {
         success: true,
-        data: post?.comments || [],
+        data: comments,
       } as T;
     }
   }

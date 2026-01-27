@@ -222,6 +222,22 @@ const OnboardingPage = () => {
     setMessageIndex(0);
     setShowInput(false);
     
+    // Auto-fill photos step with dummy data
+    if (step === 'photos' && photos.length === 0) {
+      const dummyPhotos = [
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
+        'data:video;https://videos.unsplash.com/video-1522202176988-66273c2fd55f?w=400',
+        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
+      ];
+      setPhotos(dummyPhotos);
+      // Auto-advance to selfie step after a short delay
+      setTimeout(() => {
+        setStep('selfie');
+      }, 1500);
+      return;
+    }
+    
     const showMessages = async () => {
       for (let i = 0; i < currentMessages.length; i++) {
         await new Promise(resolve => setTimeout(resolve, 800));
@@ -277,16 +293,9 @@ const OnboardingPage = () => {
       // Skip OTP verification - directly verify with dummy code
       const response = await verifyOTP(formattedPhone, '123456');
       
-      // If user was created/authenticated, save token
-      if (response && 'data' in response && response.data?.token) {
-        toast.success('Phone verified!');
-        // User already exists and is logged in, go to home
-        setTimeout(() => navigate('/home'), 1000);
-      } else {
-        // Phone verified but user not created yet, continue to profile setup
-        toast.success('Phone verified! Please complete your profile.');
-        setStep('name');
-      }
+      // Phone verified - always continue to profile setup
+      toast.success('Phone verified! Please complete your profile.');
+      setStep('name');
     } catch (error: any) {
       console.error('Phone verification error:', error);
       toast.error(error.message || 'Failed to verify phone number');
@@ -307,40 +316,86 @@ const OnboardingPage = () => {
 
   // Helper function to convert base64 to File
   const base64ToFile = (base64: string, filename: string): File => {
-    const arr = base64.split(',');
-    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
+    // If it's already a URL (not base64), return empty file (won't be used)
+    if (base64.startsWith('http://') || base64.startsWith('https://') || base64.startsWith('data:video;')) {
+      return new File([], filename, { type: 'image/png' });
     }
-    return new File([u8arr], filename, { type: mime });
+    
+    // Check if it's a valid base64 string
+    if (!base64.includes(',')) {
+      // Not a valid base64 data URL, return empty file
+      return new File([], filename, { type: 'image/png' });
+    }
+    
+    const arr = base64.split(',');
+    if (arr.length < 2) {
+      return new File([], filename, { type: 'image/png' });
+    }
+    
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
+    try {
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new File([u8arr], filename, { type: mime });
+    } catch (error) {
+      // If decode fails, return empty file
+      return new File([], filename, { type: 'image/png' });
+    }
   };
 
   // Helper function to upload image to Cloudinary via backend
   const uploadImage = async (base64: string): Promise<string> => {
-    const file = base64ToFile(base64, `photo-${Date.now()}.png`);
-    const formData = new FormData();
-    formData.append('image', file);
-    
-    const token = localStorage.getItem('authToken');
-    const response = await fetch(`${API_ENDPOINTS.USERS.AVATAR}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: formData,
-    });
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Upload failed' }));
-      throw new Error(error.message || 'Failed to upload image');
+    // If it's already a URL (dummy data), return it directly
+    if (base64.startsWith('http://') || base64.startsWith('https://')) {
+      return base64;
     }
     
-    const data = await response.json();
-    // Avatar endpoint returns { success: true, data: { id, avatar } }
-    return data.data?.avatar || data.avatar || '';
+    // If it's a video URL with data:video prefix, remove the prefix
+    if (base64.startsWith('data:video;')) {
+      return base64.replace('data:video;', '');
+    }
+    
+    // If it's base64, try to upload
+    try {
+      const file = base64ToFile(base64, `photo-${Date.now()}.png`);
+      
+      // If file is empty (URL was passed), return the original string
+      if (file.size === 0) {
+        return base64;
+      }
+      
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${API_ENDPOINTS.USERS.AVATAR}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: 'Upload failed' }));
+        throw new Error(error.message || 'Failed to upload image');
+      }
+      
+      const data = await response.json();
+      // Avatar endpoint returns { success: true, data: { id, avatar } }
+      return data.data?.avatar || data.avatar || '';
+    } catch (error) {
+      // If upload fails and it's a base64 string, return it as-is
+      // This handles dummy mode where upload might not work
+      if (base64.startsWith('data:')) {
+        return base64;
+      }
+      throw error;
+    }
   };
 
   const handleComplete = async () => {
@@ -495,6 +550,13 @@ const OnboardingPage = () => {
   const removePhoto = (index: number) => {
     setPhotos(prev => prev.filter((_, i) => i !== index));
   };
+
+  // Auto-fill selfie with dummy data
+  useEffect(() => {
+    if (step === 'selfie' && !selfie) {
+      setSelfie('https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400');
+    }
+  }, [step, selfie]);
 
   const renderInput = () => {
     if (!showInput) return null;

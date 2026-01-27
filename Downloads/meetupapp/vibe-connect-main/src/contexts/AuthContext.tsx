@@ -10,6 +10,9 @@ interface User {
   displayName?: string;
   avatar?: string;
   bio?: string;
+  photos?: string[];
+  interests?: string[];
+  lookingFor?: string[];
 }
 
 interface AuthContextType {

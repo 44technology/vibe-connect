@@ -1,20 +1,15 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Search, Bell, Coffee, UtensilsCrossed, Dumbbell, Film, Heart, Users, Palette, PartyPopper, Briefcase, Sparkles, ChevronRight, Plus, Store, Filter, GraduationCap } from 'lucide-react';
+import { Search, ChevronRight, Plus, Calendar, Clock, MapPin, ArrowRight, GraduationCap } from 'lucide-react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import BottomNav from '@/components/layout/BottomNav';
-import CategoryChip from '@/components/ui/CategoryChip';
-import MeetupCard from '@/components/cards/MeetupCard';
-import VenueCard from '@/components/cards/VenueCard';
-import ActiveUserCard from '@/components/cards/ActiveUserCard';
-import { activeUsers, meetups as mockMeetups, venues as mockVenues } from '@/data/mockData';
-import UserAvatar from '@/components/ui/UserAvatar';
+import { meetups as mockMeetups, venues as mockVenues } from '@/data/mockData';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useMeetups } from '@/hooks/useMeetups';
 import { useVenues } from '@/hooks/useVenues';
-import { useStories } from '@/hooks/useStories';
 import { useAuth } from '@/contexts/AuthContext';
+import VenueCard from '@/components/cards/VenueCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Dialog,
@@ -24,27 +19,12 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import CreateStoryModal from '@/components/CreateStoryModal';
-
-const categories = [
-  { id: '1', icon: Coffee, label: 'Coffee' },
-  { id: '2', icon: UtensilsCrossed, label: 'Dining' },
-  { id: '3', icon: Dumbbell, label: 'Sports' },
-  { id: '4', icon: Film, label: 'Cinema' },
-  { id: '5', icon: Heart, label: 'Yoga' },
-  { id: '6', icon: Palette, label: 'Activities' },
-  { id: '7', icon: PartyPopper, label: 'Events' },
-];
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showFilterDialog, setShowFilterDialog] = useState(false);
-  const [showCreateStory, setShowCreateStory] = useState(false);
+  const { isAuthenticated, user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'vibes' | 'venues'>('vibes');
+  const [discoverTab, setDiscoverTab] = useState<'vibes' | 'venues'>('vibes');
   const [filters, setFilters] = useState({
     category: '',
     distance: '',
@@ -53,7 +33,6 @@ const HomePage = () => {
   });
   
   const { data: notificationsData, isLoading: notificationsLoading } = useNotifications(isAuthenticated);
-  const { data: storiesData } = useStories();
 
   // Convert distance filter to radius in miles
   const radius = filters.distance ? parseFloat(filters.distance) * 1.60934 : undefined; // Convert miles to km
@@ -64,7 +43,7 @@ const HomePage = () => {
 
   // Fetch meetups with filters
   const { data: meetupsData, isLoading: meetupsLoading } = useMeetups({
-    category: filters.category || selectedCategory || undefined,
+    category: filters.category || undefined,
     search: searchQuery || undefined,
     isFree: filters.priceRange === 'free' ? true : undefined,
     latitude: filters.distance ? userLat : undefined,
@@ -84,171 +63,300 @@ const HomePage = () => {
   const meetups = meetupsData && meetupsData.length > 0 ? meetupsData : mockMeetups;
   const venues = venuesData && venuesData.length > 0 ? venuesData : mockVenues;
 
+  // Format date helper function
+  const formatDate = (date: string | Date | undefined) => {
+    if (!date) return 'TBD';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
+  // Format time helper function
+  const formatTime = (time: string | Date | undefined) => {
+    if (!time) return 'TBD';
+    const t = typeof time === 'string' ? new Date(time) : time;
+    return t.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  };
+
+  // Separate meetups into "Your Activities" and "Discover"
+  const yourActivities = useMemo(() => {
+    if (!isAuthenticated || !user) return [];
+    return meetups.filter((meetup: any) => {
+      // Check if user is creator/host
+      if (meetup.creator?.id === user.id || meetup.host?.id === user.id) return true;
+      // Check if user is a member/attendee
+      if (meetup.members?.some((m: any) => m.user?.id === user.id || m.id === user.id)) return true;
+      return false;
+    });
+  }, [meetups, isAuthenticated, user]);
+
+  const discoverMeetups = useMemo(() => {
+    // Show all meetups except user's own activities
+    const yourActivityIds = new Set(yourActivities.map((m: any) => m.id));
+    return meetups.filter((meetup: any) => !yourActivityIds.has(meetup.id));
+  }, [meetups, yourActivities]);
+
   return (
     <MobileLayout>
-      {/* Header */}
-      <div className="sticky top-0 z-40 glass safe-top">
-        <div className="px-4 py-3">
+      {/* Elegant Header */}
+      <div className="sticky top-0 z-40 glass safe-top backdrop-blur-xl bg-background/80 border-b border-border/50">
+        <div className="px-4 py-4">
+          {/* Purple dashed accent line */}
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent border-t border-dashed border-primary/30" />
+          
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <UserAvatar 
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150" 
-                alt="Alex" 
-                size="md"
-              />
-              <div>
-                <p className="text-sm text-muted-foreground">Good morning,</p>
-                <h1 className="text-lg font-bold text-foreground">Alex! 👋</h1>
-              </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">Events</h1>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <motion.button
-                onClick={() => navigate('/venue-posts')}
-                className="p-2 rounded-full bg-muted"
+                onClick={() => navigate('/discover')}
+                className="p-2 rounded-xl hover:bg-muted/50 transition-colors"
                 whileTap={{ scale: 0.9 }}
               >
-                <Store className="w-5 h-5 text-foreground" />
+                <Search className="w-5 h-5 text-foreground" />
               </motion.button>
               <motion.button
                 onClick={() => navigate('/create')}
-                className="p-2 rounded-full bg-primary text-primary-foreground"
+                className="p-2 rounded-xl hover:bg-muted/50 transition-colors"
                 whileTap={{ scale: 0.9 }}
               >
-                <Plus className="w-5 h-5" />
-              </motion.button>
-              <motion.button 
-                className="relative p-2"
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setShowNotifications(true)}
-              >
-                <Bell className="w-6 h-6 text-foreground" />
-                {notificationsData?.unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-secondary" />
-                )}
+                <Plus className="w-5 h-5 text-foreground" />
               </motion.button>
             </div>
-          </div>
-
-          {/* Search bar */}
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search vibes or venues..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-12 pl-12 pr-4 rounded-2xl bg-muted border-0 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <motion.button 
-              className="h-12 w-12 rounded-2xl bg-muted flex items-center justify-center"
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowFilterDialog(true)}
-            >
-              <Filter className="w-5 h-5 text-foreground" />
-            </motion.button>
           </div>
         </div>
       </div>
 
-      <div className="px-4 pb-4 space-y-6">
-        {/* Categories */}
+      <div className="px-4 pb-6 space-y-8">
+        {/* Quick Access - Classes */}
         <section>
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar py-2 -mx-4 px-4">
-            {categories.map((cat) => (
-              <CategoryChip
-                key={cat.id}
-                icon={cat.icon}
-                label={cat.label}
-                isActive={selectedCategory === cat.id}
-                onClick={() => setSelectedCategory(cat.id === selectedCategory ? null : cat.id)}
-              />
-            ))}
-          </div>
+          <motion.button
+            onClick={() => navigate('/classes')}
+            className="w-full p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 transition-all group"
+            whileTap={{ scale: 0.98 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
+                <GraduationCap className="w-6 h-6 text-primary" />
+              </div>
+              <div className="text-left flex-1">
+                <h3 className="font-bold text-foreground text-base">Classes & Mentorship</h3>
+                <p className="text-xs text-muted-foreground">Learn from instructors, mentors & venues</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+            </div>
+          </motion.button>
         </section>
 
-        {/* Active Now */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-foreground">Active Now</h2>
-            <button className="text-sm text-primary font-medium flex items-center">
-              See all <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="flex gap-4 overflow-x-auto hide-scrollbar -mx-4 px-4 py-2">
-            {activeUsers.map((user) => (
-              <ActiveUserCard
-                key={user.id}
-                {...user}
-              />
-            ))}
-          </div>
-        </section>
-
-        {/* Classes Quick Access */}
-        <motion.button
-          onClick={() => navigate('/classes')}
-          className="w-full p-4 rounded-2xl bg-gradient-to-r from-connectme to-primary flex items-center justify-between"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-              <GraduationCap className="w-6 h-6 text-primary-foreground" />
+        {/* Your Activities Section */}
+        {yourActivities.length > 0 && (
+          <section>
+            <motion.button
+              onClick={() => navigate('/my-meetups')}
+              className="flex items-center justify-between w-full mb-4 group"
+            >
+              <h2 className="text-xl font-bold text-foreground">Your Activities</h2>
+              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+            </motion.button>
+            <div className="space-y-3">
+              <AnimatePresence>
+                {yourActivities.map((meetup: any, index: number) => {
+                  const hostName = meetup.host?.name || meetup.creator?.displayName || 
+                    (meetup.creator ? `${meetup.creator.firstName} ${meetup.creator.lastName}` : 'You');
+                  const isYou = isAuthenticated && user && (
+                    meetup.host?.id === user.id || meetup.creator?.id === user.id
+                  );
+                  
+                  return (
+                    <motion.div
+                      key={meetup.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      onClick={() => navigate(`/meetup/${meetup.id}`)}
+                      className="flex gap-4 p-3 rounded-2xl hover:bg-muted/30 transition-colors cursor-pointer group"
+                    >
+                      {/* Image */}
+                      <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                        {meetup.image ? (
+                          <img src={meetup.image} alt={meetup.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                            <span className="text-2xl">{meetup.categoryEmoji || '🎉'}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium mb-1 ${isYou ? 'text-primary' : 'text-primary'}`}>
+                          {isYou ? 'You' : hostName}
+                        </p>
+                        <h3 className="text-base font-bold text-foreground mb-2 line-clamp-1 group-hover:text-primary transition-colors">
+                          {meetup.title}
+                        </h3>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3.5 h-3.5" />
+                              <span>{formatDate(meetup.date || meetup.startTime)}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span className="text-[#FF8C00] font-semibold">
+                                {formatTime(meetup.time || meetup.startTime)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground line-clamp-1">
+                              {meetup.location || meetup.venue?.name || meetup.venue || 'Location TBD'}
+                            </span>
+                            <motion.button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/meetup/${meetup.id}`);
+                              }}
+                              className="ml-auto w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors"
+                            >
+                              <ArrowRight className="w-3 h-3 text-primary" />
+                            </motion.button>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </div>
-            <div className="text-left">
-              <h3 className="font-bold text-primary-foreground">Classes & Lessons</h3>
-              <p className="text-sm text-primary-foreground/80">Tennis, Yoga, Skydiving & more</p>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-primary-foreground" />
-        </motion.button>
+          </section>
+        )}
 
-        {/* Discover Section with Tabs */}
+        {/* Discover Section */}
         <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-foreground">Discover</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-foreground">Discover</h2>
+            <motion.button
+              onClick={() => navigate('/discover')}
+              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              whileTap={{ scale: 0.95 }}
+            >
+              <span>View All</span>
+              <ChevronRight className="w-4 h-4" />
+            </motion.button>
           </div>
           
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'vibes' | 'venues')} className="mt-4">
-            <TabsList className="grid w-full grid-cols-2 bg-muted rounded-xl p-1 h-12">
-              <TabsTrigger value="vibes" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
+          <Tabs value={discoverTab} onValueChange={(v) => setDiscoverTab(v as 'vibes' | 'venues')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 bg-muted rounded-xl p-1 h-10 mb-4">
+              <TabsTrigger value="vibes" className="rounded-lg text-sm data-[state=active]:bg-card">
                 Vibes
               </TabsTrigger>
-              <TabsTrigger value="venues" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <TabsTrigger value="venues" className="rounded-lg text-sm data-[state=active]:bg-card">
                 Venues
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="vibes" className="mt-4 space-y-4">
-              {meetupsLoading ? (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">Loading vibes...</p>
-                </div>
-              ) : meetups && meetups.length > 0 ? (
-                meetups.map((meetup: any) => (
-                  <MeetupCard 
-                    key={meetup.id} 
-                    {...meetup} 
-                    onPress={() => navigate(`/meetup/${meetup.id}`)}
-                  />
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No vibes found. Try adjusting your filters.</p>
-                </div>
-              )}
+            <TabsContent value="vibes" className="mt-0">
+              <div className="space-y-3">
+                <AnimatePresence>
+                  {meetupsLoading ? (
+                    <div className="text-center py-12">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="w-8 h-8 mx-auto mb-4 rounded-full border-4 border-primary/20 border-t-primary"
+                      />
+                      <p className="text-muted-foreground">Loading events...</p>
+                    </div>
+                  ) : discoverMeetups.length > 0 ? (
+                    discoverMeetups.slice(0, 5).map((meetup: any, index: number) => {
+                      const hostName = meetup.host?.name || meetup.creator?.displayName || 
+                        (meetup.creator ? `${meetup.creator.firstName} ${meetup.creator.lastName}` : 'Unknown');
+                      
+                      return (
+                        <motion.div
+                          key={meetup.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          onClick={() => navigate(`/meetup/${meetup.id}`)}
+                          className="flex gap-4 p-3 rounded-2xl hover:bg-muted/30 transition-colors cursor-pointer group"
+                        >
+                          {/* Image */}
+                          <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                            {meetup.image ? (
+                              <img src={meetup.image} alt={meetup.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                                <span className="text-2xl">{meetup.categoryEmoji || '🎉'}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium mb-1 text-primary">
+                              {hostName}
+                            </p>
+                            <h3 className="text-base font-bold text-foreground mb-2 line-clamp-1 group-hover:text-primary transition-colors">
+                              {meetup.title}
+                            </h3>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="w-3.5 h-3.5" />
+                                  <span>{formatDate(meetup.date || meetup.startTime)}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span className="text-[#FF8C00] font-semibold">
+                                    {formatTime(meetup.time || meetup.startTime)}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground line-clamp-1">
+                                  {meetup.location || meetup.venue?.name || meetup.venue || 'Location TBD'}
+                                </span>
+                                <motion.button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/meetup/${meetup.id}`);
+                                  }}
+                                  className="ml-auto w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors"
+                                >
+                                  <ArrowRight className="w-3 h-3 text-primary" />
+                                </motion.button>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-12">
+                      <p className="text-muted-foreground">No events found. Try adjusting your filters.</p>
+                    </div>
+                  )}
+                </AnimatePresence>
+              </div>
             </TabsContent>
 
-            <TabsContent value="venues" className="mt-4">
+            <TabsContent value="venues" className="mt-0">
               <div className="grid grid-cols-2 gap-3">
                 {venuesLoading ? (
                   <div className="text-center py-8 col-span-2">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="w-8 h-8 mx-auto mb-4 rounded-full border-4 border-primary/20 border-t-primary"
+                    />
                     <p className="text-muted-foreground">Loading venues...</p>
                   </div>
                 ) : venues && venues.length > 0 ? (
-                  venues.map((venue: any) => (
+                  venues.slice(0, 6).map((venue: any) => (
                     <VenueCard
                       key={venue.id}
                       {...venue}
@@ -257,7 +365,7 @@ const HomePage = () => {
                   ))
                 ) : (
                   <div className="text-center py-8 col-span-2">
-                    <p className="text-muted-foreground">No venues found. Try adjusting your filters.</p>
+                    <p className="text-muted-foreground">No venues found.</p>
                   </div>
                 )}
               </div>
@@ -266,147 +374,6 @@ const HomePage = () => {
         </section>
       </div>
 
-      {/* Notifications Dialog */}
-      <Dialog open={showNotifications} onOpenChange={setShowNotifications}>
-        <DialogContent className="max-w-md mx-4 rounded-2xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>Notifications</DialogTitle>
-          </DialogHeader>
-          <div className="mt-4 space-y-2 max-h-[60vh] overflow-y-auto">
-            {notificationsLoading ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">Loading notifications...</p>
-              </div>
-            ) : notificationsData?.data && notificationsData.data.length > 0 ? (
-              notificationsData.data.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-4 rounded-xl ${
-                    notification.read ? 'bg-muted/50' : 'bg-primary/5 border border-primary/20'
-                  }`}
-                >
-                  <h4 className="font-semibold text-foreground">{notification.title}</h4>
-                  <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {new Date(notification.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No notifications</p>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Filter Dialog */}
-      <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
-        <DialogContent className="max-w-md mx-4 rounded-2xl">
-          <DialogHeader>
-            <DialogTitle>Filter Results</DialogTitle>
-            <DialogDescription>
-              Narrow down your search by category, distance, price, and rating.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            {/* Category Filter */}
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Category</label>
-              <select
-                value={filters.category}
-                onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-                className="w-full h-10 px-3 rounded-lg bg-muted border-0 text-foreground"
-              >
-                <option value="">All Categories</option>
-                <option value="coffee">Coffee</option>
-                <option value="café">Café</option>
-                <option value="japanese">Japanese</option>
-                <option value="italian">Italian</option>
-                <option value="sports">Sports</option>
-                <option value="park">Park</option>
-              </select>
-            </div>
-
-            {/* Distance Filter */}
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Distance</label>
-              <select
-                value={filters.distance}
-                onChange={(e) => setFilters({ ...filters, distance: e.target.value })}
-                className="w-full h-10 px-3 rounded-lg bg-muted border-0 text-foreground"
-              >
-                <option value="">Any Distance</option>
-                <option value="1">Within 1 mile</option>
-                <option value="5">Within 5 miles</option>
-                <option value="10">Within 10 miles</option>
-                <option value="25">Within 25 miles</option>
-              </select>
-            </div>
-
-            {/* Price Range Filter */}
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Price Range</label>
-              <select
-                value={filters.priceRange}
-                onChange={(e) => setFilters({ ...filters, priceRange: e.target.value })}
-                className="w-full h-10 px-3 rounded-lg bg-muted border-0 text-foreground"
-              >
-                <option value="">Any Price</option>
-                <option value="free">Free</option>
-                <option value="$">$ - Budget Friendly</option>
-                <option value="$$">$$ - Moderate</option>
-                <option value="$$$">$$$ - Expensive</option>
-              </select>
-            </div>
-
-            {/* Rating Filter */}
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Minimum Rating</label>
-              <select
-                value={filters.rating}
-                onChange={(e) => setFilters({ ...filters, rating: e.target.value })}
-                className="w-full h-10 px-3 rounded-lg bg-muted border-0 text-foreground"
-              >
-                <option value="">Any Rating</option>
-                <option value="4">4+ Stars</option>
-                <option value="4.5">4.5+ Stars</option>
-                <option value="5">5 Stars</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex gap-2 justify-end">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setFilters({ category: '', distance: '', priceRange: '', rating: '' });
-              }}
-            >
-              Reset
-            </Button>
-            <Button
-              onClick={() => {
-                setShowFilterDialog(false);
-              }}
-              className="bg-gradient-primary"
-            >
-              Apply Filters
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Create Story Modal */}
-      <CreateStoryModal
-        open={showCreateStory}
-        onOpenChange={setShowCreateStory}
-        onSuccess={() => {
-          // Stories will auto-refresh via React Query
-        }}
-      />
 
       <BottomNav />
     </MobileLayout>

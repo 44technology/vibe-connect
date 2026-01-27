@@ -15,6 +15,16 @@ export interface Meetup {
   tags: string[];
   latitude?: number;
   longitude?: number;
+  isFree?: boolean;
+  pricePerPerson?: number;
+  isBlindMeet?: boolean;
+  host?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    displayName?: string;
+    avatar?: string;
+  };
   creator: {
     id: string;
     firstName: string;
@@ -167,6 +177,78 @@ export const useCreateMeetup = () => {
       }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meetups'] });
+    },
+  });
+};
+
+export const useUpdateMeetup = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      meetupId, 
+      data 
+    }: { 
+      meetupId: string; 
+      data: {
+        title?: string;
+        description?: string;
+        startTime?: string;
+        endTime?: string;
+        maxAttendees?: number;
+        category?: string;
+        tags?: string[];
+        venueId?: string;
+        latitude?: number;
+        longitude?: number;
+        location?: string;
+        isPublic?: boolean;
+        isFree?: boolean;
+        pricePerPerson?: number;
+        isBlindMeet?: boolean;
+        image?: File;
+      }
+    }) => {
+      if (data.image) {
+        const response = await apiUpload<{ success: boolean; data: Meetup }>(
+          API_ENDPOINTS.MEETUPS.UPDATE(meetupId),
+          data.image,
+          data
+        );
+        return response.data;
+      } else {
+        const response = await apiRequest<{ success: boolean; data: Meetup }>(
+          API_ENDPOINTS.MEETUPS.UPDATE(meetupId),
+          {
+            method: 'PUT',
+            body: JSON.stringify(data),
+          }
+        );
+        return response.data;
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['meetup', variables.meetupId] });
+      queryClient.invalidateQueries({ queryKey: ['meetups'] });
+    },
+  });
+};
+
+export const useDeleteMeetup = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (meetupId: string) => {
+      const response = await apiRequest<{ success: boolean; message: string }>(
+        API_ENDPOINTS.MEETUPS.DELETE(meetupId),
+        {
+          method: 'DELETE',
+        }
+      );
+      return response;
+    },
+    onSuccess: (_, meetupId) => {
       queryClient.invalidateQueries({ queryKey: ['meetups'] });
     },
   });

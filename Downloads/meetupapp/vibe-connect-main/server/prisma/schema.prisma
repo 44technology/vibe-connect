@@ -66,6 +66,10 @@ model User {
   latitude      Float?
   longitude     Float?
   lastSeen      DateTime      @default(now())
+  spotifyConnected Boolean     @default(false)
+  spotifyAccessToken String?
+  spotifyRefreshToken String?
+  spotifyLastTrack   Json?     // { name, artist, album, image, playedAt }
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 

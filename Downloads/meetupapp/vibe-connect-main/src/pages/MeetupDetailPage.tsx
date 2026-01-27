@@ -1,19 +1,145 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, Users, Calendar, Heart, Share2, User, DollarSign, Lock, Globe } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Users, Calendar, Heart, Share2, User, DollarSign, Lock, Globe, Tag, Sparkles, MessageCircle, Edit, Trash2, Save, X } from 'lucide-react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import UserAvatar from '@/components/ui/UserAvatar';
-import { useMeetup } from '@/hooks/useMeetups';
+import { useMeetup, useJoinMeetup, useUpdateMeetup, useDeleteMeetup } from '@/hooks/useMeetups';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePersonalization } from '@/hooks/usePersonalization';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
+
+// Sample campaigns for meetups
+const sampleCampaigns = [
+  {
+    id: 'campaign-1',
+    title: 'Early Bird Special',
+    description: 'Join before 24 hours and get 20% off on your first drink',
+    discount: '20% OFF',
+    icon: '🎉',
+    image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400',
+    time: 'All Day',
+    days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+  },
+  {
+    id: 'campaign-2',
+    title: 'Group Discount',
+    description: 'Bring 3+ friends and everyone gets 15% off',
+    discount: '15% OFF',
+    icon: '👥',
+    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400',
+    time: 'All Day',
+    days: ['Saturday', 'Sunday'],
+  },
+  {
+    id: 'campaign-3',
+    title: 'Student Discount',
+    description: 'Show your student ID and get 25% off',
+    discount: '25% OFF',
+    icon: '🎓',
+    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400',
+    time: 'All Day',
+    days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+  },
+];
 
 const MeetupDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: meetup, isLoading, error } = useMeetup(id || '');
+  const joinMeetup = useJoinMeetup();
+  const updateMeetup = useUpdateMeetup();
+  const deleteMeetup = useDeleteMeetup();
+  const { trackJoin } = usePersonalization();
+  
+  // Edit states
+  const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [editData, setEditData] = useState({
+    title: '',
+    description: '',
+    pricePerPerson: 0,
+    maxAttendees: 10,
+  });
+  
+  // Check if user is the host
+  const isHost = user && meetup && (meetup.creator?.id === user.id || meetup.host?.id === user.id);
+
+  // Initialize edit data when meetup loads
+  useEffect(() => {
+    if (meetup && !isEditing) {
+      setEditData({
+        title: meetup.title || '',
+        description: meetup.description || '',
+        pricePerPerson: meetup.pricePerPerson || 0,
+        maxAttendees: meetup.maxAttendees || 10,
+      });
+    }
+  }, [meetup, isEditing]);
+
+  // Edit handlers
+  const handleStartEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    // Reset edit data to original values
+    if (meetup) {
+      setEditData({
+        title: meetup.title || '',
+        description: meetup.description || '',
+        pricePerPerson: meetup.pricePerPerson || 0,
+        maxAttendees: meetup.maxAttendees || 10,
+      });
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!id || !editData.title.trim()) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      await updateMeetup.mutateAsync({
+        id,
+        data: {
+          title: editData.title,
+          description: editData.description,
+          pricePerPerson: editData.pricePerPerson,
+          maxAttendees: editData.maxAttendees,
+        },
+      });
+      setIsEditing(false);
+      toast.success('Meetup updated successfully!');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update meetup');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id) return;
+
+    try {
+      await deleteMeetup.mutateAsync(id);
+      toast.success('Meetup deleted successfully');
+      navigate('/home');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete meetup');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -52,9 +178,35 @@ const MeetupDetailPage = () => {
   const attendeeCount = meetup._count?.members || attendees.length || 0;
   const maxAttendees = meetup.maxAttendees || 10;
 
-  const handleJoin = () => {
-    toast.success('Joined the vibe!');
-    navigate('/home');
+  // Check if meetup details should be revealed (2 hours before)
+  const shouldRevealDetails = () => {
+    if (!isBlindMeet) return true;
+    const now = new Date();
+    const twoHoursBefore = new Date(startTime.getTime() - 2 * 60 * 60 * 1000);
+    return now >= twoHoursBefore;
+  };
+
+  const revealDetails = shouldRevealDetails();
+
+  const handleJoin = async () => {
+    if (!meetup || !id) {
+      toast.error('Meetup not found');
+      return;
+    }
+
+    try {
+      await joinMeetup.mutateAsync({ meetupId: id, status: 'going' });
+      
+      // Track for personalization
+      if (user) {
+        trackJoin(meetup);
+      }
+      
+      toast.success('Joined the vibe!');
+      navigate('/home');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to join vibe');
+    }
   };
 
   return (
@@ -71,18 +223,38 @@ const MeetupDetailPage = () => {
           </motion.button>
           <h1 className="text-xl font-bold text-foreground">Vibe Details</h1>
           <div className="flex gap-2 ml-auto">
+            {isHost && (
+              <>
+                <motion.button
+                  onClick={() => setIsEditing(!isEditing)}
+                  className="p-2 rounded-full bg-muted"
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <Edit className="w-5 h-5 text-foreground" />
+                </motion.button>
+                <motion.button
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="p-2 rounded-full bg-muted"
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <Trash2 className="w-5 h-5 text-destructive" />
+                </motion.button>
+              </>
+            )}
             <motion.button
               className="p-2 rounded-full bg-muted"
               whileTap={{ scale: 0.9 }}
             >
               <Share2 className="w-5 h-5 text-foreground" />
             </motion.button>
-            <motion.button
-              className="p-2 rounded-full bg-muted"
-              whileTap={{ scale: 0.9 }}
-            >
-              <Heart className="w-5 h-5 text-foreground" />
-            </motion.button>
+            {!isHost && (
+              <motion.button
+                className="p-2 rounded-full bg-muted"
+                whileTap={{ scale: 0.9 }}
+              >
+                <Heart className="w-5 h-5 text-foreground" />
+              </motion.button>
+            )}
           </div>
         </div>
       </div>
@@ -94,11 +266,22 @@ const MeetupDetailPage = () => {
             <img src={meetup.image} alt={meetup.title} className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent" />
             <div className="absolute bottom-4 left-4 right-4">
-              <h1 className="text-2xl font-bold text-card mb-2">{meetup.title}</h1>
-              {meetup.category && (
-                <span className="px-3 py-1 rounded-full bg-card/90 backdrop-blur-sm text-card text-sm font-medium">
-                  {meetup.category}
-                </span>
+              {isBlindMeet && !revealDetails ? (
+                <>
+                  <h1 className="text-2xl font-bold text-card mb-2 blur-sm select-none">Mystery Vibe</h1>
+                  <span className="px-3 py-1 rounded-full bg-card/90 backdrop-blur-sm text-card text-sm font-medium">
+                    ???
+                  </span>
+                </>
+              ) : (
+                <>
+                  <h1 className="text-2xl font-bold text-card mb-2">{meetup.title}</h1>
+                  {meetup.category && (
+                    <span className="px-3 py-1 rounded-full bg-card/90 backdrop-blur-sm text-card text-sm font-medium">
+                      {meetup.category}
+                    </span>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -151,9 +334,152 @@ const MeetupDetailPage = () => {
           )}
 
           {/* Description */}
-          {meetup.description && (
-            <div className="card-elevated p-4">
-              <p className="text-foreground whitespace-pre-wrap">{meetup.description}</p>
+          {isEditing ? (
+            <div className="card-elevated p-4 space-y-4">
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  Title
+                </label>
+                <Input
+                  value={editData.title}
+                  onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                  placeholder="Vibe title"
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  Description
+                </label>
+                <Textarea
+                  value={editData.description}
+                  onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                  placeholder="Describe your vibe..."
+                  className="w-full min-h-[100px]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">
+                    Price per Person ($)
+                  </label>
+                  <Input
+                    type="number"
+                    value={editData.pricePerPerson}
+                    onChange={(e) => setEditData({ ...editData, pricePerPerson: parseFloat(e.target.value) || 0 })}
+                    placeholder="0"
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">
+                    Max Attendees
+                  </label>
+                  <Input
+                    type="number"
+                    value={editData.maxAttendees}
+                    onChange={(e) => setEditData({ ...editData, maxAttendees: parseInt(e.target.value) || 10 })}
+                    placeholder="10"
+                    className="w-full"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={handleCancelEdit}
+                  className="flex-1"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveEdit}
+                  disabled={updateMeetup.isPending || !editData.title.trim()}
+                  className="flex-1 bg-gradient-primary"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {updateMeetup.isPending ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            meetup.description && (
+              <div className="card-elevated p-4">
+                <p className="text-foreground whitespace-pre-wrap">{meetup.description}</p>
+              </div>
+            )
+          )}
+
+          {/* Campaigns & Offers */}
+          {sampleCampaigns.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Tag className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-foreground text-lg">Campaigns & Offers</h3>
+              </div>
+              <div className="space-y-3">
+                {sampleCampaigns.map((campaign) => {
+                  const isActive = campaign.days.includes(new Date().toLocaleDateString('en-US', { weekday: 'long' }));
+                  const currentHour = new Date().getHours();
+                  const campaignStartHour = campaign.time === 'All Day' ? 0 : parseInt(campaign.time.split(' - ')[0]?.split(':')[0] || '0');
+                  const campaignEndHour = campaign.time === 'All Day' ? 23 : parseInt(campaign.time.split(' - ')[1]?.split(':')[0] || '23');
+                  const isTimeValid = campaign.time === 'All Day' || (currentHour >= campaignStartHour && currentHour < campaignEndHour);
+                  
+                  return (
+                    <motion.div
+                      key={campaign.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`card-elevated p-4 rounded-2xl border-2 ${
+                        isActive && isTimeValid ? 'border-primary/50 bg-primary/5' : 'border-border'
+                      }`}
+                    >
+                      <div className="flex gap-4">
+                        <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                          <img src={campaign.image} alt={campaign.title} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-center pb-2">
+                            <span className="text-2xl">{campaign.icon}</span>
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between mb-1">
+                            <h4 className="font-semibold text-foreground">{campaign.title}</h4>
+                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                              campaign.discount.includes('%')
+                                ? 'bg-primary/20 text-primary'
+                                : 'bg-friendme/20 text-friendme'
+                            }`}>
+                              {campaign.discount}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-2">{campaign.description}</p>
+                          <div className="flex flex-wrap gap-2 text-xs">
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <Clock className="w-3 h-3" />
+                              <span>{campaign.time}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <Calendar className="w-3 h-3" />
+                              <span>{campaign.days.join(', ')}</span>
+                            </div>
+                          </div>
+                          {isActive && isTimeValid && (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className="mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium"
+                            >
+                              <Sparkles className="w-3 h-3" />
+                              Active Now
+                            </motion.div>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
@@ -167,26 +493,87 @@ const MeetupDetailPage = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-muted">
-              <MapPin className="w-5 h-5 text-primary" />
-              <div className="flex-1">
-                <p className="text-sm text-muted-foreground">Location</p>
-                <p className="font-medium text-foreground">{venueName}</p>
-                {venueAddress && venueAddress !== venueName && (
-                  <p className="text-sm text-muted-foreground">{venueAddress}</p>
-                )}
+            {meetup.venue?.id ? (
+              <motion.button
+                onClick={() => navigate(`/venue/${meetup.venue.id}`)}
+                className="w-full flex items-center gap-3 p-4 rounded-xl bg-muted text-left"
+                whileTap={{ scale: 0.98 }}
+              >
+                <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Location</p>
+                  {isBlindMeet && !revealDetails ? (
+                    <>
+                      <p className="font-medium text-foreground blur-sm select-none">Secret Location</p>
+                      <p className="text-xs text-primary mt-1">🔒 Revealed 2 hours before event</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-medium text-foreground">{venueName}</p>
+                      {venueAddress && venueAddress !== venueName && (
+                        <p className="text-sm text-muted-foreground">{venueAddress}</p>
+                      )}
+                      <p className="text-xs text-primary mt-1">Tap to view venue details</p>
+                    </>
+                  )}
+                </div>
+              </motion.button>
+            ) : (
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-muted">
+                <MapPin className="w-5 h-5 text-primary" />
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Location</p>
+                  {isBlindMeet && !revealDetails ? (
+                    <>
+                      <p className="font-medium text-foreground blur-sm select-none">Secret Location</p>
+                      <p className="text-xs text-primary mt-1">🔒 Revealed 2 hours before event</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-medium text-foreground">{venueName}</p>
+                      {venueAddress && venueAddress !== venueName && (
+                        <p className="text-sm text-muted-foreground">{venueAddress}</p>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-muted">
-              <Users className="w-5 h-5 text-primary" />
-              <div className="flex-1">
-                <p className="text-sm text-muted-foreground">Attendees</p>
-                <p className="font-medium text-foreground">
-                  {attendeeCount} / {maxAttendees} people
+            {isEditing ? (
+              <div className="card-elevated p-4">
+                <p className="text-sm font-medium text-muted-foreground mb-2">Attendees</p>
+                <p className="text-foreground">
+                  {attendeeCount} / {editData.maxAttendees} people
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Max attendees updated above
                 </p>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-muted">
+                <Users className="w-5 h-5 text-primary" />
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Attendees</p>
+                  <p className="font-medium text-foreground">
+                    {attendeeCount} / {maxAttendees} people
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {/* Price Info */}
+            {meetup.pricePerPerson !== undefined && meetup.pricePerPerson !== null && meetup.pricePerPerson > 0 && (
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-muted">
+                <DollarSign className="w-5 h-5 text-primary" />
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Price per Person</p>
+                  <p className="font-medium text-foreground">
+                    ${isEditing ? editData.pricePerPerson : meetup.pricePerPerson}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Attendees */}
@@ -250,23 +637,115 @@ const MeetupDetailPage = () => {
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
-            <Button
-              variant="outline"
-              className="flex-1 h-12"
-              onClick={() => navigate('/home')}
-            >
-              Back
-            </Button>
-            <Button
-              onClick={handleJoin}
-              className="flex-1 h-12 bg-gradient-primary"
-            >
-              Join Vibe
-            </Button>
+          <div className="space-y-3 pt-4">
+            {isHost ? (
+              <>
+                {isEditing ? (
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      className="flex-1 h-12"
+                      onClick={handleCancelEdit}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleSaveEdit}
+                      disabled={updateMeetup.isPending || !editData.title.trim()}
+                      className="flex-1 h-12 bg-gradient-primary"
+                    >
+                      {updateMeetup.isPending ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <Button
+                      onClick={handleStartEdit}
+                      className="w-full h-12 bg-gradient-primary"
+                    >
+                      <Edit className="w-5 h-5 mr-2" />
+                      Edit Vibe
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full h-12 flex items-center justify-center gap-2"
+                      onClick={() => navigate(`/chat?meetupId=${id}`)}
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      Open Chat
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full h-12 flex items-center justify-center gap-2"
+                      onClick={() => navigate('/home')}
+                    >
+                      Back to Home
+                    </Button>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1 h-12"
+                    onClick={() => navigate('/home')}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    onClick={handleJoin}
+                    className="flex-1 h-12 bg-gradient-primary"
+                  >
+                    Join Vibe
+                  </Button>
+                </div>
+                
+                {/* Chat Button */}
+                <Button
+                  variant="outline"
+                  className="w-full h-12 flex items-center justify-center gap-2"
+                  onClick={() => {
+                    navigate(`/chat?meetupId=${id}`);
+                  }}
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  Open Chat
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Meetup</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this meetup? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDelete}
+              disabled={deleteMeetup.isPending}
+              className="flex-1 bg-destructive text-destructive-foreground"
+            >
+              {deleteMeetup.isPending ? 'Deleting...' : 'Delete'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MobileLayout>
   );
 };

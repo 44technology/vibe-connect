@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MessageCircle, Share2, MoreVertical, X, Plus } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreVertical, X, Plus, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MobileLayout from '@/components/layout/MobileLayout';
 import UserAvatar from '@/components/ui/UserAvatar';
@@ -95,31 +95,51 @@ const LifePage = () => {
     );
   }, [connections, user]);
 
+  // Calculate common interests between current user and post user
+  const getCommonInterests = (postUserInterests: string[] = []) => {
+    if (!user?.interests || !postUserInterests || postUserInterests.length === 0) return [];
+    return user.interests.filter(interest => postUserInterests.includes(interest));
+  };
+
   // Use backend posts if available, otherwise use mock data
   const allBackendPosts = useMemo(() => {
     if (backendPosts && backendPosts.length > 0) {
-      return backendPosts.map((p: any) => ({
-        id: p.id,
-        type: p.venue ? 'venue' : 'user',
-        user: p.user ? {
-          id: p.user.id,
-          name: p.user.displayName || `${p.user.firstName} ${p.user.lastName}`,
-          avatar: p.user.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
-        } : null,
-        venue: p.venue ? {
-          name: p.venue.name,
-          avatar: p.venue.image || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=150',
-        } : null,
-        content: p.content || '',
-        image: p.image || 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800',
-        likes: p._count?.likes || 0,
-        comments: p._count?.comments || 0,
-        time: new Date(p.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric' }),
-        commonInterests: [], // TODO: Get from user interests
-      }));
+      return backendPosts.map((p: any) => {
+        const postUserInterests = p.user?.interests || [];
+        const commonInterests = getCommonInterests(postUserInterests);
+        
+        return {
+          id: p.id,
+          type: p.venue ? 'venue' : 'user',
+          user: p.user ? {
+            id: p.user.id,
+            name: p.user.displayName || `${p.user.firstName} ${p.user.lastName}`,
+            avatar: p.user.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150',
+            interests: postUserInterests,
+          } : null,
+          venue: p.venue ? {
+            name: p.venue.name,
+            avatar: p.venue.image || 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=150',
+          } : null,
+          content: p.content || '',
+          image: p.image || 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800',
+          likes: p._count?.likes || 0,
+          comments: p._count?.comments || 0,
+          time: new Date(p.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric' }),
+          commonInterests,
+        };
+      });
     }
-    return posts.map(p => ({ ...p, user: p.user ? { id: p.user.name, ...p.user } : null }));
-  }, [backendPosts]);
+    return posts.map(p => {
+      const postUserInterests = p.user?.commonInterests || [];
+      const commonInterests = getCommonInterests(postUserInterests);
+      return { 
+        ...p, 
+        user: p.user ? { id: p.user.name, ...p.user, interests: postUserInterests } : null,
+        commonInterests,
+      };
+    });
+  }, [backendPosts, user?.interests]);
 
   // Filter posts based on active tab
   const allPosts = useMemo(() => {
@@ -398,11 +418,21 @@ const LifePage = () => {
                 <div className="flex-1 space-y-3">
                   {/* User/Venue Info */}
                   <div className="flex items-center gap-3">
-                    <UserAvatar
-                      src={currentPost.user?.avatar || currentPost.venue?.avatar}
-                      alt={currentPost.user?.name || currentPost.venue?.name || ''}
-                      size="md"
-                    />
+                    <motion.button
+                      onClick={() => {
+                        if (currentPost.user?.id) {
+                          navigate(`/user/${currentPost.user.id}`);
+                        }
+                      }}
+                      whileTap={{ scale: 0.95 }}
+                      className="cursor-pointer"
+                    >
+                      <UserAvatar
+                        src={currentPost.user?.avatar || currentPost.venue?.avatar}
+                        alt={currentPost.user?.name || currentPost.venue?.name || ''}
+                        size="md"
+                      />
+                    </motion.button>
                     <div>
                       <h3 className="font-semibold text-white">
                         {currentPost.user?.name || currentPost.venue?.name}
@@ -417,6 +447,20 @@ const LifePage = () => {
 
                 {/* Right: Actions */}
                 <div className="flex flex-col items-center gap-6">
+                  {/* Common Interest Indicator - Star emoji if common interests exist */}
+                  {currentPost.commonInterests && currentPost.commonInterests.length > 0 && (
+                    <motion.div
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      className="flex flex-col items-center gap-1 mb-2"
+                      title={`${currentPost.commonInterests.length} common interest${currentPost.commonInterests.length > 1 ? 's' : ''}`}
+                    >
+                      <div className="p-2 rounded-full bg-primary/20 backdrop-blur-sm border border-primary/30 shadow-lg">
+                        <span className="text-2xl">⭐</span>
+                      </div>
+                    </motion.div>
+                  )}
+                  
                   {/* Like Button */}
                   <motion.button
                     onClick={() => toggleLike(currentPost.id)}

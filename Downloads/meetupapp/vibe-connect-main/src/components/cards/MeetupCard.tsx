@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { MapPin, Clock, Users, Heart } from 'lucide-react';
 import UserAvatar from '../ui/UserAvatar';
+import { Button } from '../ui/button';
 
 interface MeetupCardProps {
   id: string;
@@ -35,6 +36,8 @@ interface MeetupCardProps {
     };
   }>;
   onPress?: () => void;
+  onJoin?: (e: React.MouseEvent) => void;
+  showJoinButton?: boolean;
 }
 
 const MeetupCard = ({
@@ -53,6 +56,8 @@ const MeetupCard = ({
   _count,
   members,
   onPress,
+  onJoin,
+  showJoinButton = false,
 }: MeetupCardProps) => {
   // Normalize data - support both mock data and backend data
   const hostData = host || (creator ? {
@@ -155,6 +160,20 @@ const MeetupCard = ({
             </div>
           </div>
         </div>
+
+        {showJoinButton && onJoin && (
+          <div className="pt-3">
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                onJoin(e);
+              }}
+              className="w-full bg-gradient-primary"
+            >
+              Join Vibe
+            </Button>
+          </div>
+        )}
       </div>
     </motion.div>
   );

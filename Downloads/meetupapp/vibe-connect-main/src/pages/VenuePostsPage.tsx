@@ -115,7 +115,7 @@ const VenuePostsPage = () => {
                 </div>
               </div>
               <motion.button
-                onClick={() => navigate(`/venue/${post.id}`)}
+                onClick={() => navigate(`/venue/${post.venue.id}`)}
                 className="text-primary text-sm font-medium"
                 whileTap={{ scale: 0.95 }}
               >

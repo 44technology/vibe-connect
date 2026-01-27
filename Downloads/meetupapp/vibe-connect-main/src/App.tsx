@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import WelcomePage from "./pages/WelcomePage";
 import OnboardingPage from "./pages/OnboardingPage";
 import LoginPage from "./pages/LoginPage";
@@ -23,6 +24,9 @@ import SettingsPage from "./pages/SettingsPage";
 import MeetupDetailPage from "./pages/MeetupDetailPage";
 import VenueDetailPage from "./pages/VenueDetailPage";
 import UserProfilePage from "./pages/UserProfilePage";
+import UserConnectionsPage from "./pages/UserConnectionsPage";
+import UserVibesPage from "./pages/UserVibesPage";
+import UserBadgesPage from "./pages/UserBadgesPage";
 import LifePage from "./pages/LifePage";
 import SurpriseMePage from "./pages/SurpriseMePage";
 import VenuePostsPage from "./pages/VenuePostsPage";
@@ -32,8 +36,9 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -57,15 +62,22 @@ const App = () => (
             <Route path="/meetup/:id" element={<MeetupDetailPage />} />
             <Route path="/venue/:id" element={<VenueDetailPage />} />
             <Route path="/user/:userId" element={<UserProfilePage />} />
+            <Route path="/user/:userId/connections" element={<UserConnectionsPage />} />
+            <Route path="/user/:userId/vibes" element={<UserVibesPage />} />
+            <Route path="/user/:userId/badges" element={<UserBadgesPage />} />
             <Route path="/life" element={<LifePage />} />
             <Route path="/surprise" element={<SurpriseMePage />} />
             <Route path="/venue-posts" element={<VenuePostsPage />} />
+            {/* Mentors are now part of Classes - redirect old routes */}
+            <Route path="/mentors" element={<ClassesPage />} />
+            <Route path="/mentor/:id" element={<ClassDetailPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
+    </LanguageProvider>
   </QueryClientProvider>
 );
 
