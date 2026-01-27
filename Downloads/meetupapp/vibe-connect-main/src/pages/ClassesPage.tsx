@@ -431,7 +431,7 @@ const ClassesPage = () => {
       <div className="sticky top-0 z-40 glass safe-top">
         <div className="flex items-center gap-3 px-4 py-3">
           <motion.button
-            onClick={() => navigate('/discover')}
+            onClick={() => navigate('/home')}
             className="p-2 -ml-2"
             whileTap={{ scale: 0.9 }}
           >

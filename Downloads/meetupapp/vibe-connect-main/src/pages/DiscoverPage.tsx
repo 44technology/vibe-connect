@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, MapPin, Filter, Star, ChevronRight, GraduationCap, X } from 'lucide-react';
+import { Search, MapPin, Filter, Star, ChevronRight, GraduationCap, X, DollarSign, Award, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MobileLayout from '@/components/layout/MobileLayout';
 import BottomNav from '@/components/layout/BottomNav';
@@ -16,11 +16,13 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useMeetups } from '@/hooks/useMeetups';
+import { useMeetups, useJoinMeetup } from '@/hooks/useMeetups';
 import { useVenues } from '@/hooks/useVenues';
+import { useClasses } from '@/hooks/useClasses';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePersonalization } from '@/hooks/usePersonalization';
 import { toast } from 'sonner';
+import ClassCard from '@/components/cards/ClassCard';
 
 const DiscoverPage = () => {
   const navigate = useNavigate();
@@ -34,8 +36,10 @@ const DiscoverPage = () => {
     distance: '',
     priceRange: '',
     rating: '',
+    priceFilter: 'all' as 'all' | 'free' | 'paid',
+    certificateFilter: 'all' as 'all' | 'certified' | 'non-certified',
   });
-  const [activeTab, setActiveTab] = useState<'vibes' | 'venues'>('vibes');
+  const [activeTab, setActiveTab] = useState<'vibes' | 'venues' | 'classes'>('vibes');
 
   // Convert distance filter to radius in miles
   const radius = filters.distance ? parseFloat(filters.distance) * 1.60934 : undefined; // Convert miles to km
@@ -61,6 +65,59 @@ const DiscoverPage = () => {
     longitude: filters.distance ? userLon : undefined,
     radius: radius,
   });
+
+  // Fetch classes with filters
+  const { data: classesData, isLoading: classesLoading } = useClasses(
+    searchQuery || undefined,
+    filters.category || undefined
+  );
+
+  // Format and filter classes data for ClassCard component
+  const formattedClasses = useMemo(() => {
+    if (!classesData || classesData.length === 0) return [];
+    
+    let filtered = classesData.map((c: any) => ({
+      id: c.id,
+      title: c.title || 'Untitled Class',
+      description: c.description || 'Join this class to learn and grow!',
+      skill: c.skill || 'Class',
+      category: c.category,
+      image: c.image || 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=400',
+      startTime: c.startTime || new Date().toISOString(),
+      endTime: c.endTime,
+      price: c.price !== undefined && c.price !== null ? c.price : 0,
+      schedule: c.schedule,
+      venue: c.venue ? {
+        id: c.venue.id || '',
+        name: c.venue.name || 'Location TBD',
+        address: c.venue.address || '',
+        city: c.venue.city || '',
+      } : {
+        id: '',
+        name: 'Location TBD',
+        address: '',
+        city: '',
+      },
+      _count: c._count || { enrollments: 0 },
+      hasCertificate: (c as any).hasCertificate || false,
+    }));
+
+    // Apply price filter
+    if (filters.priceFilter === 'free') {
+      filtered = filtered.filter(c => c.price === 0 || !c.price);
+    } else if (filters.priceFilter === 'paid') {
+      filtered = filtered.filter(c => c.price && c.price > 0);
+    }
+
+    // Apply certificate filter
+    if (filters.certificateFilter === 'certified') {
+      filtered = filtered.filter(c => c.hasCertificate);
+    } else if (filters.certificateFilter === 'non-certified') {
+      filtered = filtered.filter(c => !c.hasCertificate);
+    }
+
+    return filtered;
+  }, [classesData, filters.priceFilter, filters.certificateFilter]);
 
   // Use API data if available, otherwise fall back to mock data
   const rawMeetups = meetupsData && meetupsData.length > 0 ? meetupsData : mockMeetups;
@@ -134,32 +191,16 @@ const DiscoverPage = () => {
       </div>
 
       <div className="px-4 pb-4">
-        {/* Classes Quick Access */}
-        <motion.button
-          onClick={() => navigate('/classes')}
-          className="w-full mt-4 p-4 rounded-2xl bg-gradient-to-r from-connectme to-primary flex items-center justify-between"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-              <GraduationCap className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <div className="text-left">
-              <h3 className="font-bold text-primary-foreground">Classes & Lessons</h3>
-              <p className="text-sm text-primary-foreground/80">Tennis, Yoga, Skydiving & more</p>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-primary-foreground" />
-        </motion.button>
-
-        <Tabs defaultValue="vibes" className="mt-4">
-          <TabsList className="grid w-full grid-cols-2 bg-muted rounded-xl p-1 h-12">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'vibes' | 'venues' | 'classes')} className="mt-4">
+          <TabsList className="grid w-full grid-cols-3 bg-muted rounded-xl p-1 h-12">
             <TabsTrigger value="vibes" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
               Vibes
             </TabsTrigger>
             <TabsTrigger value="venues" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
               Venues
+            </TabsTrigger>
+            <TabsTrigger value="classes" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              Classes
             </TabsTrigger>
           </TabsList>
 
@@ -206,101 +247,272 @@ const DiscoverPage = () => {
               )}
             </div>
           </TabsContent>
+
+          <TabsContent value="classes" className="mt-4 space-y-4">
+            {classesLoading ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Loading classes...</p>
+              </div>
+            ) : formattedClasses && formattedClasses.length > 0 ? (
+              formattedClasses.map((classItem: any) => (
+                <ClassCard
+                  key={classItem.id}
+                  {...classItem}
+                  onClick={() => navigate(`/class/${classItem.id}`)}
+                  onEnroll={(e) => {
+                    e?.stopPropagation();
+                    navigate(`/class/${classItem.id}`);
+                  }}
+                />
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No classes found. Try adjusting your filters.</p>
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
       </div>
 
-      {/* Filter Dialog */}
+      {/* Elegant Filter Dialog */}
       <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
-        <DialogContent className="max-w-md mx-4 rounded-2xl">
+        <DialogContent className="max-w-md mx-4 rounded-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Filter Results</DialogTitle>
+            <DialogTitle className="text-xl">Filter {activeTab === 'vibes' ? 'Vibes' : activeTab === 'venues' ? 'Venues' : 'Classes'}</DialogTitle>
             <DialogDescription>
-              Narrow down your search by category, distance, price, and rating.
+              Refine your search with filters
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
-            {/* Category Filter */}
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Category</label>
-              <select
-                value={filters.category}
-                onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-                className="w-full h-10 px-3 rounded-lg bg-muted border-0 text-foreground"
-              >
-                <option value="">All Categories</option>
-                <option value="coffee">Coffee</option>
-                <option value="café">Café</option>
-                <option value="japanese">Japanese</option>
-                <option value="italian">Italian</option>
-                <option value="sports">Sports</option>
-                <option value="park">Park</option>
-              </select>
-            </div>
+          <div className="space-y-6 mt-4">
+            {/* Category Filter - For Vibes and Classes */}
+            {(activeTab === 'vibes' || activeTab === 'classes') && (
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-3 block flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  Category
+                </label>
+                <select
+                  value={filters.category}
+                  onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+                  className="w-full h-12 px-4 rounded-xl bg-muted border-0 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="">All Categories</option>
+                  {activeTab === 'vibes' ? (
+                    <>
+                      <option value="coffee">Coffee</option>
+                      <option value="café">Café</option>
+                      <option value="japanese">Japanese</option>
+                      <option value="italian">Italian</option>
+                      <option value="sports">Sports</option>
+                      <option value="park">Park</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="sports">Sports</option>
+                      <option value="tennis">Tennis</option>
+                      <option value="yoga">Yoga</option>
+                      <option value="swimming">Swimming</option>
+                      <option value="golf">Golf</option>
+                      <option value="skydiving">Skydiving</option>
+                      <option value="cooking">Cooking</option>
+                      <option value="dance">Dance</option>
+                      <option value="art">Art</option>
+                      <option value="language">Language</option>
+                      <option value="diction">Diction & Speech</option>
+                      <option value="acting">Acting & Audition</option>
+                      <option value="music">Music</option>
+                      <option value="tech">Tech</option>
+                      <option value="business">Business</option>
+                      <option value="mentorship">Mentorship</option>
+                      <option value="fitness">Fitness</option>
+                      <option value="photography">Photography</option>
+                      <option value="writing">Writing</option>
+                    </>
+                  )}
+                </select>
+              </div>
+            )}
 
-            {/* Distance Filter */}
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Distance</label>
-              <select
-                value={filters.distance}
-                onChange={(e) => setFilters({ ...filters, distance: e.target.value })}
-                className="w-full h-10 px-3 rounded-lg bg-muted border-0 text-foreground"
-              >
-                <option value="">Any Distance</option>
-                <option value="1">Within 1 mile</option>
-                <option value="5">Within 5 miles</option>
-                <option value="10">Within 10 miles</option>
-                <option value="25">Within 25 miles</option>
-              </select>
-            </div>
+            {/* Distance Filter - For Vibes and Venues */}
+            {(activeTab === 'vibes' || activeTab === 'venues') && (
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-3 block flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  Distance
+                </label>
+                <select
+                  value={filters.distance}
+                  onChange={(e) => setFilters({ ...filters, distance: e.target.value })}
+                  className="w-full h-12 px-4 rounded-xl bg-muted border-0 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="">Any Distance</option>
+                  <option value="1">Within 1 mile</option>
+                  <option value="5">Within 5 miles</option>
+                  <option value="10">Within 10 miles</option>
+                  <option value="25">Within 25 miles</option>
+                </select>
+              </div>
+            )}
 
-            {/* Price Range Filter */}
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Price Range</label>
-              <select
-                value={filters.priceRange}
-                onChange={(e) => setFilters({ ...filters, priceRange: e.target.value })}
-                className="w-full h-10 px-3 rounded-lg bg-muted border-0 text-foreground"
-              >
-                <option value="">Any Price</option>
-                <option value="free">Free</option>
-                <option value="$">$ - Budget Friendly</option>
-                <option value="$$">$$ - Moderate</option>
-                <option value="$$$">$$$ - Expensive</option>
-              </select>
-            </div>
+            {/* Price Range Filter - For Vibes */}
+            {activeTab === 'vibes' && (
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-3 block flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-primary" />
+                  Price Range
+                </label>
+                <select
+                  value={filters.priceRange}
+                  onChange={(e) => setFilters({ ...filters, priceRange: e.target.value })}
+                  className="w-full h-12 px-4 rounded-xl bg-muted border-0 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="">Any Price</option>
+                  <option value="free">Free</option>
+                  <option value="$">$ - Budget Friendly</option>
+                  <option value="$$">$$ - Moderate</option>
+                  <option value="$$$">$$$ - Expensive</option>
+                </select>
+              </div>
+            )}
 
-            {/* Rating Filter */}
-            <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">Minimum Rating</label>
-              <select
-                value={filters.rating}
-                onChange={(e) => setFilters({ ...filters, rating: e.target.value })}
-                className="w-full h-10 px-3 rounded-lg bg-muted border-0 text-foreground"
-              >
-                <option value="">Any Rating</option>
-                <option value="4">4+ Stars</option>
-                <option value="4.5">4.5+ Stars</option>
-                <option value="5">5 Stars</option>
-              </select>
-            </div>
+            {/* Price Filter - For Classes */}
+            {activeTab === 'classes' && (
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-3 block flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-primary" />
+                  Price
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <motion.button
+                    onClick={() => setFilters({ ...filters, priceFilter: 'all' })}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      filters.priceFilter === 'all'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-muted bg-muted text-foreground'
+                    }`}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Tag className="w-5 h-5 mx-auto mb-1" />
+                    <span className="text-xs font-medium">All</span>
+                  </motion.button>
+                  <motion.button
+                    onClick={() => setFilters({ ...filters, priceFilter: 'free' })}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      filters.priceFilter === 'free'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-muted bg-muted text-foreground'
+                    }`}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Tag className="w-5 h-5 mx-auto mb-1 text-green-600" />
+                    <span className="text-xs font-medium">Free</span>
+                  </motion.button>
+                  <motion.button
+                    onClick={() => setFilters({ ...filters, priceFilter: 'paid' })}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      filters.priceFilter === 'paid'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-muted bg-muted text-foreground'
+                    }`}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <DollarSign className="w-5 h-5 mx-auto mb-1" />
+                    <span className="text-xs font-medium">Paid</span>
+                  </motion.button>
+                </div>
+              </div>
+            )}
+
+            {/* Certificate Filter - For Classes */}
+            {activeTab === 'classes' && (
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-3 block flex items-center gap-2">
+                  <Award className="w-4 h-4 text-primary" />
+                  Certificate
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <motion.button
+                    onClick={() => setFilters({ ...filters, certificateFilter: 'all' })}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      filters.certificateFilter === 'all'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-muted bg-muted text-foreground'
+                    }`}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <span className="text-xs font-medium">All</span>
+                  </motion.button>
+                  <motion.button
+                    onClick={() => setFilters({ ...filters, certificateFilter: 'certified' })}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      filters.certificateFilter === 'certified'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-muted bg-muted text-foreground'
+                    }`}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Award className="w-5 h-5 mx-auto mb-1" />
+                    <span className="text-xs font-medium">Certified</span>
+                  </motion.button>
+                  <motion.button
+                    onClick={() => setFilters({ ...filters, certificateFilter: 'non-certified' })}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      filters.certificateFilter === 'non-certified'
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-muted bg-muted text-foreground'
+                    }`}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <span className="text-xs font-medium">No Cert</span>
+                  </motion.button>
+                </div>
+              </div>
+            )}
+
+            {/* Rating Filter - For Vibes and Venues */}
+            {(activeTab === 'vibes' || activeTab === 'venues') && (
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-3 block flex items-center gap-2">
+                  <Star className="w-4 h-4 text-primary" />
+                  Minimum Rating
+                </label>
+                <select
+                  value={filters.rating}
+                  onChange={(e) => setFilters({ ...filters, rating: e.target.value })}
+                  className="w-full h-12 px-4 rounded-xl bg-muted border-0 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="">Any Rating</option>
+                  <option value="4">4+ Stars</option>
+                  <option value="4.5">4.5+ Stars</option>
+                  <option value="5">5 Stars</option>
+                </select>
+              </div>
+            )}
           </div>
 
-          <div className="flex gap-2 justify-end">
+          <div className="flex gap-2 pt-4 border-t border-border mt-4">
             <Button
               variant="outline"
               onClick={() => {
-                setFilters({ category: '', distance: '', priceRange: '', rating: '' });
+                setFilters({ 
+                  category: '', 
+                  distance: '', 
+                  priceRange: '', 
+                  rating: '',
+                  priceFilter: 'all',
+                  certificateFilter: 'all',
+                });
               }}
+              className="flex-1"
             >
               Reset
             </Button>
             <Button
               onClick={() => {
-                // TODO: Apply filters
                 setShowFilterDialog(false);
               }}
-              className="bg-gradient-primary"
+              className="flex-1 bg-gradient-primary text-primary-foreground"
             >
               Apply Filters
             </Button>

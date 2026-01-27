@@ -17,12 +17,22 @@ export const usePersonalization = () => {
 
   // Get contextual recommendation
   const contextualRecommendation = useMemo(() => {
-    return getContextualRecommendation();
+    try {
+      return getContextualRecommendation();
+    } catch (error) {
+      console.warn('Error getting contextual recommendation:', error);
+      return { type: 'general' as const, message: 'Discover new meetups' };
+    }
   }, []);
 
   // Get current time slot
   const currentTimeSlot = useMemo(() => {
-    return getCurrentTimeSlot();
+    try {
+      return getCurrentTimeSlot();
+    } catch (error) {
+      console.warn('Error getting time slot:', error);
+      return 'afternoon' as const;
+    }
   }, []);
 
   // Personalize meetups
@@ -30,8 +40,13 @@ export const usePersonalization = () => {
     meetups: Meetup[],
     userLocation?: { latitude: number; longitude: number }
   ): Meetup[] => {
-    if (!user?.id) return meetups;
-    return personalizeMeetups(meetups, user.id, userLocation, user.interests);
+    try {
+      if (!user?.id) return meetups;
+      return personalizeMeetups(meetups, user.id, userLocation, (user as any).interests || []);
+    } catch (error) {
+      console.warn('Error personalizing meetups:', error);
+      return meetups;
+    }
   };
 
   // Get top recommendations
@@ -40,32 +55,55 @@ export const usePersonalization = () => {
     userLocation?: { latitude: number; longitude: number },
     limit: number = 10
   ): Meetup[] => {
-    if (!user?.id) return meetups.slice(0, limit);
-    return getTopRecommendations(meetups, user.id, userLocation, user.interests, limit);
+    try {
+      if (!user?.id) return meetups.slice(0, limit);
+      return getTopRecommendations(meetups, user.id, userLocation, (user as any).interests || [], limit);
+    } catch (error) {
+      console.warn('Error getting recommendations:', error);
+      return meetups.slice(0, limit);
+    }
   };
 
   // Track meetup join
   const trackJoin = (meetup: Meetup): void => {
-    if (!user?.id) return;
-    trackMeetupJoin(user.id, meetup);
+    try {
+      if (!user?.id) return;
+      trackMeetupJoin(user.id, meetup);
+    } catch (error) {
+      console.warn('Error tracking join:', error);
+    }
   };
 
   // Get user behavior
   const behavior = useMemo(() => {
-    if (!user?.id) return null;
-    return getUserBehavior(user.id);
+    try {
+      if (!user?.id) return null;
+      return getUserBehavior(user.id);
+    } catch (error) {
+      console.warn('Error getting user behavior:', error);
+      return null;
+    }
   }, [user?.id]);
 
   // Get user preferences
   const preferences = useMemo(() => {
-    if (!user?.id) return null;
-    return getUserPreferences(user.id);
+    try {
+      if (!user?.id) return null;
+      return getUserPreferences(user.id);
+    } catch (error) {
+      console.warn('Error getting user preferences:', error);
+      return null;
+    }
   }, [user?.id]);
 
   // Update preferences
   const updatePreferences = (newPreferences: Partial<typeof preferences>) => {
-    if (!user?.id) return;
-    updateUserPreferences(user.id, newPreferences);
+    try {
+      if (!user?.id) return;
+      updateUserPreferences(user.id, newPreferences);
+    } catch (error) {
+      console.warn('Error updating preferences:', error);
+    }
   };
 
   return {

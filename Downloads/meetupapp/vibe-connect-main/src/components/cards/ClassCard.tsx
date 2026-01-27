@@ -7,6 +7,7 @@ import { Class } from '@/hooks/useClasses';
 interface ClassCardProps extends Class {
   onEnroll?: (e?: React.MouseEvent) => void;
   isEnrolled?: boolean;
+  onClick?: () => void;
 }
 
 const ClassCard = ({
@@ -23,12 +24,14 @@ const ClassCard = ({
   _count,
   onEnroll,
   isEnrolled,
+  onClick,
 }: ClassCardProps) => {
   return (
     <motion.div
-      className="card-elevated rounded-2xl overflow-hidden"
+      className="card-elevated rounded-2xl overflow-hidden cursor-pointer"
       whileHover={{ y: -4 }}
       whileTap={{ scale: 0.98 }}
+      onClick={onClick}
     >
       {image && (
         <div className="relative h-48 overflow-hidden">
@@ -42,24 +45,30 @@ const ClassCard = ({
       <div className="p-4 space-y-3">
         <div>
           <h3 className="font-bold text-foreground text-lg mb-1 line-clamp-1">{title}</h3>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <BookOpen className="w-4 h-4" />
-            <span>{venue.name}</span>
-          </div>
+          {venue && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <BookOpen className="w-4 h-4" />
+              <span>{venue.name || 'Location TBD'}</span>
+            </div>
+          )}
         </div>
 
         <p className="text-sm text-foreground line-clamp-2">{description}</p>
 
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Calendar className="w-4 h-4" />
-            <span>{format(new Date(startTime), 'MMM d, yyyy')}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Clock className="w-4 h-4" />
-            <span>{format(new Date(startTime), 'h:mm a')}</span>
-          </div>
-          {price && (
+          {startTime && !isNaN(new Date(startTime).getTime()) && (
+            <>
+              <div className="flex items-center gap-1">
+                <Calendar className="w-4 h-4" />
+                <span>{format(new Date(startTime), 'MMM d, yyyy')}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock className="w-4 h-4" />
+                <span>{format(new Date(startTime), 'h:mm a')}</span>
+              </div>
+            </>
+          )}
+          {price !== undefined && price !== null && (
             <div className="flex items-center gap-1">
               <DollarSign className="w-4 h-4" />
               <span>${price}</span>

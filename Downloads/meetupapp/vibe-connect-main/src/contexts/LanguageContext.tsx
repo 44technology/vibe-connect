@@ -54,6 +54,25 @@ const translations: Record<Language, Record<string, string>> = {
     'students': 'Students',
     'reviews': 'Reviews',
     'yearsExperience': 'Years Experience',
+    
+    // Payment Success
+    'paymentSuccessful': 'Payment Successful!',
+    'paymentCompleted': 'Payment completed',
+    'assistantInfo': 'From now on, assistant Lira will provide you with all necessary information.',
+    'classInfo': 'Class Information',
+    'whatToDo': 'What You Need to Do',
+    'waitForAssistant': 'Wait for information from assistant Lira',
+    'waitForAssistantDesc': 'Class materials and important updates will be sent to you',
+    'joinChat': 'Join the class chat group',
+    'joinChatDesc': 'You can communicate with other students and instructors',
+    'checkNotifications': 'Check notifications',
+    'checkNotificationsDesc': 'Keep notifications enabled for class reminders and updates',
+    'startDate': 'Start Date',
+    'endDate': 'End Date',
+    'schedule': 'Schedule',
+    'totalDuration': 'Total Duration',
+    'weeks': 'weeks',
+    'backToDetails': 'Back to Class Details',
   },
   es: {
     // Common
@@ -97,6 +116,25 @@ const translations: Record<Language, Record<string, string>> = {
     'students': 'Estudiantes',
     'reviews': 'Reseñas',
     'yearsExperience': 'Años de Experiencia',
+    
+    // Payment Success
+    'paymentSuccessful': '¡Pago Exitoso!',
+    'paymentCompleted': 'Pago completado',
+    'assistantInfo': 'A partir de ahora, el asistente Lira te proporcionará toda la información necesaria.',
+    'classInfo': 'Información de la Clase',
+    'whatToDo': 'Lo Que Necesitas Hacer',
+    'waitForAssistant': 'Espera información del asistente Lira',
+    'waitForAssistantDesc': 'Los materiales de clase y actualizaciones importantes te serán enviados',
+    'joinChat': 'Únete al grupo de chat de la clase',
+    'joinChatDesc': 'Puedes comunicarte con otros estudiantes e instructores',
+    'checkNotifications': 'Revisa las notificaciones',
+    'checkNotificationsDesc': 'Mantén las notificaciones activadas para recordatorios y actualizaciones de clase',
+    'startDate': 'Fecha de Inicio',
+    'endDate': 'Fecha de Finalización',
+    'schedule': 'Horario',
+    'totalDuration': 'Duración Total',
+    'weeks': 'semanas',
+    'backToDetails': 'Volver a Detalles de la Clase',
   },
 };
 

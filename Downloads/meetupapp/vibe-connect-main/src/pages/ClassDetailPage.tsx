@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, BookOpen, MapPin, Clock, DollarSign, Users, Calendar, Phone, Globe, CreditCard, AlertCircle, Info, Star, CheckCircle2, X, Monitor, CheckCircle, Sparkles, MessageCircle, ChevronRight } from 'lucide-react';
 import MobileLayout from '@/components/layout/MobileLayout';
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useClass, useEnrollInClass, useCancelEnrollment } from '@/hooks/useClasses';
 import { useMentor } from '@/hooks/useMentors';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -16,6 +17,7 @@ const ClassDetailPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { isAuthenticated, user } = useAuth();
+  const { t } = useLanguage();
   const isMentorClass = id?.startsWith('mentor-');
   const mentorId = isMentorClass ? id.replace('mentor-', '') : null;
   const { data: mentor, isLoading: mentorLoading } = useMentor(mentorId || '');
@@ -25,6 +27,7 @@ const ClassDetailPage = () => {
   const enrollInClass = useEnrollInClass();
   const cancelEnrollment = useCancelEnrollment();
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card');
   const [cardNumber, setCardNumber] = useState('');
   const [cardExpiry, setCardExpiry] = useState('');
@@ -72,12 +75,13 @@ const ClassDetailPage = () => {
       setCardNumber('');
       setCardExpiry('');
       setCardCVC('');
-      // Show success toast - user stays on page
-      toast.success('Payment successful! You are now enrolled. The class assistant will provide you with all necessary information.');
+      // Show success modal
+      setShowSuccessDialog(true);
     } catch (error: any) {
       toast.error(error.message || 'Payment failed');
     }
   };
+
 
   const handleCancel = async () => {
     try {
@@ -192,6 +196,12 @@ const ClassDetailPage = () => {
                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-friendme/90 backdrop-blur-sm text-friendme-foreground text-sm font-medium">
                     <Building2 className="w-3 h-3" />
                     Onsite
+                  </span>
+                )}
+                {isPaid && (
+                  <span className="px-3 py-1 rounded-full bg-green-500/90 backdrop-blur-sm text-white text-sm font-medium flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Paid
                   </span>
                 )}
               </div>
@@ -345,8 +355,8 @@ const ClassDetailPage = () => {
               </div>
             </div>
 
-            {/* Enrolled Students - Only visible if user is enrolled */}
-            {isEnrolled && classItem.enrollments && classItem.enrollments.length > 0 && (
+            {/* Enrolled Students - Visible to everyone */}
+            {classItem.enrollments && classItem.enrollments.length > 0 && (
               <div className="card-elevated p-4 rounded-2xl">
                 <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                   <Users className="w-5 h-5 text-primary" />
@@ -594,6 +604,189 @@ const ClassDetailPage = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Payment Success Modal - Slides in from right */}
+        <AnimatePresence>
+          {showSuccessDialog && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowSuccessDialog(false)}
+                className="fixed inset-0 bg-black/50 z-50"
+              />
+              
+              {/* Success Modal */}
+              <motion.div
+                initial={{ x: '100%', opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: '100%', opacity: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-background z-50 shadow-2xl"
+                style={{ maxHeight: '100vh' }}
+              >
+                <div className="h-full flex flex-col">
+                  {/* Close button */}
+                  <div className="flex justify-end p-4">
+                    <motion.button
+                      onClick={() => setShowSuccessDialog(false)}
+                      className="p-2 rounded-full hover:bg-muted transition-colors"
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <X className="w-5 h-5 text-foreground" />
+                    </motion.button>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 overflow-y-auto px-6 py-6">
+                    {/* Success Icon */}
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.2, type: 'spring', stiffness: 200, damping: 15 }}
+                      className="flex justify-center mb-6"
+                    >
+                      <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <CheckCircle className="w-12 h-12 text-green-500" />
+                      </div>
+                    </motion.div>
+
+                    {/* Success Message */}
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                      className="text-center mb-6"
+                    >
+                      <h2 className="text-2xl font-bold text-foreground mb-2">
+                        {t('paymentSuccessful')}
+                      </h2>
+                      <p className="text-base text-muted-foreground mb-3">
+                        {t('assistantInfo')}
+                      </p>
+                    </motion.div>
+
+                    {/* Class Schedule Info */}
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.4 }}
+                      className="w-full p-5 rounded-2xl bg-green-500/10 border-2 border-green-500/20 mb-6"
+                    >
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
+                          <BookOpen className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-foreground">{classItem?.title}</p>
+                          <p className="text-xs text-muted-foreground">{t('classInfo')}</p>
+                        </div>
+                        <div className="px-3 py-1 rounded-full bg-green-500 text-white text-xs font-medium">
+                          {t('paymentCompleted')}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        {classItem?.startTime && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Calendar className="w-4 h-4 text-green-600" />
+                            <span className="text-muted-foreground">{t('startDate')}:</span>
+                            <span className="font-medium text-foreground">
+                              {format(new Date(classItem.startTime), 'd MMMM yyyy, EEEE')}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {classItem?.endTime && classItem?.startTime && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Calendar className="w-4 h-4 text-green-600" />
+                            <span className="text-muted-foreground">{t('endDate')}:</span>
+                            <span className="font-medium text-foreground">
+                              {format(new Date(classItem.endTime), 'd MMMM yyyy')}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {classItem?.schedule && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Clock className="w-4 h-4 text-green-600" />
+                            <span className="text-muted-foreground">{t('schedule')}:</span>
+                            <span className="font-medium text-foreground">{classItem.schedule}</span>
+                          </div>
+                        )}
+                        
+                        {classItem?.startTime && classItem?.endTime && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Clock className="w-4 h-4 text-green-600" />
+                            <span className="text-muted-foreground">{t('totalDuration')}:</span>
+                            <span className="font-medium text-foreground">
+                              {Math.ceil((new Date(classItem.endTime).getTime() - new Date(classItem.startTime).getTime()) / (1000 * 60 * 60 * 24 * 7))} {t('weeks')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+
+                    {/* What to Do Next */}
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                      className="w-full mb-6"
+                    >
+                      <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-primary" />
+                        {t('whatToDo')}
+                      </h3>
+                      <div className="space-y-3">
+                        <div className="flex items-start gap-3 p-3 rounded-xl bg-muted">
+                          <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{t('waitForAssistant')}</p>
+                            <p className="text-xs text-muted-foreground">{t('waitForAssistantDesc')}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start gap-3 p-3 rounded-xl bg-muted">
+                          <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{t('joinChat')}</p>
+                            <p className="text-xs text-muted-foreground">{t('joinChatDesc')}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start gap-3 p-3 rounded-xl bg-muted">
+                          <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{t('checkNotifications')}</p>
+                            <p className="text-xs text-muted-foreground">{t('checkNotificationsDesc')}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* Action Button */}
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.6 }}
+                      className="w-full pb-4"
+                    >
+                      <Button
+                        onClick={() => setShowSuccessDialog(false)}
+                        className="w-full h-12 rounded-xl bg-gradient-primary text-primary-foreground"
+                      >
+                        {t('backToDetails')}
+                      </Button>
+                    </motion.div>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
       </div>
     </MobileLayout>

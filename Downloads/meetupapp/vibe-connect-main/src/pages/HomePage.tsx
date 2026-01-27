@@ -8,8 +8,11 @@ import { meetups as mockMeetups, venues as mockVenues } from '@/data/mockData';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useMeetups } from '@/hooks/useMeetups';
 import { useVenues } from '@/hooks/useVenues';
+import { useStories } from '@/hooks/useStories';
 import { useAuth } from '@/contexts/AuthContext';
 import VenueCard from '@/components/cards/VenueCard';
+import UserAvatar from '@/components/ui/UserAvatar';
+import CreateStoryModal from '@/components/CreateStoryModal';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Dialog,
@@ -25,12 +28,108 @@ const HomePage = () => {
   const { isAuthenticated, user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [discoverTab, setDiscoverTab] = useState<'vibes' | 'venues'>('vibes');
+  const [showCreateStoryModal, setShowCreateStoryModal] = useState(false);
   const [filters, setFilters] = useState({
     category: '',
     distance: '',
     priceRange: '',
     rating: '',
   });
+  
+  // Fetch stories
+  const { data: storiesData } = useStories();
+
+  // Mock stories for display (if API doesn't return enough)
+  const mockStories = [
+    {
+      id: 'mock-1',
+      user: {
+        id: 'user-1',
+        firstName: 'Sarah',
+        lastName: 'Johnson',
+        displayName: 'Sarah',
+        avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+      },
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'mock-2',
+      user: {
+        id: 'user-2',
+        firstName: 'Mike',
+        lastName: 'Chen',
+        displayName: 'Mike',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+      },
+      expiresAt: new Date(Date.now() + 20 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'mock-3',
+      user: {
+        id: 'user-3',
+        firstName: 'Emma',
+        lastName: 'Williams',
+        displayName: 'Emma',
+        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150',
+      },
+      expiresAt: new Date(Date.now() + 18 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'mock-4',
+      user: {
+        id: 'user-4',
+        firstName: 'David',
+        lastName: 'Brown',
+        displayName: 'David',
+        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
+      },
+      expiresAt: new Date(Date.now() + 22 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'mock-5',
+      user: {
+        id: 'user-5',
+        firstName: 'Lisa',
+        lastName: 'Anderson',
+        displayName: 'Lisa',
+        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150',
+      },
+      expiresAt: new Date(Date.now() + 16 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'mock-6',
+      user: {
+        id: 'user-6',
+        firstName: 'James',
+        lastName: 'Wilson',
+        displayName: 'James',
+        avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150',
+      },
+      expiresAt: new Date(Date.now() + 14 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'mock-7',
+      user: {
+        id: 'user-7',
+        firstName: 'Sophia',
+        lastName: 'Martinez',
+        displayName: 'Sophia',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      },
+      expiresAt: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
+    },
+  ];
+
+  // Combine API stories with mock stories
+  const allStories = useMemo(() => {
+    const apiStories = storiesData || [];
+    // Filter out user's own stories from API
+    const otherStories = apiStories.filter((s: any) => s.user?.id !== user?.id);
+    // Combine with mock stories, avoiding duplicates
+    const mockStoryIds = new Set(mockStories.map(s => s.id));
+    const uniqueMockStories = mockStories.filter(s => !apiStories.some((as: any) => as.id === s.id));
+    return [...otherStories, ...uniqueMockStories];
+  }, [storiesData, user?.id]);
   
   const { data: notificationsData, isLoading: notificationsLoading } = useNotifications(isAuthenticated);
 
@@ -128,6 +227,71 @@ const HomePage = () => {
       </div>
 
       <div className="px-4 pb-6 space-y-8">
+        {/* Stories Section */}
+        <section>
+          <div className="flex items-center gap-4 overflow-x-auto hide-scrollbar pb-2">
+            {/* Your Story - Add New */}
+            <motion.div
+              className="flex flex-col items-center gap-2 flex-shrink-0"
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                if (isAuthenticated) {
+                  setShowCreateStoryModal(true);
+                } else {
+                  navigate('/login');
+                }
+              }}
+            >
+              <div className="relative">
+                <div className="p-0.5 rounded-full bg-muted">
+                  <div className="p-0.5 bg-background rounded-full">
+                    <UserAvatar 
+                      src={user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'} 
+                      alt={user?.displayName || user?.firstName || 'You'} 
+                      size="lg" 
+                    />
+                  </div>
+                </div>
+                <div className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-primary flex items-center justify-center border-2 border-background shadow-lg">
+                  <Plus className="w-3.5 h-3.5 text-primary-foreground" />
+                </div>
+              </div>
+              <span className="text-xs text-muted-foreground font-medium">Your Story</span>
+            </motion.div>
+
+            {/* Other Stories */}
+            {allStories && allStories.length > 0 && allStories.slice(0, 15).map((story: any) => {
+              const userName = story.user?.displayName || `${story.user?.firstName || ''} ${story.user?.lastName || ''}`.trim() || 'User';
+              const hasStory = story.expiresAt && new Date(story.expiresAt) > new Date();
+              
+              return (
+                <motion.div
+                  key={story.id}
+                  className="flex flex-col items-center gap-2 flex-shrink-0 cursor-pointer"
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    // Navigate to story view (only for real stories, not mock)
+                    if (!story.id.startsWith('mock-')) {
+                      navigate(`/story/${story.id}`);
+                    }
+                  }}
+                >
+                  <div className={`p-0.5 rounded-full ${hasStory ? 'bg-gradient-to-br from-primary to-secondary' : 'bg-muted'}`}>
+                    <div className="p-0.5 bg-background rounded-full">
+                      <UserAvatar 
+                        src={story.user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'} 
+                        alt={userName} 
+                        size="lg" 
+                      />
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted-foreground max-w-[60px] truncate">{userName}</span>
+                </motion.div>
+              );
+            })}
+          </div>
+        </section>
+
         {/* Quick Access - Classes */}
         <section>
           <motion.button
@@ -160,7 +324,7 @@ const HomePage = () => {
             </motion.button>
             <div className="space-y-3">
               <AnimatePresence>
-                {yourActivities.map((meetup: any, index: number) => {
+                {yourActivities.slice(0, 3).map((meetup: any, index: number) => {
                   const hostName = meetup.host?.name || meetup.creator?.displayName || 
                     (meetup.creator ? `${meetup.creator.firstName} ${meetup.creator.lastName}` : 'You');
                   const isYou = isAuthenticated && user && (
@@ -242,7 +406,7 @@ const HomePage = () => {
               className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
               whileTap={{ scale: 0.95 }}
             >
-              <span>View All</span>
+              <span>Select All</span>
               <ChevronRight className="w-4 h-4" />
             </motion.button>
           </div>
@@ -374,6 +538,14 @@ const HomePage = () => {
         </section>
       </div>
 
+      {/* Create Story Modal */}
+      <CreateStoryModal
+        open={showCreateStoryModal}
+        onOpenChange={setShowCreateStoryModal}
+        onSuccess={() => {
+          // Refresh stories after creation
+        }}
+      />
 
       <BottomNav />
     </MobileLayout>
