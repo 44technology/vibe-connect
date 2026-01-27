@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, Filter, Star, MapPin, Clock, DollarSign, GraduationCap, Send, X, Monitor, Building2, Users, Award, Tag, Circle } from 'lucide-react';
+import { ArrowLeft, Search, Filter, Star, MapPin, Clock, DollarSign, GraduationCap, Send, X, Monitor, Building2, Users, Award, Tag, Circle, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MobileLayout from '@/components/layout/MobileLayout';
 import BottomNav from '@/components/layout/BottomNav';
@@ -12,6 +12,7 @@ import { apiRequest, API_ENDPOINTS } from '@/lib/api';
 import { toast } from 'sonner';
 import { useClasses } from '@/hooks/useClasses';
 import { useMentors } from '@/hooks/useMentors';
+import { useAuth } from '@/contexts/AuthContext';
 
 const classCategories = [
   { id: 'all', label: 'All', emoji: '✨' },
@@ -277,6 +278,7 @@ const classes = [
 
 const ClassesPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestionDialog, setShowSuggestionDialog] = useState(false);
@@ -305,32 +307,40 @@ const ClassesPage = () => {
 
   // Use backend classes if available, otherwise use mock data
   const backendClassesFormatted = backendClasses && backendClasses.length > 0
-    ? backendClasses.map(c => ({
-        id: c.id,
-        title: c.title || 'Untitled Class',
-        instructor: {
-          name: (c as any).instructor?.name || c.venue?.name || 'Instructor',
-          avatar: (c as any).instructor?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-          rating: (c as any).instructor?.rating || 4.5,
-        },
-        category: c.category || 'all',
-        location: c.venue?.name || 'Location TBD',
-        distance: '0.5 mi',
-        price: c.price || 0,
-        duration: c.endTime && c.startTime
-          ? `${Math.round((new Date(c.endTime).getTime() - new Date(c.startTime).getTime()) / 60000)} min`
-          : '1 hour',
-        image: c.image || 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=400',
-        nextAvailable: c.startTime 
-          ? new Date(c.startTime).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-          : 'TBD',
-        students: c._count?.enrollments || 0,
-        isOnline: !c.latitude || !c.longitude,
-        hasCertificate: (c as any).hasCertificate || false,
-        isMentor: false,
-        mentor: undefined,
-      }))
-    : classes.map(c => ({ ...c, isOnline: c.isOnline || false, hasCertificate: (c as any).hasCertificate || false, isMentor: false, mentor: undefined }));
+    ? backendClasses.map(c => {
+        const userEnrollment = c.enrollments?.find((e: any) => e.user.id === user?.id);
+        const isEnrolled = !!userEnrollment;
+        const isPaid = isEnrolled && userEnrollment && (userEnrollment.status === 'paid' || userEnrollment.status === 'enrolled') && c.price && c.price > 0;
+        
+        return {
+          id: c.id,
+          title: c.title || 'Untitled Class',
+          instructor: {
+            name: (c as any).instructor?.name || c.venue?.name || 'Instructor',
+            avatar: (c as any).instructor?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+            rating: (c as any).instructor?.rating || 4.5,
+          },
+          category: c.category || 'all',
+          location: c.venue?.name || 'Location TBD',
+          distance: '0.5 mi',
+          price: c.price || 0,
+          duration: c.endTime && c.startTime
+            ? `${Math.round((new Date(c.endTime).getTime() - new Date(c.startTime).getTime()) / 60000)} min`
+            : '1 hour',
+          image: c.image || 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=400',
+          nextAvailable: c.startTime 
+            ? new Date(c.startTime).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+            : 'TBD',
+          students: c._count?.enrollments || 0,
+          isOnline: !c.latitude || !c.longitude,
+          hasCertificate: (c as any).hasCertificate || false,
+          isMentor: false,
+          mentor: undefined,
+          isEnrolled,
+          isPaid,
+        };
+      })
+    : classes.map(c => ({ ...c, isOnline: c.isOnline || false, hasCertificate: (c as any).hasCertificate || false, isMentor: false, mentor: undefined, isEnrolled: false, isPaid: false }));
 
   // Convert mentors to class format (mentors can offer mentorship classes)
   const mentorClasses = useMemo(() => {
@@ -556,7 +566,7 @@ const ClassesPage = () => {
               </div>
               
               <div className="mt-3 flex items-center justify-between">
-                <div className="flex items-center gap-1 font-bold">
+                <div className="flex items-center gap-2">
                   {(classItem as any).price === 0 || !(classItem as any).price ? (
                     <span className="text-green-600 flex items-center gap-1">
                       <Tag className="w-4 h-4" />
@@ -566,6 +576,12 @@ const ClassesPage = () => {
                     <span className="text-primary flex items-center gap-1">
                       <DollarSign className="w-4 h-4" />
                       <span>${(classItem as any).price}</span>
+                    </span>
+                  )}
+                  {(classItem as any).isPaid && (
+                    <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 text-xs font-medium flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Paid
                     </span>
                   )}
                 </div>
@@ -620,60 +636,155 @@ const ClassesPage = () => {
         )}
       </div>
 
-      {/* Filter Dialog */}
+      {/* Elegant Filter Dialog */}
       <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-md mx-4 rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Filter Classes</DialogTitle>
+            <DialogTitle className="text-xl">Filter Classes</DialogTitle>
             <DialogDescription>
-              Filter classes by enrollment status
+              Refine your search with filters
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div className="flex items-center justify-between p-4 rounded-xl bg-muted">
-              <div className="flex items-center gap-3">
-                <GraduationCap className="w-5 h-5 text-primary" />
-                <div>
-                  <label className="text-sm font-medium text-foreground cursor-pointer">
-                    Show Only Enrolled Classes
-                  </label>
-                  <p className="text-xs text-muted-foreground">
-                    Display only classes you're enrolled in
-                  </p>
+          
+          <div className="space-y-6 mt-4 max-h-[70vh] overflow-y-auto">
+            {/* Enrollment Status */}
+            <div>
+              <label className="text-sm font-semibold text-foreground mb-3 block flex items-center gap-2">
+                <GraduationCap className="w-4 h-4 text-primary" />
+                Enrollment Status
+              </label>
+              <div className="flex items-center justify-between p-4 rounded-xl bg-muted">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Show Only Enrolled</p>
+                    <p className="text-xs text-muted-foreground">Classes you're enrolled in</p>
+                  </div>
                 </div>
+                <motion.button
+                  onClick={() => setShowEnrolledOnly(!showEnrolledOnly)}
+                  className={`relative w-12 h-6 rounded-full transition-colors ${
+                    showEnrolledOnly ? 'bg-primary' : 'bg-muted-foreground/30'
+                  }`}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <motion.div
+                    className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-md"
+                    animate={{ x: showEnrolledOnly ? 24 : 0 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  />
+                </motion.button>
               </div>
-              <motion.button
-                onClick={() => setShowEnrolledOnly(!showEnrolledOnly)}
-                className={`relative w-12 h-6 rounded-full transition-colors ${
-                  showEnrolledOnly ? 'bg-primary' : 'bg-muted-foreground/30'
-                }`}
-                whileTap={{ scale: 0.95 }}
-              >
-                <motion.div
-                  className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-md"
-                  animate={{ x: showEnrolledOnly ? 24 : 0 }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                />
-              </motion.button>
             </div>
-            <div className="flex gap-2 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowEnrolledOnly(false);
-                  setShowFilterDialog(false);
-                }}
-                className="flex-1"
-              >
-                Reset
-              </Button>
-              <Button
-                onClick={() => setShowFilterDialog(false)}
-                className="flex-1 bg-gradient-primary text-primary-foreground"
-              >
-                Apply
-              </Button>
+
+            {/* Price Filter */}
+            <div>
+              <label className="text-sm font-semibold text-foreground mb-3 block flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-primary" />
+                Price
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                <motion.button
+                  onClick={() => setPriceFilter('all')}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    priceFilter === 'all'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-muted bg-muted text-foreground'
+                  }`}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Tag className="w-5 h-5 mx-auto mb-1" />
+                  <span className="text-xs font-medium">All</span>
+                </motion.button>
+                <motion.button
+                  onClick={() => setPriceFilter('free')}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    priceFilter === 'free'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-muted bg-muted text-foreground'
+                  }`}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Tag className="w-5 h-5 mx-auto mb-1 text-green-600" />
+                  <span className="text-xs font-medium">Free</span>
+                </motion.button>
+                <motion.button
+                  onClick={() => setPriceFilter('paid')}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    priceFilter === 'paid'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-muted bg-muted text-foreground'
+                  }`}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <DollarSign className="w-5 h-5 mx-auto mb-1" />
+                  <span className="text-xs font-medium">Paid</span>
+                </motion.button>
+              </div>
             </div>
+
+            {/* Certificate Filter */}
+            <div>
+              <label className="text-sm font-semibold text-foreground mb-3 block flex items-center gap-2">
+                <Award className="w-4 h-4 text-primary" />
+                Certificate
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                <motion.button
+                  onClick={() => setCertificateFilter('all')}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    certificateFilter === 'all'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-muted bg-muted text-foreground'
+                  }`}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <span className="text-xs font-medium">All</span>
+                </motion.button>
+                <motion.button
+                  onClick={() => setCertificateFilter('certified')}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    certificateFilter === 'certified'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-muted bg-muted text-foreground'
+                  }`}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Award className="w-5 h-5 mx-auto mb-1" />
+                  <span className="text-xs font-medium">Certified</span>
+                </motion.button>
+                <motion.button
+                  onClick={() => setCertificateFilter('non-certified')}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    certificateFilter === 'non-certified'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-muted bg-muted text-foreground'
+                  }`}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <span className="text-xs font-medium">No Cert</span>
+                </motion.button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-4 border-t border-border mt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowEnrolledOnly(false);
+                setPriceFilter('all');
+                setCertificateFilter('all');
+              }}
+              className="flex-1"
+            >
+              Reset
+            </Button>
+            <Button
+              onClick={() => setShowFilterDialog(false)}
+              className="flex-1 bg-gradient-primary text-primary-foreground"
+            >
+              Apply Filters
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

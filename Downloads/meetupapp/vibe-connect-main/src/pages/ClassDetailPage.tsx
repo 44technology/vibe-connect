@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, BookOpen, MapPin, Clock, DollarSign, Users, Calendar, Phone, Globe, CreditCard, AlertCircle, Info, Star, CheckCircle2, X, Monitor } from 'lucide-react';
+import { ArrowLeft, BookOpen, MapPin, Clock, DollarSign, Users, Calendar, Phone, Globe, CreditCard, AlertCircle, Info, Star, CheckCircle2, X, Monitor, CheckCircle, Sparkles, MessageCircle, ChevronRight } from 'lucide-react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
 import UserAvatar from '@/components/ui/UserAvatar';
@@ -32,6 +32,7 @@ const ClassDetailPage = () => {
 
   const isEnrolled = classItem?.enrollments?.some((e) => e.user.id === user?.id) || false;
   const enrollment = classItem?.enrollments?.find((e) => e.user.id === user?.id);
+  const isPaid = isEnrolled && enrollment && (enrollment.status === 'paid' || enrollment.status === 'enrolled') && classItem?.price && classItem.price > 0;
   
   // Check if class is online
   const isOnline = !classItem?.latitude || !classItem?.longitude;
@@ -67,11 +68,12 @@ const ClassDetailPage = () => {
     try {
       await enrollInClass.mutateAsync(id!);
       setShowPaymentDialog(false);
-      toast.success('Payment successful! You are now enrolled.');
       // Reset form
       setCardNumber('');
       setCardExpiry('');
       setCardCVC('');
+      // Show success toast - user stays on page
+      toast.success('Payment successful! You are now enrolled. The class assistant will provide you with all necessary information.');
     } catch (error: any) {
       toast.error(error.message || 'Payment failed');
     }
@@ -343,28 +345,64 @@ const ClassDetailPage = () => {
               </div>
             </div>
 
-            {/* Enrolled Students */}
-            {classItem.enrollments && classItem.enrollments.length > 0 && (
-              <div>
-                <h3 className="font-semibold text-foreground mb-3">
-                  Enrolled Students ({classItem.enrollments.length})
+            {/* Enrolled Students - Only visible if user is enrolled */}
+            {isEnrolled && classItem.enrollments && classItem.enrollments.length > 0 && (
+              <div className="card-elevated p-4 rounded-2xl">
+                <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  Class Participants ({classItem.enrollments.length})
                 </h3>
                 <div className="space-y-2">
-                  {classItem.enrollments.slice(0, 10).map((enrollment) => (
-                    <div key={enrollment.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted">
-                      <UserAvatar
-                        src={enrollment.user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'}
-                        alt={enrollment.user?.displayName || enrollment.user?.firstName || 'User'}
-                        size="sm"
-                      />
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {enrollment.user?.displayName || `${enrollment.user?.firstName || ''} ${enrollment.user?.lastName || ''}`.trim() || 'Unknown User'}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                  {classItem.enrollments.map((enrollment) => {
+                    const userName = enrollment.user?.displayName || `${enrollment.user?.firstName || ''} ${enrollment.user?.lastName || ''}`.trim() || 'Unknown User';
+                    const isCurrentUser = enrollment.user?.id === user?.id;
+                    
+                    return (
+                      <motion.button
+                        key={enrollment.id}
+                        onClick={() => {
+                          if (!isCurrentUser && enrollment.user?.id) {
+                            navigate(`/user/${enrollment.user.id}`);
+                          }
+                        }}
+                        disabled={isCurrentUser}
+                        className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all ${
+                          isCurrentUser 
+                            ? 'bg-muted cursor-default' 
+                            : 'bg-muted hover:bg-muted/80 active:bg-muted/60'
+                        }`}
+                        whileTap={!isCurrentUser ? { scale: 0.98 } : {}}
+                      >
+                        <UserAvatar
+                          src={enrollment.user?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'}
+                          alt={userName}
+                          size="sm"
+                        />
+                        <div className="flex-1 text-left">
+                          <p className="font-medium text-foreground">
+                            {userName}
+                            {isCurrentUser && (
+                              <span className="ml-2 text-xs text-primary font-medium">(You)</span>
+                            )}
+                          </p>
+                          {enrollment.status && (
+                            <p className="text-xs text-muted-foreground capitalize">
+                              {enrollment.status}
+                            </p>
+                          )}
+                        </div>
+                        {!isCurrentUser && (
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </motion.button>
+                    );
+                  })}
                 </div>
+                {classItem.enrollments.length > 10 && (
+                  <p className="text-xs text-muted-foreground mt-3 text-center">
+                    Showing all {classItem.enrollments.length} participants
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -392,7 +430,7 @@ const ClassDetailPage = () => {
                   disabled
                 >
                   <CheckCircle2 className="w-5 h-5 mr-2" />
-                  Enrolled
+                  {isPaid ? 'Enrolled (Paid)' : 'Enrolled'}
                 </Button>
                 <Button
                   variant="outline"
@@ -412,12 +450,12 @@ const ClassDetailPage = () => {
                 disabled={enrollInClass.isPending || (classItem.maxStudents && (classItem._count?.enrollments || 0) >= classItem.maxStudents)}
               >
                 {enrollInClass.isPending
-                  ? 'Enrolling...'
+                  ? 'Joining...'
                   : classItem.maxStudents && (classItem._count?.enrollments || 0) >= classItem.maxStudents
                   ? 'Class Full'
                   : classItem.price && classItem.price > 0
-                  ? `Enroll Now - $${classItem.price}`
-                  : 'Enroll Now (Free)'}
+                  ? `Join the Class - $${classItem.price}`
+                  : 'Join the Class (Free)'}
               </Button>
               {isEnrolled && (
                 <Button
@@ -556,6 +594,7 @@ const ClassDetailPage = () => {
             </div>
           </DialogContent>
         </Dialog>
+
       </div>
     </MobileLayout>
   );
