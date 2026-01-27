@@ -70,9 +70,13 @@ const MeetupItem = ({ meetup }: { meetup: typeof upcomingMeetups[0] }) => {
     >
       <div className="relative h-32">
         <img src={meetup.image} alt={meetup.title} className="w-full h-full object-cover" />
-        {meetup.isHost && (
+        {meetup.isHost ? (
           <span className="absolute top-2 left-2 px-2 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
             Host
+          </span>
+        ) : (
+          <span className="absolute top-2 left-2 px-2 py-1 rounded-full bg-secondary text-secondary-foreground text-xs font-medium">
+            Guest
           </span>
         )}
       </div>

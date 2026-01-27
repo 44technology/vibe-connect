@@ -30,6 +30,7 @@ import UserBadgesPage from "./pages/UserBadgesPage";
 import LifePage from "./pages/LifePage";
 import SurpriseMePage from "./pages/SurpriseMePage";
 import VenuePostsPage from "./pages/VenuePostsPage";
+import StoryViewPage from "./pages/StoryViewPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,6 +69,7 @@ const App = () => (
             <Route path="/life" element={<LifePage />} />
             <Route path="/surprise" element={<SurpriseMePage />} />
             <Route path="/venue-posts" element={<VenuePostsPage />} />
+            <Route path="/story/:id" element={<StoryViewPage />} />
             {/* Mentors are now part of Classes - redirect old routes */}
             <Route path="/mentors" element={<ClassesPage />} />
             <Route path="/mentor/:id" element={<ClassDetailPage />} />

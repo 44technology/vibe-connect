@@ -186,6 +186,15 @@ const VenueDetailPage = () => {
     toast.info('AR view would open here. In production, this would use AR.js or similar.');
   };
 
+  const handleViewMenuItem = (item: typeof sampleMenuItems[0]) => {
+    setSelectedMenuItem(item);
+    setViewMode('2d'); // Reset to 2D view when opening menu item
+  };
+
+  // Separate campaigns and free items
+  const campaigns = sampleCampaigns.filter(c => c.type !== 'free-item');
+  const freeItems = sampleCampaigns.filter(c => c.type === 'free-item');
+
   return (
     <MobileLayout>
       {/* Header */}
@@ -276,78 +285,147 @@ const VenueDetailPage = () => {
             )}
           </div>
 
-          {/* Campaigns Section */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Tag className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold text-foreground text-lg">Campaigns & Offers</h3>
-            </div>
+          {/* Campaigns Section - Horizontal Scroll */}
+          {campaigns.length > 0 && (
             <div className="space-y-3">
-              {sampleCampaigns.map((campaign) => {
-                const currentDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-                const isActive = campaign.days.includes(currentDay);
-                const currentHour = new Date().getHours();
-                const campaignStartHour = campaign.time === 'All Day' ? 0 : parseInt(campaign.time.split(' - ')[0]?.split(':')[0] || '0');
-                const campaignEndHour = campaign.time === 'All Day' ? 23 : parseInt(campaign.time.split(' - ')[1]?.split(':')[0] || '23');
-                const isTimeValid = campaign.time === 'All Day' || (currentHour >= campaignStartHour && currentHour < campaignEndHour);
-                
-                return (
-                  <motion.div
-                    key={campaign.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`card-elevated p-4 rounded-2xl border-2 ${
-                      isActive && isTimeValid ? 'border-primary/50 bg-primary/5' : 'border-border'
-                    }`}
-                  >
-                    <div className="flex gap-4">
-                      <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
-                        <img src={campaign.image} alt={campaign.title} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-center pb-2">
-                          <span className="text-2xl">{campaign.icon}</span>
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between mb-1">
-                          <h4 className="font-semibold text-foreground">{campaign.title}</h4>
-                          <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                            campaign.discount.includes('%')
-                              ? 'bg-primary/20 text-primary'
-                              : campaign.discount.includes('FREE') || campaign.discount.includes('Free')
-                              ? 'bg-friendme/20 text-friendme'
-                              : 'bg-secondary/20 text-secondary'
-                          }`}>
-                            {campaign.discount}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">{campaign.description}</p>
-                        <div className="flex flex-wrap gap-2 text-xs">
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Clock className="w-3 h-3" />
-                            <span>{campaign.time}</span>
+              <div className="flex items-center gap-2">
+                <Tag className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-foreground text-lg">Campaigns & Offers</h3>
+              </div>
+              <div className="overflow-x-auto -mx-4 px-4 pb-2 scrollbar-hide">
+                <div className="flex gap-3" style={{ width: 'max-content' }}>
+                  {campaigns.map((campaign) => {
+                    const currentDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+                    const isActive = campaign.days.includes(currentDay);
+                    const currentHour = new Date().getHours();
+                    const campaignStartHour = campaign.time === 'All Day' ? 0 : parseInt(campaign.time.split(' - ')[0]?.split(':')[0] || '0');
+                    const campaignEndHour = campaign.time === 'All Day' ? 23 : parseInt(campaign.time.split(' - ')[1]?.split(':')[0] || '23');
+                    const isTimeValid = campaign.time === 'All Day' || (currentHour >= campaignStartHour && currentHour < campaignEndHour);
+                    
+                    return (
+                      <motion.div
+                        key={campaign.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className={`card-elevated p-4 rounded-2xl border-2 flex-shrink-0 w-80 ${
+                          isActive && isTimeValid ? 'border-primary/50 bg-primary/5' : 'border-border'
+                        }`}
+                      >
+                        <div className="flex flex-col gap-3">
+                          <div className="relative w-full h-32 rounded-xl overflow-hidden">
+                            <img src={campaign.image} alt={campaign.title} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-center pb-2">
+                              <span className="text-3xl">{campaign.icon}</span>
+                            </div>
+                            <div className="absolute top-2 right-2">
+                              <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                                campaign.discount.includes('%')
+                                  ? 'bg-primary/90 text-white'
+                                  : campaign.discount.includes('FREE') || campaign.discount.includes('Free')
+                                  ? 'bg-friendme/90 text-white'
+                                  : 'bg-secondary/90 text-white'
+                              }`}>
+                                {campaign.discount}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Calendar className="w-3 h-3" />
-                            <span>{campaign.days.join(', ')}</span>
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-foreground text-base">{campaign.title}</h4>
+                            <p className="text-sm text-muted-foreground line-clamp-2">{campaign.description}</p>
+                            <div className="flex flex-col gap-1 text-xs">
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <Clock className="w-3 h-3" />
+                                <span>{campaign.time}</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <Calendar className="w-3 h-3" />
+                                <span className="line-clamp-1">{campaign.days.join(', ')}</span>
+                              </div>
+                            </div>
+                            {isActive && isTimeValid && (
+                              <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium"
+                              >
+                                <Sparkles className="w-3 h-3" />
+                                Active Now
+                              </motion.div>
+                            )}
                           </div>
                         </div>
-                        {isActive && isTimeValid && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/20 text-primary text-xs font-medium"
-                          >
-                            <Sparkles className="w-3 h-3" />
-                            Active Now
-                          </motion.div>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Free Items Section - Horizontal Scroll */}
+          {freeItems.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-friendme" />
+                <h3 className="font-semibold text-foreground text-lg">Free Items</h3>
+              </div>
+              <div className="overflow-x-auto -mx-4 px-4 pb-2 scrollbar-hide">
+                <div className="flex gap-3" style={{ width: 'max-content' }}>
+                  {freeItems.map((item) => {
+                    const currentDay = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+                    const isActive = item.days.includes(currentDay);
+                    const currentHour = new Date().getHours();
+                    const itemStartHour = item.time === 'All Day' ? 0 : parseInt(item.time.split(' - ')[0]?.split(':')[0] || '0');
+                    const itemEndHour = item.time === 'All Day' ? 23 : parseInt(item.time.split(' - ')[1]?.split(':')[0] || '23');
+                    const isTimeValid = item.time === 'All Day' || (currentHour >= itemStartHour && currentHour < itemEndHour);
+                    
+                    return (
+                      <motion.div
+                        key={item.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className={`card-elevated p-4 rounded-2xl border-2 flex-shrink-0 w-72 ${
+                          isActive && isTimeValid ? 'border-friendme/50 bg-friendme/5' : 'border-border'
+                        }`}
+                      >
+                        <div className="flex flex-col gap-3">
+                          <div className="relative w-full h-28 rounded-xl overflow-hidden">
+                            <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-center pb-2">
+                              <span className="text-3xl">{item.icon}</span>
+                            </div>
+                            <div className="absolute top-2 right-2">
+                              <span className="px-2 py-1 rounded-full text-xs font-bold bg-friendme/90 text-white">
+                                {item.discount}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <h4 className="font-semibold text-foreground text-base">{item.title}</h4>
+                            <p className="text-sm text-muted-foreground line-clamp-2">{item.description}</p>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="w-3 h-3" />
+                              <span>{item.time}</span>
+                            </div>
+                            {isActive && isTimeValid && (
+                              <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-friendme/20 text-friendme text-xs font-medium"
+                              >
+                                <Sparkles className="w-3 h-3" />
+                                Active Now
+                              </motion.div>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Tabs */}
           <Tabs defaultValue="ambiance" className="w-full">
@@ -455,7 +533,8 @@ const VenueDetailPage = () => {
                                 <motion.button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleViewAR(item.id);
+                                    handleViewMenuItem(item);
+                                    setViewMode('ar');
                                   }}
                                   className="ml-auto px-2 py-1 rounded-lg bg-primary/10 text-primary text-xs font-medium flex items-center gap-1"
                                   whileTap={{ scale: 0.95 }}
@@ -473,7 +552,7 @@ const VenueDetailPage = () => {
                 </>
               ) : (
                 <div className="card-elevated p-4">
-                  <h3 className="font-semibold text-foreground mb-3">Services</h3>
+                  <h3 className="font-semibold text-foreground mb-3">Menu</h3>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
                       <UtensilsCrossed className="w-5 h-5 text-primary" />

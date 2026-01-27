@@ -120,22 +120,72 @@ const DiscoverPage = () => {
   }, [classesData, filters.priceFilter, filters.certificateFilter]);
 
   // Use API data if available, otherwise fall back to mock data
-  const rawMeetups = meetupsData && meetupsData.length > 0 ? meetupsData : mockMeetups;
+  // Check if meetupsData is empty or undefined, use mockMeetups as fallback
+  const rawMeetups = (meetupsData && meetupsData.length > 0) ? meetupsData : (mockMeetups && mockMeetups.length > 0 ? mockMeetups : []);
+  
+  // Normalize and format meetups for display
+  const normalizedMeetups = useMemo(() => {
+    if (!rawMeetups || rawMeetups.length === 0) return [];
+    
+    return rawMeetups.map((meetup: any) => {
+      // If it's already in API format (has startTime), return as-is
+      if (meetup.startTime) {
+        return meetup;
+      }
+      
+      // Otherwise, normalize from mock data format
+      return {
+        ...meetup,
+        startTime: meetup.startTime || (meetup.date && meetup.time ? new Date(`${meetup.date} ${meetup.time}`).toISOString() : new Date().toISOString()),
+        creator: meetup.creator || (meetup.host ? {
+          id: meetup.host.id || 'unknown',
+          firstName: meetup.host.name?.split(' ')[0] || 'Unknown',
+          lastName: meetup.host.name?.split(' ')[1] || '',
+          displayName: meetup.host.name,
+          avatar: meetup.host.avatar,
+        } : {
+          id: 'unknown',
+          firstName: 'Unknown',
+          lastName: '',
+          displayName: 'Unknown',
+        }),
+        venue: meetup.venue && typeof meetup.venue === 'object' ? meetup.venue : (meetup.venue ? {
+          id: 'venue-' + meetup.id,
+          name: typeof meetup.venue === 'string' ? meetup.venue : meetup.venue.name || 'Location TBD',
+          address: meetup.location || '',
+          city: meetup.location?.split(',')[1]?.trim() || '',
+        } : undefined),
+        location: meetup.location || (typeof meetup.venue === 'string' ? meetup.venue : meetup.venue?.name || 'Location TBD'),
+        _count: meetup._count || { members: meetup.attendees?.length || 0 },
+        members: meetup.members || (meetup.attendees?.map((a: any) => ({
+          id: a.id,
+          user: {
+            id: a.id,
+            firstName: a.name?.split(' ')[0] || 'User',
+            lastName: a.name?.split(' ')[1] || '',
+            displayName: a.name,
+            avatar: a.avatar,
+          },
+          status: 'going',
+        })) || []),
+      };
+    });
+  }, [rawMeetups]);
   
   // Personalize meetups based on user behavior, location, time, interests, and context
   const meetups = useMemo(() => {
-    if (!isAuthenticated || !user) return rawMeetups;
+    if (!isAuthenticated || !user) return normalizedMeetups;
     
     const userLocation = filters.distance ? { latitude: userLat, longitude: userLon } : undefined;
     
     // If search or filters are active, use filtered results
     if (searchQuery || filters.category || filters.distance || filters.priceRange) {
-      return rawMeetups; // Keep filters as-is
+      return normalizedMeetups; // Keep filters as-is
     }
     
     // Otherwise, apply personalization
-    return personalize(rawMeetups, userLocation);
-  }, [rawMeetups, isAuthenticated, user, filters, searchQuery, userLat, userLon, personalize]);
+    return personalize(normalizedMeetups, userLocation);
+  }, [normalizedMeetups, isAuthenticated, user, filters, searchQuery, userLat, userLon, personalize]);
   
   const venues = venuesData && venuesData.length > 0 ? venuesData : mockVenues;
 

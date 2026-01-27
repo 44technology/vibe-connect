@@ -28,10 +28,30 @@ const ClassDetailPage = () => {
   const cancelEnrollment = useCancelEnrollment();
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card');
   const [cardNumber, setCardNumber] = useState('');
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCVC, setCardCVC] = useState('');
+  const [paymentInvoice, setPaymentInvoice] = useState<{
+    invoiceNumber: string;
+    amount: number;
+    date: string;
+    paymentMethod: string;
+    cardLast4?: string;
+  } | null>(null);
+  
+  // Detect card type from card number
+  const getCardType = (number: string): string => {
+    const cleaned = number.replace(/\s/g, '');
+    if (/^4/.test(cleaned)) return 'visa';
+    if (/^5[1-5]/.test(cleaned)) return 'mastercard';
+    if (/^3[47]/.test(cleaned)) return 'amex';
+    if (/^6(?:011|5)/.test(cleaned)) return 'discover';
+    return '';
+  };
+  
+  const cardType = getCardType(cardNumber);
 
   const isEnrolled = classItem?.enrollments?.some((e) => e.user.id === user?.id) || false;
   const enrollment = classItem?.enrollments?.find((e) => e.user.id === user?.id);
@@ -70,13 +90,43 @@ const ClassDetailPage = () => {
 
     try {
       await enrollInClass.mutateAsync(id!);
+      
+      // Generate invoice info
+      const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      const invoiceData = {
+        invoiceNumber,
+        amount: classItem?.price || 0,
+        date: new Date().toISOString(),
+        paymentMethod: paymentMethod === 'card' ? 'Card' : 'Cash',
+        cardLast4: paymentMethod === 'card' ? cardNumber.slice(-4).replace(/\s/g, '') : undefined,
+      };
+      setPaymentInvoice(invoiceData);
+      
       setShowPaymentDialog(false);
       // Reset form
       setCardNumber('');
       setCardExpiry('');
       setCardCVC('');
-      // Show success modal
-      setShowSuccessDialog(true);
+      
+      // Only show success modal for card payments, not cash
+      if (paymentMethod === 'card') {
+        setShowSuccessDialog(true);
+      } else {
+        // For cash payment, show info message with class start date
+        const startDate = classItem?.startTime ? new Date(classItem.startTime) : null;
+        if (startDate) {
+          const formattedDate = format(startDate, 'EEEE, MMMM d');
+          toast.success('Enrollment confirmed!', {
+            description: `You can pay in cash before the first lesson on ${formattedDate}.`,
+            duration: 5000,
+          });
+        } else {
+          toast.success('Enrollment confirmed!', {
+            description: 'You can pay in cash before the first lesson starts.',
+            duration: 5000,
+          });
+        }
+      }
     } catch (error: any) {
       toast.error(error.message || 'Payment failed');
     }
@@ -199,10 +249,31 @@ const ClassDetailPage = () => {
                   </span>
                 )}
                 {isPaid && (
-                  <span className="px-3 py-1 rounded-full bg-green-500/90 backdrop-blur-sm text-white text-sm font-medium flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Paid
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-full bg-green-500/90 backdrop-blur-sm text-white text-sm font-medium flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Paid
+                    </span>
+                    <motion.button
+                      onClick={() => {
+                        // Load invoice from enrollment or use stored invoice
+                        if (enrollment && classItem?.price) {
+                          setPaymentInvoice({
+                            invoiceNumber: `INV-${enrollment.id}-${Date.now()}`,
+                            amount: classItem.price,
+                            date: enrollment.createdAt || new Date().toISOString(),
+                            paymentMethod: 'Card',
+                            cardLast4: '****',
+                          });
+                          setShowInvoiceDialog(true);
+                        }
+                      }}
+                      className="px-3 py-1 rounded-full bg-primary/10 backdrop-blur-sm text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      View Invoice
+                    </motion.button>
+                  </div>
                 )}
               </div>
               <h2 className="text-3xl font-bold text-card mb-2 drop-shadow-lg">
@@ -531,6 +602,32 @@ const ClassDetailPage = () => {
                       maxLength={19}
                       className="w-full h-12 px-4 rounded-xl bg-muted border-0 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
+                    {/* Card Type Logos */}
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-xs text-muted-foreground">Accepted cards:</span>
+                      <div className="flex items-center gap-1.5">
+                        <div className={`px-2 py-1 rounded text-xs font-semibold transition-all ${
+                          cardType === 'visa' ? 'bg-blue-600 text-white' : 'bg-muted text-muted-foreground'
+                        }`}>
+                          Visa
+                        </div>
+                        <div className={`px-2 py-1 rounded text-xs font-semibold transition-all ${
+                          cardType === 'mastercard' ? 'bg-red-600 text-white' : 'bg-muted text-muted-foreground'
+                        }`}>
+                          Mastercard
+                        </div>
+                        <div className={`px-2 py-1 rounded text-xs font-semibold transition-all ${
+                          cardType === 'amex' ? 'bg-blue-500 text-white' : 'bg-muted text-muted-foreground'
+                        }`}>
+                          Amex
+                        </div>
+                        <div className={`px-2 py-1 rounded text-xs font-semibold transition-all ${
+                          cardType === 'discover' ? 'bg-orange-600 text-white' : 'bg-muted text-muted-foreground'
+                        }`}>
+                          Discover
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -567,10 +664,28 @@ const ClassDetailPage = () => {
               )}
 
               {paymentMethod === 'cash' && (
-                <div className="p-4 rounded-xl bg-muted">
-                  <p className="text-sm text-muted-foreground">
-                    You can pay in cash when you arrive at the class. Your enrollment will be confirmed after payment.
-                  </p>
+                <div className="p-4 rounded-xl bg-muted border border-primary/20">
+                  <div className="flex items-start gap-3">
+                    <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-foreground mb-1">
+                        Cash Payment Available
+                      </p>
+                      {classItem?.startTime ? (
+                        <p className="text-sm text-muted-foreground">
+                          You can pay in cash before the first lesson on{' '}
+                          <span className="font-medium text-foreground">
+                            {format(new Date(classItem.startTime), 'EEEE, MMMM d')}
+                          </span>
+                          . Your enrollment will be confirmed after payment.
+                        </p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          You can pay in cash before the first lesson starts. Your enrollment will be confirmed after payment.
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -729,11 +844,48 @@ const ClassDetailPage = () => {
                       </div>
                     </motion.div>
 
+                    {/* Payment Invoice Info */}
+                    {paymentInvoice && (
+                      <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.5 }}
+                        className="w-full p-4 rounded-xl bg-muted border border-border mb-6"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="text-sm font-semibold text-foreground">Payment Details</h4>
+                          <button
+                            onClick={() => setShowInvoiceDialog(true)}
+                            className="text-xs text-primary hover:underline"
+                          >
+                            View Invoice
+                          </button>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Amount Charged:</span>
+                            <span className="font-semibold text-foreground">${paymentInvoice.amount}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Payment Method:</span>
+                            <span className="font-medium text-foreground">
+                              {paymentInvoice.paymentMethod}
+                              {paymentInvoice.cardLast4 && ` •••• ${paymentInvoice.cardLast4}`}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Invoice #:</span>
+                            <span className="font-mono text-xs text-foreground">{paymentInvoice.invoiceNumber}</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
                     {/* What to Do Next */}
                     <motion.div
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
-                      transition={{ delay: 0.5 }}
+                      transition={{ delay: 0.6 }}
                       className="w-full mb-6"
                     >
                       <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -775,7 +927,11 @@ const ClassDetailPage = () => {
                       className="w-full pb-4"
                     >
                       <Button
-                        onClick={() => setShowSuccessDialog(false)}
+                        onClick={() => {
+                          setShowSuccessDialog(false);
+                          // Go back to previous page (where user came from)
+                          navigate(-1);
+                        }}
                         className="w-full h-12 rounded-xl bg-gradient-primary text-primary-foreground"
                       >
                         {t('backToDetails')}
@@ -787,6 +943,104 @@ const ClassDetailPage = () => {
             </>
           )}
         </AnimatePresence>
+
+        {/* Invoice Dialog */}
+        <Dialog open={showInvoiceDialog} onOpenChange={setShowInvoiceDialog}>
+          <DialogContent className="max-w-md mx-4 rounded-2xl">
+            <DialogHeader>
+              <DialogTitle>Payment Invoice</DialogTitle>
+              <DialogDescription>
+                Payment receipt and invoice details
+              </DialogDescription>
+            </DialogHeader>
+            
+            {paymentInvoice && (
+              <div className="space-y-6 py-4">
+                {/* Invoice Header */}
+                <div className="text-center pb-4 border-b border-border">
+                  <h3 className="text-lg font-bold text-foreground mb-1">{classItem?.title}</h3>
+                  <p className="text-sm text-muted-foreground">Invoice #{paymentInvoice.invoiceNumber}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {format(new Date(paymentInvoice.date), 'MMMM d, yyyy • h:mm a')}
+                  </p>
+                </div>
+
+                {/* Payment Details */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center py-2 border-b border-border">
+                    <span className="text-muted-foreground">Amount Paid:</span>
+                    <span className="text-2xl font-bold text-primary">${paymentInvoice.amount}</span>
+                  </div>
+                  
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Payment Method:</span>
+                    <span className="font-medium text-foreground">
+                      {paymentInvoice.paymentMethod}
+                      {paymentInvoice.cardLast4 && ` •••• ${paymentInvoice.cardLast4}`}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Transaction Date:</span>
+                    <span className="font-medium text-foreground">
+                      {format(new Date(paymentInvoice.date), 'MMM d, yyyy')}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Invoice Number:</span>
+                    <span className="font-mono text-xs text-foreground">{paymentInvoice.invoiceNumber}</span>
+                  </div>
+                </div>
+
+                {/* Class Info */}
+                {classItem && (
+                  <div className="p-4 rounded-xl bg-muted space-y-2">
+                    <p className="text-sm font-semibold text-foreground">Class Information</p>
+                    <div className="space-y-1 text-sm">
+                      {classItem.startTime && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Start Date:</span>
+                          <span className="text-foreground">
+                            {format(new Date(classItem.startTime), 'MMM d, yyyy')}
+                          </span>
+                        </div>
+                      )}
+                      {classItem.instructor && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Instructor:</span>
+                          <span className="text-foreground">
+                            {classItem.instructor.displayName || `${classItem.instructor.firstName} ${classItem.instructor.lastName}`}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowInvoiceDialog(false)}
+                    className="flex-1"
+                  >
+                    Close
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      // Print or download invoice
+                      window.print();
+                    }}
+                    className="flex-1 bg-gradient-primary"
+                  >
+                    Print / Save
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
       </div>
     </MobileLayout>

@@ -11,6 +11,30 @@ import { useClasses, useEnrollInClass } from '@/hooks/useClasses';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
+// Helper functions for date/time formatting
+const formatDate = (date: string | Date | undefined) => {
+  if (!date) return 'TBA';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return 'TBA';
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+};
+
+const formatTime = (time: string | Date | undefined) => {
+  if (!time) return 'TBA';
+  const t = new Date(time);
+  if (isNaN(t.getTime())) return 'TBA';
+  return t.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+};
+
+const formatDateTime = (dateTime: string | Date | undefined) => {
+  if (!dateTime) return 'TBA';
+  const dt = new Date(dateTime);
+  if (isNaN(dt.getTime())) return 'TBA';
+  const dateStr = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  const timeStr = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return `${dateStr} at ${timeStr}`;
+};
+
 const SurpriseMePage = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
@@ -232,14 +256,6 @@ const SurpriseMePage = () => {
                   </div>
                 )}
 
-                {!canRollToday && (
-                  <div className="mb-4 p-3 rounded-xl bg-muted border border-border">
-                    <p className="text-sm text-muted-foreground">
-                      ⏰ You've already rolled today! Come back tomorrow for another surprise.
-                    </p>
-                  </div>
-                )}
-
                 <Button
                   onClick={rollDice}
                   disabled={isRolling || meetupsLoading || classesLoading || !canRollToday}
@@ -275,114 +291,182 @@ const SurpriseMePage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center card-elevated p-6 rounded-2xl"
               >
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-secondary to-primary flex items-center justify-center">
-                  {itemType === 'class' ? (
-                    <GraduationCap className="w-8 h-8 text-primary-foreground" />
-                  ) : (
-                    <Sparkles className="w-8 h-8 text-primary-foreground" />
-                  )}
+                {/* Dice Icon Badge */}
+                <div className="relative w-20 h-20 mx-auto mb-4">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-secondary to-primary flex items-center justify-center shadow-2xl">
+                    {itemType === 'class' ? (
+                      <GraduationCap className="w-10 h-10 text-primary-foreground" />
+                    ) : (
+                      <Sparkles className="w-10 h-10 text-primary-foreground" />
+                    )}
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg border-2 border-background">
+                    <span className="text-lg">🎲</span>
+                  </div>
+                </div>
+                
+                {/* Dice Badge */}
+                <div className="mb-4">
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-yellow-400/20 to-orange-500/20 border-2 border-yellow-400/30 text-yellow-600 dark:text-yellow-400 text-sm font-bold">
+                    <span className="text-lg">🎲</span>
+                    <span>From Dice Roll</span>
+                  </span>
                 </div>
 
                 {itemType === 'class' ? (
-                  <>
-                    <h3 className="text-xl font-bold text-foreground mb-1">{selectedItem.title}</h3>
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                      {selectedItem.category && (
-                        <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                          {selectedItem.category}
+                  shouldRevealDetails(selectedItem) ? (
+                    <>
+                      <h3 className="text-xl font-bold text-foreground mb-1">{selectedItem.title}</h3>
+                      <div className="flex items-center justify-center gap-2 mb-4 flex-wrap">
+                        <span className="inline-block px-3 py-1 rounded-full bg-gradient-to-r from-primary to-secondary text-primary-foreground text-sm font-semibold">
+                          Surprise
                         </span>
-                      )}
-                      {isClassOnline(selectedItem) ? (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary/10 text-secondary text-sm font-medium">
-                          <Monitor className="w-3 h-3" />
-                          Online
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-friendme/10 text-friendme text-sm font-medium">
-                          <Building2 className="w-3 h-3" />
-                          Onsite
-                        </span>
-                      )}
-                    </div>
+                        {selectedItem.category && (
+                          <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium blur-sm select-none">
+                            {selectedItem.category}
+                          </span>
+                        )}
+                        {isClassOnline(selectedItem) ? (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-secondary/10 text-secondary text-sm font-medium blur-sm select-none">
+                            <Monitor className="w-3 h-3" />
+                            Online
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-friendme/10 text-friendme text-sm font-medium blur-sm select-none">
+                            <Building2 className="w-3 h-3" />
+                            Onsite
+                          </span>
+                        )}
+                      </div>
 
-                    <div className="space-y-2 mb-6 text-left">
-                      {!isClassOnline(selectedItem) && selectedItem.venue && (
+                      <div className="space-y-2 mb-6 text-left">
+                        {/* Instructor/Creator - Blur */}
+                        {(selectedItem.instructor || selectedItem.creator) && (
+                          <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
+                            <Users className="w-5 h-5 text-primary" />
+                            <span className="text-foreground text-sm blur-sm select-none">
+                              {selectedItem.instructor?.displayName || selectedItem.creator?.displayName || 'Instructor'}
+                            </span>
+                          </div>
+                        )}
+                        {!isClassOnline(selectedItem) && selectedItem.venue && (
+                          <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
+                            <MapPin className="w-5 h-5 text-primary" />
+                            <span className="text-foreground text-sm blur-sm select-none">
+                              {selectedItem.venue.name} - {selectedItem.venue.address}
+                            </span>
+                          </div>
+                        )}
+                        {isClassOnline(selectedItem) && (
+                          <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
+                            <Monitor className="w-5 h-5 text-primary" />
+                            <span className="text-foreground text-sm blur-sm select-none">Online Class</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
+                          <Calendar className="w-5 h-5 text-primary" />
+                          <span className="text-foreground text-sm">
+                            {formatDateTime(selectedItem.startTime)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
+                          <Users className="w-5 h-5 text-primary" />
+                          <span className="text-foreground text-sm blur-sm select-none">
+                            {selectedItem._count?.enrollments || 0} students
+                            {selectedItem.maxStudents && ` / ${selectedItem.maxStudents}`}
+                          </span>
+                        </div>
+                        {selectedItem.price !== undefined && selectedItem.price !== null && (
+                          <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
+                            <span className="text-foreground text-sm font-semibold blur-sm select-none">
+                              {selectedItem.price === 0 ? 'FREE' : `$${selectedItem.price}`}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="text-xl font-bold text-foreground mb-1">Surprise Activity</h3>
+                      <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+                        ???
+                      </span>
+
+                      <div className="space-y-2 mb-6 text-left">
                         <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
                           <MapPin className="w-5 h-5 text-primary" />
+                          <span className="text-foreground text-sm blur-sm select-none">
+                            Secret Location
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
+                          <Calendar className="w-5 h-5 text-primary" />
                           <span className="text-foreground text-sm">
-                            {selectedItem.venue.name} - {selectedItem.venue.address}
+                            {formatDate(selectedItem.startTime)}
                           </span>
                         </div>
-                      )}
-                      {isClassOnline(selectedItem) && (
                         <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
-                          <Monitor className="w-5 h-5 text-primary" />
-                          <span className="text-foreground text-sm">Online Class</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
-                        <Calendar className="w-5 h-5 text-primary" />
-                        <span className="text-foreground text-sm">
-                          {selectedItem.startTime 
-                            ? new Date(selectedItem.startTime).toLocaleDateString('en-US', { 
-                                weekday: 'long', 
-                                month: 'short', 
-                                day: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit'
-                              })
-                            : 'TBA'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
-                        <Users className="w-5 h-5 text-primary" />
-                        <span className="text-foreground text-sm">
-                          {selectedItem._count?.enrollments || 0} students
-                          {selectedItem.maxStudents && ` / ${selectedItem.maxStudents}`}
-                        </span>
-                      </div>
-                      {selectedItem.price !== undefined && selectedItem.price !== null && (
-                        <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
-                          <span className="text-foreground text-sm font-semibold">
-                            {selectedItem.price === 0 ? 'FREE' : `$${selectedItem.price}`}
+                          <Clock className="w-5 h-5 text-primary" />
+                          <span className="text-foreground text-sm">
+                            {formatTime(selectedItem.startTime)}
                           </span>
                         </div>
-                      )}
-                    </div>
-                  </>
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
+                          <Users className="w-5 h-5 text-primary" />
+                          <span className="text-foreground text-sm">
+                            {selectedItem._count?.enrollments || 0} mystery participants
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mb-4 p-3 rounded-xl bg-primary/5 border border-primary/20">
+                        <p className="text-xs text-primary font-medium">
+                          🔒 Details will be revealed 2 hours before the activity
+                        </p>
+                      </div>
+                    </>
+                  )
                 ) : shouldRevealDetails(selectedItem) ? (
                   <>
                     <h3 className="text-xl font-bold text-foreground mb-1">{selectedItem.title}</h3>
-                    {selectedItem.category && (
-                      <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-                        {selectedItem.category}
+                    <div className="flex items-center justify-center gap-2 mb-4 flex-wrap">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-yellow-400/20 to-orange-500/20 border-2 border-yellow-400/30 text-yellow-600 dark:text-yellow-400 text-sm font-bold">
+                        <span>🎲</span>
+                        <span>Dice Surprise</span>
                       </span>
-                    )}
+                      {selectedItem.category && (
+                        <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium blur-sm select-none">
+                          {selectedItem.category}
+                        </span>
+                      )}
+                    </div>
 
                     <div className="space-y-2 mb-6 text-left">
+                      {/* Host/Creator - Blur */}
+                      {(selectedItem.host || selectedItem.creator) && (
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
+                          <Users className="w-5 h-5 text-primary" />
+                          <span className="text-foreground text-sm blur-sm select-none">
+                            {selectedItem.host?.name || selectedItem.creator?.displayName || 
+                             (selectedItem.creator ? `${selectedItem.creator.firstName} ${selectedItem.creator.lastName}` : 'Host')}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
                         <MapPin className="w-5 h-5 text-primary" />
-                        <span className="text-foreground text-sm">
+                        <span className="text-foreground text-sm blur-sm select-none">
                           {selectedItem.venue?.name || selectedItem.location || 'Secret Location'}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
                         <Calendar className="w-5 h-5 text-primary" />
                         <span className="text-foreground text-sm">
-                          {selectedItem.startTime 
-                            ? new Date(selectedItem.startTime).toLocaleDateString('en-US', { 
-                                weekday: 'long', 
-                                month: 'short', 
-                                day: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit'
-                              })
-                            : 'TBA'}
+                          {formatDateTime(selectedItem.startTime)}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
                         <Users className="w-5 h-5 text-primary" />
-                        <span className="text-foreground text-sm">
+                        <span className="text-foreground text-sm blur-sm select-none">
                           {selectedItem._count?.members || 0} attendees
                         </span>
                       </div>
@@ -391,9 +475,15 @@ const SurpriseMePage = () => {
                 ) : (
                   <>
                     <h3 className="text-xl font-bold text-foreground mb-1">Mystery Vibe</h3>
-                    <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-                      ???
-                    </span>
+                    <div className="flex items-center justify-center gap-2 mb-4 flex-wrap">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-yellow-400/20 to-orange-500/20 border-2 border-yellow-400/30 text-yellow-600 dark:text-yellow-400 text-sm font-bold">
+                        <span>🎲</span>
+                        <span>Dice Surprise</span>
+                      </span>
+                      <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                        ???
+                      </span>
+                    </div>
 
                     <div className="space-y-2 mb-6 text-left">
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
@@ -405,13 +495,13 @@ const SurpriseMePage = () => {
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
                         <Calendar className="w-5 h-5 text-primary" />
                         <span className="text-foreground text-sm">
-                          {selectedItem.startTime 
-                            ? new Date(selectedItem.startTime).toLocaleDateString('en-US', { 
-                                weekday: 'long', 
-                                month: 'short', 
-                                day: 'numeric'
-                              })
-                            : 'TBA'}
+                          {formatDate(selectedItem.startTime)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
+                        <Clock className="w-5 h-5 text-primary" />
+                        <span className="text-foreground text-sm">
+                          {formatTime(selectedItem.startTime)}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
@@ -452,8 +542,8 @@ const SurpriseMePage = () => {
                     disabled={enrollInClass.isPending || joinMeetup.isPending}
                   >
                     {itemType === 'class' 
-                      ? (enrollInClass.isPending ? 'Enrolling...' : 'Enroll Now')
-                      : (joinMeetup.isPending ? 'Joining...' : 'Join Surprise Vibe')
+                      ? (enrollInClass.isPending ? 'Enrolling...' : 'Join Surprise Activity')
+                      : (joinMeetup.isPending ? 'Joining...' : 'Join Surprise Activity')
                     }
                   </Button>
                 </div>

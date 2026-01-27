@@ -10,8 +10,68 @@ import { usePosts, useLikePost, useCommentPost, usePostComments } from '@/hooks/
 import { useMatches } from '@/hooks/useMatches';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useCreateDirectChat } from '@/hooks/useChat';
 import { Input } from '@/components/ui/input';
-import { Send } from 'lucide-react';
+import { Send, ExternalLink } from 'lucide-react';
+
+// Sponsor reels data (ads)
+const sponsorReels = [
+  {
+    id: 'sponsor-1',
+    type: 'sponsor',
+    sponsorType: 'venue',
+    name: 'Panther Coffee',
+    avatar: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=150',
+    content: 'Discover Miami\'s best coffee experience! ☕',
+    image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800',
+    link: 'https://panthercoffee.com',
+    category: 'Café',
+  },
+  {
+    id: 'sponsor-2',
+    type: 'sponsor',
+    sponsorType: 'brand',
+    name: 'Nike',
+    avatar: 'https://logos-world.net/wp-content/uploads/2020/04/Nike-Logo.png',
+    content: 'Just Do It. Find your perfect fit! 🏃‍♂️',
+    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800',
+    link: 'https://nike.com',
+    category: 'Sportswear',
+  },
+  {
+    id: 'sponsor-3',
+    type: 'sponsor',
+    sponsorType: 'venue',
+    name: 'Zuma Miami',
+    avatar: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=150',
+    content: 'Experience authentic Japanese cuisine! 🍣',
+    image: 'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=800',
+    link: 'https://zumarestaurant.com',
+    category: 'Restaurant',
+  },
+  {
+    id: 'sponsor-4',
+    type: 'sponsor',
+    sponsorType: 'brand',
+    name: 'Coca-Cola',
+    avatar: 'https://logos-world.net/wp-content/uploads/2020/04/Coca-Cola-Logo.png',
+    content: 'Taste the Feeling! 🥤',
+    image: 'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=800',
+    link: 'https://coca-cola.com',
+    category: 'Beverage',
+  },
+  {
+    id: 'sponsor-5',
+    type: 'sponsor',
+    sponsorType: 'venue',
+    name: 'Equinox South Beach',
+    avatar: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=150',
+    content: 'Transform your body and mind! 💪',
+    image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800',
+    link: 'https://equinox.com',
+    category: 'Fitness',
+  },
+];
 
 // Mock data for posts (users and venues)
 const posts = [
@@ -80,6 +140,7 @@ const LifePage = () => {
   const { data: backendPosts, isLoading } = usePosts();
   const likePost = useLikePost();
   const commentPost = useCommentPost();
+  const createDirectChat = useCreateDirectChat();
   
   // Fetch comments for selected post
   const { data: comments, isLoading: commentsLoading } = usePostComments(selectedPostId || '');
@@ -141,16 +202,39 @@ const LifePage = () => {
     });
   }, [backendPosts, user?.interests]);
 
-  // Filter posts based on active tab
+  // Filter posts based on active tab and insert sponsor reels every 3 posts
   const allPosts = useMemo(() => {
+    let filteredPosts: any[] = [];
+    
     if (activeTab === 'friends') {
       // Show only posts from connections
-      return allBackendPosts.filter((p: any) => 
+      filteredPosts = allBackendPosts.filter((p: any) => 
         p.user && connectionIds.has(p.user.id)
       );
+    } else {
+      // Explore: show all posts
+      filteredPosts = allBackendPosts;
     }
-    // Explore: show all posts
-    return allBackendPosts;
+
+    // Insert sponsor reels every 3 posts
+    const postsWithSponsors: any[] = [];
+    let sponsorIndex = 0;
+    
+    filteredPosts.forEach((post, index) => {
+      postsWithSponsors.push(post);
+      
+      // Insert sponsor reel after every 3 posts (at positions 3, 6, 9, etc.)
+      if ((index + 1) % 3 === 0) {
+        const sponsor = sponsorReels[sponsorIndex % sponsorReels.length];
+        postsWithSponsors.push({
+          ...sponsor,
+          isSponsored: true,
+        });
+        sponsorIndex++;
+      }
+    });
+
+    return postsWithSponsors;
   }, [allBackendPosts, activeTab, connectionIds]);
 
   const currentPost = allPosts[currentIndex];
@@ -330,11 +414,16 @@ const LifePage = () => {
             {/* Post Image/Video */}
             <div className="relative h-full w-full">
               <img
-                src={currentPost.image}
+                src={currentPost.isSponsored ? currentPost.image : currentPost.image}
                 alt={currentPost.content}
                 className="h-full w-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              {currentPost.isSponsored && (
+                <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-black/60 backdrop-blur-sm">
+                  <span className="text-white text-xs font-semibold">Sponsored</span>
+                </div>
+              )}
             </div>
 
             {/* Content Overlay */}
@@ -443,6 +532,20 @@ const LifePage = () => {
 
                   {/* Content */}
                   <p className="text-white text-lg leading-relaxed">{currentPost.content}</p>
+                  
+                  {/* Sponsor Link Button */}
+                  {currentPost.isSponsored && currentPost.link && (
+                    <motion.button
+                      onClick={() => {
+                        window.open(currentPost.link, '_blank', 'noopener,noreferrer');
+                      }}
+                      className="mt-4 flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-semibold"
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <span>Visit Website</span>
+                      <ExternalLink className="w-4 h-4" />
+                    </motion.button>
+                  )}
                 </div>
 
                 {/* Right: Actions */}
@@ -463,7 +566,7 @@ const LifePage = () => {
                   
                   {/* Like Button */}
                   <motion.button
-                    onClick={() => toggleLike(currentPost.id)}
+                    onClick={() => toggleLike(currentPost.id, currentPost.user?.id)}
                     className="flex flex-col items-center gap-1"
                     whileTap={{ scale: 0.9 }}
                   >
@@ -479,9 +582,25 @@ const LifePage = () => {
 
                   {/* Comment Button */}
                   <motion.button
-                    onClick={() => {
-                      setSelectedPostId(currentPost.id);
-                      setShowComments(true);
+                    onClick={async () => {
+                      // Open chat with post owner when clicking comment
+                      if (currentPost.user?.id && currentPost.user.id !== user?.id) {
+                        try {
+                          const chat = await createDirectChat.mutateAsync(currentPost.user.id);
+                          navigate(`/chat?chatId=${chat.id}`);
+                        } catch (error: any) {
+                          // If chat creation fails, still show comments
+                          setSelectedPostId(currentPost.id);
+                          setShowComments(true);
+                          if (error.message && !error.message.includes('chat')) {
+                            toast.error(error.message);
+                          }
+                        }
+                      } else {
+                        // Show comments if own post or no user ID
+                        setSelectedPostId(currentPost.id);
+                        setShowComments(true);
+                      }
                     }}
                     className="flex flex-col items-center gap-1"
                     whileTap={{ scale: 0.9 }}

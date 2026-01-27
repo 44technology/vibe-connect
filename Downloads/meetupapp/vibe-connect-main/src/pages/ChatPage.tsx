@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MoreVertical, Phone, Video, Send, Mic, MapPin, Calendar, Clock, ChevronRight, X, Star, GraduationCap, MessageCircle, Plus, Users } from 'lucide-react';
+import { Search, MoreVertical, Phone, Video, Send, Mic, MapPin, Calendar, Clock, ChevronRight, X, Star, GraduationCap, MessageCircle, Plus, Users, Sparkles, CheckCircle2, Info, ArrowRight, MessageSquare, Camera, Box, Eye, RotateCcw, UtensilsCrossed } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MobileLayout from '@/components/layout/MobileLayout';
 import BottomNav from '@/components/layout/BottomNav';
@@ -68,6 +68,65 @@ const venueTypes = [
   { id: 'park', label: 'Park', emoji: '🌳' },
   { id: 'fitness', label: 'Fitness', emoji: '💪' },
   { id: 'entertainment', label: 'Entertainment', emoji: '🎬' },
+];
+
+// Sample menu items for restaurants
+const sampleMenuItems = [
+  {
+    id: '1',
+    name: 'Grilled Salmon',
+    description: 'Fresh Atlantic salmon with lemon butter sauce',
+    price: 28,
+    image: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=400',
+    arModel: '/models/salmon.glb',
+    ingredients: ['Salmon', 'Lemon', 'Butter', 'Herbs', 'Olive Oil'],
+    calories: 420,
+    category: 'Main Course',
+  },
+  {
+    id: '2',
+    name: 'Caesar Salad',
+    description: 'Crisp romaine lettuce with parmesan and croutons',
+    price: 16,
+    image: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=400',
+    arModel: '/models/caesar.glb',
+    ingredients: ['Romaine Lettuce', 'Parmesan', 'Croutons', 'Caesar Dressing'],
+    calories: 280,
+    category: 'Salad',
+  },
+  {
+    id: '3',
+    name: 'Chocolate Lava Cake',
+    description: 'Warm chocolate cake with molten center',
+    price: 12,
+    image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=400',
+    arModel: '/models/cake.glb',
+    ingredients: ['Dark Chocolate', 'Butter', 'Eggs', 'Sugar', 'Flour'],
+    calories: 450,
+    category: 'Dessert',
+  },
+  {
+    id: '4',
+    name: 'Margherita Pizza',
+    description: 'Classic Italian pizza with fresh mozzarella and basil',
+    price: 18,
+    image: 'https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=400',
+    arModel: '/models/pizza.glb',
+    ingredients: ['Mozzarella', 'Tomato Sauce', 'Basil', 'Olive Oil'],
+    calories: 320,
+    category: 'Main Course',
+  },
+  {
+    id: '5',
+    name: 'Beef Burger',
+    description: 'Juicy beef patty with lettuce, tomato, and special sauce',
+    price: 22,
+    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400',
+    arModel: '/models/burger.glb',
+    ingredients: ['Beef Patty', 'Lettuce', 'Tomato', 'Onion', 'Special Sauce'],
+    calories: 580,
+    category: 'Main Course',
+  },
 ];
 
 const ChatPage = () => {
@@ -194,11 +253,30 @@ const ChatPage = () => {
   const isClassChat = currentChat?.type === 'class' || currentChat?.class;
   const classId = currentChat?.class?.id;
   
-  // Check URL params for meetupId or classId and auto-select chat
+  // Check if there's already a meetup request in this chat
+  const hasPendingRequest = useMemo(() => {
+    if (!messagesData || messagesData.length === 0) return false;
+    // Check if there's a meetup request message from current user
+    return messagesData.some((msg: Message) => 
+      msg.senderId === user?.id && 
+      msg.content.includes('📍 Meetup Request:') &&
+      !msg.content.includes('✅ Accepted') &&
+      !msg.content.includes('❌ Declined')
+    );
+  }, [messagesData, user?.id]);
+  
+  // Check URL params for meetupId, classId, or chatId and auto-select chat
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const meetupId = params.get('meetupId');
     const classId = params.get('classId');
+    const chatId = params.get('chatId');
+    
+    // If chatId is provided, select that chat directly
+    if (chatId) {
+      setSelectedChat(chatId);
+      return;
+    }
     
     if (meetupId && meetupChats.length > 0) {
       // Try to find existing chat for this meetup
@@ -372,6 +450,30 @@ const ChatPage = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {/* Class Details Button */}
+                {isClassChat && currentChat?.class?.id && (
+                  <motion.button 
+                    className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-sm font-medium flex items-center gap-1.5"
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => navigate(`/class/${currentChat.class.id}`)}
+                  >
+                    <Info className="w-4 h-4" />
+                    Class Details
+                    <ArrowRight className="w-3 h-3" />
+                  </motion.button>
+                )}
+                {/* Vibe Details Button */}
+                {currentChat?.type === 'vibe' && currentChat?.meetup?.id && (
+                  <motion.button 
+                    className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-sm font-medium flex items-center gap-1.5"
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => navigate(`/meetup/${currentChat.meetup.id}`)}
+                  >
+                    <Info className="w-4 h-4" />
+                    Vibe Details
+                    <ArrowRight className="w-3 h-3" />
+                  </motion.button>
+                )}
                 {isDirectChat && (
                   <motion.button 
                     className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-sm font-medium flex items-center gap-1.5"
@@ -433,6 +535,8 @@ const ChatPage = () => {
             ) : (
               messagesData.map((msg: Message) => {
                 const isOwnMessage = msg.senderId === user?.id;
+                const isMeetupRequest = msg.content.includes('📍 Meetup Request:');
+                
                 return (
                   <motion.div
                     key={msg.id}
@@ -441,9 +545,13 @@ const ChatPage = () => {
                     className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
                   >
                     <div className={`rounded-2xl px-4 py-2 max-w-[75%] ${
-                      isOwnMessage 
-                        ? 'bg-primary text-primary-foreground rounded-tr-md' 
-                        : 'bg-muted rounded-tl-md'
+                      isMeetupRequest
+                        ? isOwnMessage
+                          ? 'bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-tr-md border-2 border-primary/30'
+                          : 'bg-gradient-to-r from-muted to-muted/80 border-2 border-primary/20 rounded-tl-md'
+                        : isOwnMessage 
+                          ? 'bg-primary text-primary-foreground rounded-tr-md' 
+                          : 'bg-muted rounded-tl-md'
                     }`}>
                       {!isOwnMessage && (
                         <p className="text-xs font-medium mb-1 opacity-70">
@@ -453,10 +561,18 @@ const ChatPage = () => {
                           }
                         </p>
                       )}
+                      {isMeetupRequest && (
+                        <div className="flex items-center gap-2 mb-2">
+                          <MapPin className={`w-4 h-4 ${isOwnMessage ? 'text-primary-foreground' : 'text-primary'}`} />
+                          <span className={`text-xs font-semibold ${isOwnMessage ? 'text-primary-foreground' : 'text-primary'}`}>
+                            Meetup Request
+                          </span>
+                        </div>
+                      )}
                       {msg.image && (
                         <img src={msg.image} alt="Message" className="rounded-lg mb-2 max-w-full" />
                       )}
-                      <p className={isOwnMessage ? 'text-primary-foreground' : 'text-foreground'}>
+                      <p className={`whitespace-pre-line ${isOwnMessage ? 'text-primary-foreground' : 'text-foreground'}`}>
                         {msg.content}
                       </p>
                       <p className={`text-xs mt-1 ${isOwnMessage ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
@@ -513,49 +629,93 @@ const ChatPage = () => {
 
         {/* Ready to Meet Dialog */}
         <Dialog open={showReadyToMeet} onOpenChange={setShowReadyToMeet}>
-          <DialogContent className="max-w-md mx-4 rounded-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Ready to Meet</DialogTitle>
-              <DialogDescription>
-                {meetStep === 'datetime' && 'Select date and time for your meetup'}
-                {meetStep === 'venuetype' && 'Choose a venue type'}
-                {meetStep === 'venue' && 'Select a venue'}
-              </DialogDescription>
-            </DialogHeader>
+          <DialogContent className="max-w-md mx-4 rounded-3xl max-h-[90vh] overflow-y-auto p-0 border-0 shadow-2xl">
+            {/* Elegant Header with Gradient */}
+            <div className="relative bg-gradient-to-br from-primary via-secondary to-primary p-6 rounded-t-3xl">
+              <div className="absolute inset-0 bg-black/10 rounded-t-3xl" />
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <Sparkles className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-white text-xl font-bold">Ready to Meet</h2>
+                      <p className="text-white/80 text-sm">
+                        {meetStep === 'datetime' && 'Plan your meetup'}
+                        {meetStep === 'venuetype' && 'Choose venue type'}
+                        {meetStep === 'venue' && 'Select location'}
+                      </p>
+                    </div>
+                  </div>
+                  <motion.button
+                    onClick={() => setShowReadyToMeet(false)}
+                    className="p-2 rounded-xl bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors"
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <X className="w-5 h-5 text-white" />
+                  </motion.button>
+                </div>
+                
+                {/* Progress Indicator */}
+                <div className="mt-4 flex gap-2">
+                  <div className={`h-1.5 rounded-full flex-1 transition-all ${
+                    meetStep === 'datetime' ? 'bg-white' : 'bg-white/30'
+                  }`} />
+                  <div className={`h-1.5 rounded-full flex-1 transition-all ${
+                    meetStep === 'venuetype' ? 'bg-white' : meetStep === 'venue' ? 'bg-white/50' : 'bg-white/30'
+                  }`} />
+                  <div className={`h-1.5 rounded-full flex-1 transition-all ${
+                    meetStep === 'venue' ? 'bg-white' : 'bg-white/30'
+                  }`} />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6">
 
             <AnimatePresence mode="wait">
               {meetStep === 'datetime' && (
                 <motion.div
                   key="datetime"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-4 py-4"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-6"
                 >
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Date</label>
-                    <Input
-                      type="date"
-                      value={selectedDate}
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                      className="h-12"
-                      min={new Date().toISOString().split('T')[0]}
-                    />
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-primary" />
+                        Select Date
+                      </label>
+                      <Input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        className="h-14 rounded-xl bg-muted border-2 border-border focus:border-primary transition-colors text-base"
+                        min={new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-primary" />
+                        Select Time
+                      </label>
+                      <Input
+                        type="time"
+                        value={selectedTime}
+                        onChange={(e) => setSelectedTime(e.target.value)}
+                        className="h-14 rounded-xl bg-muted border-2 border-border focus:border-primary transition-colors text-base"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">Time</label>
-                    <Input
-                      type="time"
-                      value={selectedTime}
-                      onChange={(e) => setSelectedTime(e.target.value)}
-                      className="h-12"
-                    />
-                  </div>
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex gap-3 pt-4">
                     <Button
                       variant="outline"
                       onClick={() => setShowReadyToMeet(false)}
-                      className="flex-1"
+                      className="flex-1 h-12 rounded-xl"
                     >
                       Cancel
                     </Button>
@@ -568,9 +728,9 @@ const ChatPage = () => {
                         }
                       }}
                       disabled={!selectedDate || !selectedTime}
-                      className="flex-1 bg-gradient-primary"
+                      className="flex-1 h-12 rounded-xl bg-gradient-primary text-primary-foreground shadow-lg"
                     >
-                      Next <ChevronRight className="w-4 h-4 ml-1" />
+                      Continue <ChevronRight className="w-4 h-4 ml-2" />
                     </Button>
                   </div>
                 </motion.div>
@@ -579,39 +739,50 @@ const ChatPage = () => {
               {meetStep === 'venuetype' && (
                 <motion.div
                   key="venuetype"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-4 py-4"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-6"
                 >
-                  <div className="grid grid-cols-3 gap-3">
-                    {venueTypes.map((type) => (
-                      <motion.button
-                        key={type.id}
-                        onClick={() => {
-                          setSelectedVenueType(type.id);
-                          setMeetStep('venue');
-                        }}
-                        className="p-4 rounded-2xl border-2 border-border bg-card hover:border-primary hover:bg-primary/5 transition-all flex flex-col items-center gap-2"
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <span className="text-2xl">{type.emoji}</span>
-                        <span className="text-xs font-medium text-foreground">{type.label}</span>
-                      </motion.button>
-                    ))}
+                  <div>
+                    <label className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-primary" />
+                      Choose Venue Type
+                    </label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {venueTypes.map((type) => (
+                        <motion.button
+                          key={type.id}
+                          onClick={() => {
+                            setSelectedVenueType(type.id);
+                            setMeetStep('venue');
+                          }}
+                          className="p-5 rounded-2xl border-2 border-border bg-card hover:border-primary hover:bg-primary/5 transition-all flex flex-col items-center gap-3 group"
+                          whileTap={{ scale: 0.95 }}
+                          whileHover={{ y: -2 }}
+                        >
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center group-hover:from-primary/20 group-hover:to-secondary/20 transition-all">
+                            <span className="text-3xl">{type.emoji}</span>
+                          </div>
+                          <span className="text-xs font-semibold text-foreground">{type.label}</span>
+                        </motion.button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex gap-3 pt-4">
                     <Button
                       variant="outline"
                       onClick={() => setMeetStep('datetime')}
-                      className="flex-1"
+                      className="flex-1 h-12 rounded-xl"
                     >
+                      <ChevronRight className="w-4 h-4 mr-2 rotate-180" />
                       Back
                     </Button>
                     <Button
                       variant="outline"
                       onClick={() => setShowReadyToMeet(false)}
-                      className="flex-1"
+                      className="flex-1 h-12 rounded-xl"
                     >
                       Cancel
                     </Button>
@@ -622,93 +793,485 @@ const ChatPage = () => {
               {meetStep === 'venue' && (
                 <motion.div
                   key="venue"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-4 py-4"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-6"
                 >
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {filteredVenues.map((venue) => (
-                      <motion.button
-                        key={venue.id}
-                        onClick={() => setSelectedVenue(venue.id)}
-                        className={`w-full p-3 rounded-xl border-2 text-left transition-all ${
-                          selectedVenue === venue.id
-                            ? 'border-primary bg-primary/10'
-                            : 'border-border bg-card'
-                        }`}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                            <img src={venue.image} alt={venue.name} className="w-full h-full object-cover" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-foreground text-sm truncate">{venue.name}</h4>
-                            <p className="text-xs text-muted-foreground">{venue.category}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <div className="flex items-center gap-1">
-                                <Star className="w-3 h-3 fill-secondary text-secondary" />
-                                <span className="text-xs text-muted-foreground">{venue.rating}</span>
+                  <div>
+                    <label className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-primary" />
+                      Select a Venue
+                    </label>
+                    <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                      {filteredVenues.map((venue, index) => (
+                        <motion.button
+                          key={venue.id}
+                          onClick={() => setSelectedVenue(venue.id)}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${
+                            selectedVenue === venue.id
+                              ? 'border-primary bg-gradient-to-r from-primary/10 to-secondary/10 shadow-lg'
+                              : 'border-border bg-card hover:border-primary/50 hover:bg-muted/50'
+                          }`}
+                          whileTap={{ scale: 0.98 }}
+                          whileHover={{ y: -2 }}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className={`relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 ${
+                              selectedVenue === venue.id ? 'ring-2 ring-primary' : ''
+                            }`}>
+                              <img src={venue.image} alt={venue.name} className="w-full h-full object-cover" />
+                              {selectedVenue === venue.id && (
+                                <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                  <CheckCircle2 className="w-6 h-6 text-primary" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-foreground text-base mb-1 truncate">{venue.name}</h4>
+                              <p className="text-sm text-muted-foreground mb-2">{venue.category}</p>
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-1">
+                                  <Star className="w-4 h-4 fill-secondary text-secondary" />
+                                  <span className="text-sm font-medium text-foreground">{venue.rating}</span>
+                                </div>
+                                <span className="text-muted-foreground">•</span>
+                                <span className="text-sm text-muted-foreground">{venue.distance}</span>
+                                {venue.priceRange && (
+                                  <>
+                                    <span className="text-muted-foreground">•</span>
+                                    <span className="text-sm text-muted-foreground">{venue.priceRange}</span>
+                                  </>
+                                )}
                               </div>
-                              <span className="text-xs text-muted-foreground">•</span>
-                              <span className="text-xs text-muted-foreground">{venue.distance}</span>
                             </div>
                           </div>
-                          {selectedVenue === venue.id && (
-                            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                              <X className="w-3 h-3 text-primary-foreground rotate-45" />
-                            </div>
-                          )}
-                        </div>
-                      </motion.button>
-                    ))}
+                        </motion.button>
+                      ))}
+                    </div>
                   </div>
                   {filteredVenues.length === 0 && (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground">No venues found for this type.</p>
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                        <MapPin className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                      <p className="text-muted-foreground font-medium">No venues found for this type.</p>
+                      <p className="text-sm text-muted-foreground mt-1">Try selecting a different venue type.</p>
                     </div>
                   )}
-                  <div className="flex gap-2 pt-2">
+                  
+                  {/* View Menu Button for Restaurants */}
+                  {selectedVenue && selectedVenueType === 'restaurant' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="pt-2"
+                    >
+                      <Button
+                        onClick={() => setShowMenuModal(true)}
+                        variant="outline"
+                        className="w-full h-12 rounded-xl border-2 border-primary/50 bg-primary/5 hover:bg-primary/10"
+                      >
+                        <UtensilsCrossed className="w-4 h-4 mr-2 text-primary" />
+                        View Menu
+                      </Button>
+                    </motion.div>
+                  )}
+                  
+                  <div className="flex gap-3 pt-4">
                     <Button
                       variant="outline"
                       onClick={() => {
                         setSelectedVenue(null);
                         setMeetStep('venuetype');
                       }}
-                      className="flex-1"
+                      className="flex-1 h-12 rounded-xl"
                     >
+                      <ChevronRight className="w-4 h-4 mr-2 rotate-180" />
                       Back
                     </Button>
                     <Button
-                      onClick={() => {
-                        if (selectedVenue) {
-                          // TODO: Send meetup request to the other user
+                      onClick={async () => {
+                        if (selectedVenue && selectedChat && !hasPendingRequest) {
                           const venue = venues.find(v => v.id === selectedVenue);
-                          toast.success(`Meetup request sent to ${currentChat?.name}!`, {
-                            description: `${venue?.name} on ${new Date(selectedDate).toLocaleDateString()} at ${selectedTime}`
-                          });
-                          setShowReadyToMeet(false);
-                          setMeetStep('datetime');
-                          setSelectedDate('');
-                          setSelectedTime('');
-                          setSelectedVenueType('');
-                          setSelectedVenue(null);
+                          const dateTime = new Date(`${selectedDate}T${selectedTime}`);
+                          
+                          // Create meetup request message
+                          const requestMessage = `📍 Meetup Request:\n\n${venue?.name}\n📅 ${new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}\n🕐 ${selectedTime}\n\nWould you like to meet here?`;
+                          
+                          try {
+                            // Send request as a message in the chat
+                            await sendMessageMutation.mutateAsync({
+                              chatId: selectedChat,
+                              content: requestMessage,
+                            });
+                            
+                            toast.success(`Meetup request sent to ${currentChat?.name}!`, {
+                              description: `${venue?.name} on ${new Date(selectedDate).toLocaleDateString()} at ${selectedTime}`
+                            });
+                            
+                            setShowReadyToMeet(false);
+                            setMeetStep('datetime');
+                            setSelectedDate('');
+                            setSelectedTime('');
+                            setSelectedVenueType('');
+                            setSelectedVenue(null);
+                          } catch (error: any) {
+                            toast.error(error.message || 'Failed to send meetup request');
+                          }
+                        } else if (hasPendingRequest) {
+                          toast.error('You already have a pending meetup request with this person');
                         } else {
                           toast.error('Please select a venue');
                         }
                       }}
-                      disabled={!selectedVenue}
-                      className="flex-1 bg-gradient-primary"
+                      disabled={!selectedVenue || hasPendingRequest}
+                      className="flex-1 h-12 rounded-xl bg-gradient-primary text-primary-foreground shadow-lg disabled:opacity-50"
                     >
-                      Send Request
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      {hasPendingRequest ? 'Request Already Sent' : 'Send Request'}
                     </Button>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
+            </div>
           </DialogContent>
         </Dialog>
+
+        {/* Menu Modal */}
+        <Dialog open={showMenuModal} onOpenChange={setShowMenuModal}>
+          <DialogContent className="max-w-md mx-4 rounded-3xl max-h-[90vh] overflow-y-auto p-0 border-0 shadow-2xl">
+            {/* Header */}
+            <div className="relative bg-gradient-to-br from-primary via-secondary to-primary p-6 rounded-t-3xl">
+              <div className="absolute inset-0 bg-black/10 rounded-t-3xl" />
+              <div className="relative z-10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <UtensilsCrossed className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-white text-xl font-bold">Menu</h2>
+                    <p className="text-white/80 text-sm">Browse our delicious offerings</p>
+                  </div>
+                </div>
+                <motion.button
+                  onClick={() => setShowMenuModal(false)}
+                  className="p-2 rounded-xl bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-colors"
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <X className="w-5 h-5 text-white" />
+                </motion.button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {sampleMenuItems.map((item) => (
+                <motion.button
+                  key={item.id}
+                  onClick={() => {
+                    setSelectedMenuItem(item);
+                    setMenuViewMode('2d');
+                  }}
+                  className="w-full text-left border-b border-border pb-4 last:border-0 last:pb-0"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className="flex gap-4">
+                    <div className="relative w-24 h-24 rounded-xl overflow-hidden flex-shrink-0">
+                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                      <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-primary/90 backdrop-blur-sm">
+                        <Camera className="w-3 h-3 text-white" />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-1">
+                        <div>
+                          <h4 className="font-semibold text-foreground">{item.name}</h4>
+                          <p className="text-xs text-muted-foreground">{item.category}</p>
+                        </div>
+                        <span className="text-lg font-bold text-primary">${item.price}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{item.description}</p>
+                      
+                      {/* Ingredients */}
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {item.ingredients.slice(0, 3).map((ingredient, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2 py-0.5 rounded-full bg-muted text-xs text-foreground"
+                          >
+                            {ingredient}
+                          </span>
+                        ))}
+                        {item.ingredients.length > 3 && (
+                          <span className="px-2 py-0.5 rounded-full bg-muted text-xs text-muted-foreground">
+                            +{item.ingredients.length - 3} more
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Calories & AR Button */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Calories:</span>
+                        <span className="text-xs font-medium text-foreground">{item.calories} kcal</span>
+                        <motion.button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedMenuItem(item);
+                            setMenuViewMode('ar');
+                          }}
+                          className="ml-auto px-2 py-1 rounded-lg bg-primary/10 text-primary text-xs font-medium flex items-center gap-1"
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Sparkles className="w-3 h-3" />
+                          View in AR
+                        </motion.button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Menu Item Detail Modal with 3D/AR View */}
+        <AnimatePresence>
+          {selectedMenuItem && (
+            <Dialog open={!!selectedMenuItem} onOpenChange={() => setSelectedMenuItem(null)}>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+                <DialogHeader className="px-6 pt-6 pb-4">
+                  <div className="flex items-center justify-between">
+                    <DialogTitle className="text-2xl font-bold">{selectedMenuItem.name}</DialogTitle>
+                    <button
+                      onClick={() => setSelectedMenuItem(null)}
+                      className="p-2 rounded-full bg-muted hover:bg-accent transition-colors"
+                    >
+                      <X className="w-5 h-5 text-foreground" />
+                    </button>
+                  </div>
+                </DialogHeader>
+
+                <div className="px-6 pb-6 space-y-4">
+                  {/* View Mode Tabs */}
+                  <div className="flex gap-2 border-b border-border">
+                    <button
+                      onClick={() => setMenuViewMode('2d')}
+                      className={`px-4 py-2 text-sm font-medium transition-colors ${
+                        menuViewMode === '2d'
+                          ? 'text-primary border-b-2 border-primary'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <Eye className="w-4 h-4 inline mr-2" />
+                      View
+                    </button>
+                    <button
+                      onClick={() => setMenuViewMode('3d')}
+                      className={`px-4 py-2 text-sm font-medium transition-colors ${
+                        menuViewMode === '3d'
+                          ? 'text-primary border-b-2 border-primary'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <Box className="w-4 h-4 inline mr-2" />
+                      3D Model
+                    </button>
+                    <button
+                      onClick={() => setMenuViewMode('ar')}
+                      className={`px-4 py-2 text-sm font-medium transition-colors ${
+                        menuViewMode === 'ar'
+                          ? 'text-primary border-b-2 border-primary'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <Camera className="w-4 h-4 inline mr-2" />
+                      AR View
+                    </button>
+                  </div>
+
+                  {/* Content Area */}
+                  <AnimatePresence mode="wait">
+                    {menuViewMode === '2d' && (
+                      <motion.div
+                        key="2d"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="space-y-4"
+                      >
+                        {/* Image */}
+                        <div className="relative aspect-video rounded-xl overflow-hidden">
+                          <img
+                            src={selectedMenuItem.image}
+                            alt={selectedMenuItem.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+
+                        {/* Details */}
+                        <div className="space-y-3">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h3 className="text-xl font-bold text-foreground">{selectedMenuItem.name}</h3>
+                              <p className="text-sm text-muted-foreground">{selectedMenuItem.category}</p>
+                            </div>
+                            <span className="text-2xl font-bold text-primary">${selectedMenuItem.price}</span>
+                          </div>
+
+                          <p className="text-foreground">{selectedMenuItem.description}</p>
+
+                          {/* Ingredients */}
+                          <div>
+                            <h4 className="text-sm font-semibold text-foreground mb-2">Ingredients</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {selectedMenuItem.ingredients.map((ingredient: string, idx: number) => (
+                                <span
+                                  key={idx}
+                                  className="px-3 py-1 rounded-full bg-muted text-sm text-foreground"
+                                >
+                                  {ingredient}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Nutrition Info */}
+                          <div className="p-4 rounded-xl bg-muted">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Calories</span>
+                              <span className="text-sm font-semibold text-foreground">{selectedMenuItem.calories} kcal</span>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {menuViewMode === '3d' && (
+                      <motion.div
+                        key="3d"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="space-y-4"
+                      >
+                        <div className="aspect-square bg-gradient-to-br from-primary/20 to-secondary/20 rounded-xl flex flex-col items-center justify-center p-8 relative overflow-hidden">
+                          <div className="relative w-full h-full flex items-center justify-center">
+                            <div className="absolute inset-0 opacity-10" style={{
+                              backgroundImage: 'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)',
+                              backgroundSize: '20px 20px'
+                            }} />
+                            <div className="relative z-10 text-center">
+                              <Box className="w-24 h-24 mx-auto mb-4 text-primary/50" />
+                              <p className="text-lg font-semibold text-foreground mb-2">3D Model View</p>
+                              <p className="text-sm text-muted-foreground mb-4">
+                                {selectedMenuItem.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground px-4">
+                                In production, this would display an interactive 3D model using Three.js, react-three-fiber, or model-viewer.
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Controls */}
+                          <div className="absolute bottom-4 left-4 right-4 flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => toast.info('Rotate model - Use mouse/touch to interact')}
+                            >
+                              <RotateCcw className="w-4 h-4 mr-2" />
+                              Rotate
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => toast.info('Zoom in/out - Pinch or scroll')}
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              Zoom
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+                          <p className="text-sm text-foreground">
+                            <strong>3D Model:</strong> {selectedMenuItem.arModel}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Interactive 3D model allows you to rotate, zoom, and explore the dish from all angles.
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {menuViewMode === 'ar' && (
+                      <motion.div
+                        key="ar"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="space-y-4"
+                      >
+                        <div className="aspect-square bg-black rounded-xl flex flex-col items-center justify-center p-8 relative overflow-hidden">
+                          <div className="relative w-full h-full flex items-center justify-center">
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-secondary/30 opacity-20" />
+                            <div className="relative z-10 text-center">
+                              <Camera className="w-24 h-24 mx-auto mb-4 text-white/50" />
+                              <p className="text-lg font-semibold text-white mb-2">AR View</p>
+                              <p className="text-sm text-white/80 mb-4">
+                                {selectedMenuItem.name}
+                              </p>
+                              <p className="text-xs text-white/60 px-4 mb-4">
+                                Point your camera at a flat surface to place the 3D model in your environment.
+                              </p>
+                              <div className="flex flex-col gap-2">
+                                <Button
+                                  className="bg-white text-black hover:bg-white/90"
+                                  onClick={() => toast.info('AR view would activate camera. In production, this uses AR.js, WebXR, or 8th Wall.')}
+                                >
+                                  <Camera className="w-4 h-4 mr-2" />
+                                  Start AR Experience
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+                          <p className="text-sm font-semibold text-foreground mb-2">AR Features:</p>
+                          <ul className="text-xs text-muted-foreground space-y-1">
+                            <li>• Place the dish in your real environment</li>
+                            <li>• View it from different angles</li>
+                            <li>• See accurate size and proportions</li>
+                            <li>• Share AR experience with friends</li>
+                          </ul>
+                        </div>
+
+                        <div className="p-4 rounded-xl bg-muted">
+                          <p className="text-sm text-foreground mb-2">
+                            <strong>AR Model:</strong> {selectedMenuItem.arModel}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            In production, this would use WebXR API, AR.js, 8th Wall, or similar AR framework to overlay the 3D model onto your camera view.
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </AnimatePresence>
       </MobileLayout>
     );
   }
