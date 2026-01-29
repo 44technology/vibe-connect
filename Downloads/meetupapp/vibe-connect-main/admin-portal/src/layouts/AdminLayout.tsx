@@ -20,6 +20,20 @@ import {
   Percent,
   Upload,
   BookOpen,
+  MessageCircle,
+  MessageSquare,
+  Ticket,
+  QrCode,
+  TrendingUp,
+  Star,
+  MapPin,
+  DollarSign,
+  PieChart,
+  Wallet,
+  BarChart3,
+  Calendar,
+  Bot,
+  Camera,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -77,15 +91,46 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-            {navigation.map((item, index) => {
-              if (item.divider) {
+          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+            {navigation.map((item) => {
+              const Icon = item.icon;
+              const hasChildren = item.children && item.children.length > 0;
+              const isActive = hasChildren 
+                ? item.children?.some(child => location.pathname === child.href || location.pathname.startsWith(child.href + '/'))
+                : location.pathname === item.href || location.pathname.startsWith(item.href + '/');
+              
+              if (hasChildren) {
                 return (
-                  <div key={`divider-${index}`} className="my-4 border-t border-border" />
+                  <div key={item.name} className="mb-2">
+                    <div className={`flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-semibold text-muted-foreground uppercase tracking-wider`}>
+                      <Icon className="w-4 h-4" />
+                      <span>{item.name}</span>
+                    </div>
+                    <div className="ml-4 mt-1 space-y-1">
+                      {item.children?.map((child) => {
+                        const ChildIcon = child.icon;
+                        const isChildActive = location.pathname === child.href || location.pathname.startsWith(child.href + '/');
+                        return (
+                          <Link
+                            key={child.name}
+                            to={child.href}
+                            onClick={() => setSidebarOpen(false)}
+                            className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-sm ${
+                              isChildActive
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                            }`}
+                          >
+                            <ChildIcon className="w-4 h-4" />
+                            <span>{child.name}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
                 );
               }
-              const Icon = item.icon;
-              const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
+              
               return (
                 <Link
                   key={item.name}

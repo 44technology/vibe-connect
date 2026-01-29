@@ -7,7 +7,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Badge } from '../../components/ui/badge';
-import { Plus, GraduationCap, MapPin, Calendar, Clock, Users, DollarSign, Monitor, Building, Video, Crown, Lock, TrendingUp } from 'lucide-react';
+import { Plus, GraduationCap, MapPin, Calendar, Clock, Users, DollarSign, Monitor, Building, Video, Crown, Lock, TrendingUp, X, AlertCircle } from 'lucide-react';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Switch } from '../../components/ui/switch';
@@ -57,6 +57,8 @@ export default function ClassesPage() {
   const [description, setDescription] = useState('');
   const [isPremium, setIsPremium] = useState(false);
   const [isExclusive, setIsExclusive] = useState(false);
+  const [lessons, setLessons] = useState<Array<{id: string; day: string; time: string; title: string}>>([]);
+  const [showAds, setShowAds] = useState(true); // Default true for free classes
   
   const weekDays = [
     { value: 'monday', label: 'Monday' },
@@ -76,18 +78,65 @@ export default function ClassesPage() {
     );
   };
 
+  const handleAddLesson = () => {
+    if (frequency !== 'custom' || selectedDays.length === 0) {
+      toast.error('Please select custom days first');
+      return;
+    }
+    if (!time || !duration) {
+      toast.error('Please set time and duration first');
+      return;
+    }
+    
+    // Add a lesson for each selected day that doesn't have a lesson yet
+    const daysWithoutLessons = selectedDays.filter(day => 
+      !lessons.some(lesson => lesson.day === day)
+    );
+    
+    if (daysWithoutLessons.length === 0) {
+      toast.info('All selected days already have lessons');
+      return;
+    }
+    
+    const newLessons = daysWithoutLessons.map(day => ({
+      id: `lesson-${Date.now()}-${day}`,
+      day,
+      time,
+      title: `${weekDays.find(w => w.value === day)?.label} - ${title}`,
+    }));
+    
+    setLessons([...lessons, ...newLessons]);
+    toast.success(`${newLessons.length} lesson(s) added`);
+  };
+
+  const handleRemoveLesson = (lessonId: string) => {
+    setLessons(lessons.filter(l => l.id !== lessonId));
+  };
+
   const handleSubmit = () => {
-    if (!title.trim() || !price || !maxStudents || !date || !time || !duration) {
+    if (!title.trim() || !maxStudents || !date || !time || !duration) {
       toast.error('Please fill all required fields');
       return;
     }
-    if (frequency === 'custom' && selectedDays.length === 0) {
-      toast.error('Please select at least one day for custom frequency');
-      return;
+    
+    // For custom frequency, require lessons
+    if (frequency === 'custom') {
+      if (selectedDays.length === 0) {
+        toast.error('Please select at least one day for custom frequency');
+        return;
+      }
+      if (lessons.length === 0) {
+        toast.error('Please add at least one lesson for custom days');
+        return;
+      }
     }
+    
     const frequencyDisplay = frequency === 'custom' && selectedDays.length > 0
       ? selectedDays.map(d => weekDays.find(w => w.value === d)?.label).join(', ')
       : frequency;
+    
+    const classPrice = price ? parseFloat(price) : 0;
+    const isFree = classPrice === 0;
     
     const newClass = {
       id: classes.length + 1,
@@ -96,7 +145,7 @@ export default function ClassesPage() {
       city: city || 'mexico-city',
       type,
       classType,
-      price: parseFloat(price),
+      price: classPrice,
       maxStudents: parseInt(maxStudents),
       currentStudents: 0,
       location: (type === 'online' || type === 'hybrid') ? (meetingPlatform ? meetingPlatform.charAt(0).toUpperCase() + meetingPlatform.slice(1) : '') : location,
@@ -107,11 +156,14 @@ export default function ClassesPage() {
       duration,
       frequency: frequencyDisplay,
       selectedDays: frequency === 'custom' ? selectedDays : [],
+      lessons: frequency === 'custom' ? lessons : [],
       description,
       isPremium: classType === 'masterclass' ? true : isPremium,
       isExclusive: classType === 'masterclass' ? true : isExclusive,
       isPopular: false,
       recentEnrollments: 0,
+      showAds: isFree ? showAds : false, // Paid classes never show ads
+      isFree,
     };
     setClasses([newClass, ...classes]);
     setTitle('');
@@ -131,6 +183,8 @@ export default function ClassesPage() {
     setClassType('regular');
     setIsPremium(false);
     setIsExclusive(false);
+    setLessons([]);
+    setShowAds(true);
     setIsDialogOpen(false);
     toast.success(`${classType === 'masterclass' ? 'Masterclass' : 'Class'} created successfully!`);
   };
@@ -242,10 +296,21 @@ export default function ClassesPage() {
                   <Label>Price ($)</Label>
                   <Input
                     type="number"
-                    placeholder="e.g., 50"
+                    placeholder="e.g., 50 (0 for free)"
                     value={price}
-                    onChange={(e) => setPrice(e.target.value)}
+                    onChange={(e) => {
+                      setPrice(e.target.value);
+                      // If price is set, disable ads
+                      if (parseFloat(e.target.value) > 0) {
+                        setShowAds(false);
+                      } else {
+                        setShowAds(true);
+                      }
+                    }}
                   />
+                  {price && parseFloat(price) > 0 && (
+                    <p className="text-xs text-muted-foreground">+3% platform fee applies</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Max Students</Label>
@@ -257,6 +322,38 @@ export default function ClassesPage() {
                   />
                 </div>
               </div>
+              {/* Ads Settings - Only for Free Classes */}
+              {(!price || parseFloat(price) === 0) && (
+                <div className="space-y-3 p-4 rounded-lg bg-muted/50 border border-border">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-orange-500" />
+                        Show Ads
+                      </Label>
+                      <p className="text-xs text-muted-foreground">Free classes can show ads (can be disabled)</p>
+                    </div>
+                    <Switch checked={showAds} onCheckedChange={setShowAds} />
+                  </div>
+                  {showAds && (
+                    <div className="p-2 rounded bg-orange-500/10 border border-orange-500/20">
+                      <p className="text-xs text-orange-600 dark:text-orange-400">
+                        Ads will be displayed in this free class. Users can close ads.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {price && parseFloat(price) > 0 && (
+                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-green-600" />
+                    <p className="text-xs text-green-600 dark:text-green-400 font-semibold">
+                      Paid classes never show ads
+                    </p>
+                  </div>
+                </div>
+              )}
               {(type === 'online' || type === 'hybrid') && (
                 <>
                   <div className="space-y-2">
@@ -339,6 +436,7 @@ export default function ClassesPage() {
                         onClick={() => {
                           setFrequency('daily');
                           setSelectedDays([]);
+                          setLessons([]);
                         }}
                         size="sm"
                         type="button"
@@ -350,6 +448,7 @@ export default function ClassesPage() {
                         onClick={() => {
                           setFrequency('weekly');
                           setSelectedDays([]);
+                          setLessons([]);
                         }}
                         size="sm"
                         type="button"
@@ -361,6 +460,7 @@ export default function ClassesPage() {
                         onClick={() => {
                           setFrequency('monthly');
                           setSelectedDays([]);
+                          setLessons([]);
                         }}
                         size="sm"
                         type="button"
@@ -369,7 +469,10 @@ export default function ClassesPage() {
                       </Button>
                       <Button
                         variant={frequency === 'custom' ? 'default' : 'outline'}
-                        onClick={() => setFrequency('custom')}
+                        onClick={() => {
+                          setFrequency('custom');
+                          setLessons([]);
+                        }}
                         size="sm"
                         type="button"
                       >
@@ -397,6 +500,49 @@ export default function ClassesPage() {
                     )}
                     {frequency === 'custom' && selectedDays.length === 0 && (
                       <p className="text-xs text-muted-foreground">Please select at least one day</p>
+                    )}
+                    {frequency === 'custom' && selectedDays.length > 0 && (
+                      <div className="mt-3 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-semibold">Lessons ({lessons.length})</Label>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={handleAddLesson}
+                            disabled={!time || !duration}
+                          >
+                            <Plus className="w-4 h-4 mr-1" />
+                            Add Lessons
+                          </Button>
+                        </div>
+                        {lessons.length === 0 ? (
+                          <div className="p-4 rounded-lg border border-dashed border-border bg-muted/30 text-center">
+                            <AlertCircle className="w-5 h-5 mx-auto mb-2 text-muted-foreground" />
+                            <p className="text-xs text-muted-foreground mb-1">No lessons added yet</p>
+                            <p className="text-xs text-muted-foreground">Click "Add Lessons" to create lessons for selected days</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {lessons.map((lesson) => (
+                              <div key={lesson.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-card">
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-foreground">{weekDays.find(w => w.value === lesson.day)?.label}</p>
+                                  <p className="text-xs text-muted-foreground">{lesson.time} - {duration}</p>
+                                </div>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleRemoveLesson(lesson.id)}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

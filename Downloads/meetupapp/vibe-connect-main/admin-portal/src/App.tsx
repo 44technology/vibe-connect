@@ -15,6 +15,8 @@ import InstructorsPage from './pages/InstructorsPage';
 // Venue pages
 import VenueDashboardPage from './pages/venue/DashboardPage';
 import VenueContentPage from './pages/venue/ContentPage';
+import VenueQAPage from './pages/venue/QAPage';
+import VenueChatPage from './pages/venue/ChatPage';
 import VenueCampaignsPage from './pages/venue/CampaignsPage';
 import VenueVibesPage from './pages/venue/VibesPage';
 import VenueDiscountsPage from './pages/venue/DiscountsPage';
@@ -81,18 +83,42 @@ function AppRoutes() {
               <Route path="/instructors" element={<InstructorsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               
-              {/* Venue Features (Admin can access) */}
-              <Route path="/admin/venue/content" element={<VenueContentPage />} />
-              <Route path="/admin/venue/campaigns" element={<VenueCampaignsPage />} />
-              <Route path="/admin/venue/vibes" element={<VenueVibesPage />} />
-              <Route path="/admin/venue/discounts" element={<VenueDiscountsPage />} />
-              <Route path="/admin/venue/ads" element={<VenueAdsPage />} />
+              {/* Venue Features (Admin can access all) */}
+              <Route path="/venue/content" element={<VenueContentPage />} />
+              <Route path="/venue/qa" element={<VenueQAPage />} />
+              <Route path="/venue/chat" element={<VenueChatPage />} />
+              <Route path="/venue/campaigns" element={<VenueCampaignsPage />} />
+              <Route path="/venue/vibes" element={<VenueVibesPage />} />
+              <Route path="/venue/discounts" element={<VenueDiscountsPage />} />
+              <Route path="/venue/ads" element={<VenueAdsPage />} />
               
-              {/* Instructor Features (Admin can access) */}
-              <Route path="/admin/instructor/content" element={<InstructorContentPage />} />
-              <Route path="/admin/instructor/streaming" element={<InstructorStreamingPage />} />
-              <Route path="/admin/instructor/classes" element={<InstructorClassesPage />} />
-              <Route path="/admin/instructor/classes/:id" element={<InstructorClassDetailPage />} />
+              {/* Instructor Features (Admin can access all) */}
+              <Route path="/instructor/content" element={<InstructorContentPage />} />
+              <Route path="/instructor/streaming" element={<InstructorStreamingPage />} />
+              <Route path="/instructor/classes" element={<InstructorClassesPage />} />
+              <Route path="/instructor/classes/:id" element={<InstructorClassDetailPage />} />
+              
+              {/* Production (Admin can access) */}
+              <Route path="/production/create" element={<ProductionCreatePage />} />
+              <Route path="/production/ai-assistant" element={<AIContentAssistantPage />} />
+              <Route path="/production/schedule" element={<ScheduleCapacityPage />} />
+              
+              {/* Tickets (Admin can access) */}
+              <Route path="/tickets/pricing" element={<TicketsPricingPage />} />
+              <Route path="/tickets/checkin" element={<QRCheckinPage />} />
+              <Route path="/tickets/access" element={<AccessRulesPage />} />
+              
+              {/* Visibility (Admin can access) */}
+              <Route path="/visibility/boosts" element={<VisibilityBoostsPage />} />
+              <Route path="/visibility/trending" element={<VisibilityTrendingPage />} />
+              <Route path="/visibility/nearby" element={<VisibilityNearbyPage />} />
+              <Route path="/visibility/influencer" element={<VisibilityInfluencerPage />} />
+              
+              {/* Monetization (Admin can access) */}
+              <Route path="/monetization/pricing" element={<MonetizationPricingPage />} />
+              <Route path="/monetization/revenue" element={<MonetizationRevenuePage />} />
+              <Route path="/monetization/payouts" element={<MonetizationPayoutsPage />} />
+              <Route path="/monetization/analytics" element={<MonetizationAnalyticsPage />} />
               
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
@@ -105,6 +131,8 @@ function AppRoutes() {
             <Routes>
               <Route path="/dashboard" element={<VenueDashboardPage />} />
               <Route path="/content" element={<VenueContentPage />} />
+              <Route path="/qa" element={<VenueQAPage />} />
+              <Route path="/chat" element={<VenueChatPage />} />
               <Route path="/campaigns" element={<VenueCampaignsPage />} />
               <Route path="/vibes" element={<VenueVibesPage />} />
               <Route path="/discounts" element={<VenueDiscountsPage />} />
@@ -147,6 +175,29 @@ function AppRoutes() {
               <Route path="/streaming" element={<InstructorStreamingPage />} />
               <Route path="/classes" element={<InstructorClassesPage />} />
               <Route path="/classes/:id" element={<InstructorClassDetailPage />} />
+              
+              {/* Production */}
+              <Route path="/production/create" element={<ProductionCreatePage />} />
+              <Route path="/production/ai-assistant" element={<AIContentAssistantPage />} />
+              <Route path="/production/schedule" element={<ScheduleCapacityPage />} />
+              
+              {/* Tickets */}
+              <Route path="/tickets/pricing" element={<TicketsPricingPage />} />
+              <Route path="/tickets/checkin" element={<QRCheckinPage />} />
+              <Route path="/tickets/access" element={<AccessRulesPage />} />
+              
+              {/* Visibility */}
+              <Route path="/visibility/boosts" element={<VisibilityBoostsPage />} />
+              <Route path="/visibility/trending" element={<VisibilityTrendingPage />} />
+              <Route path="/visibility/nearby" element={<VisibilityNearbyPage />} />
+              <Route path="/visibility/influencer" element={<VisibilityInfluencerPage />} />
+              
+              {/* Monetization */}
+              <Route path="/monetization/pricing" element={<MonetizationPricingPage />} />
+              <Route path="/monetization/revenue" element={<MonetizationRevenuePage />} />
+              <Route path="/monetization/payouts" element={<MonetizationPayoutsPage />} />
+              <Route path="/monetization/analytics" element={<MonetizationAnalyticsPage />} />
+              
               <Route path="/settings" element={<InstructorSettingsPage />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />

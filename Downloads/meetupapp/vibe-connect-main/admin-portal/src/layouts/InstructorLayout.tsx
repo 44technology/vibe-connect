@@ -30,6 +30,48 @@ const navigation: Array<{
   { name: 'Posts & Stories', href: '/content', icon: Image },
   { name: 'Live Streaming', href: '/streaming', icon: Video },
   { name: 'Classes', href: '/classes', icon: GraduationCap },
+  {
+    name: 'Production',
+    href: '#',
+    icon: Sparkles,
+    children: [
+      { name: 'Create Class / Event / Vibe', href: '/production/create', icon: GraduationCap },
+      { name: 'AI Content Assistant', href: '/production/ai-assistant', icon: Bot },
+      { name: 'Schedule & Capacity', href: '/production/schedule', icon: Calendar },
+    ]
+  },
+  {
+    name: 'Tickets',
+    href: '#',
+    icon: Ticket,
+    children: [
+      { name: 'Paid / Free', href: '/tickets/pricing', icon: DollarSign },
+      { name: 'QR Check-in', href: '/tickets/checkin', icon: QrCode },
+      { name: 'Access Rules', href: '/tickets/access', icon: Shield },
+    ]
+  },
+  {
+    name: 'Visibility',
+    href: '#',
+    icon: TrendingUp,
+    children: [
+      { name: 'Boosts', href: '/visibility/boosts', icon: TrendingUp },
+      { name: 'Trending', href: '/visibility/trending', icon: Star },
+      { name: 'Nearby', href: '/visibility/nearby', icon: MapPin },
+      { name: 'Influencer / Sponsored', href: '/visibility/influencer', icon: Star },
+    ]
+  },
+  {
+    name: 'Monetization',
+    href: '#',
+    icon: DollarSign,
+    children: [
+      { name: 'Pricing', href: '/monetization/pricing', icon: DollarSign },
+      { name: 'Revenue Split', href: '/monetization/revenue', icon: PieChart },
+      { name: 'Payouts', href: '/monetization/payouts', icon: Wallet },
+      { name: 'Analytics', href: '/monetization/analytics', icon: BarChart3 },
+    ]
+  },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 

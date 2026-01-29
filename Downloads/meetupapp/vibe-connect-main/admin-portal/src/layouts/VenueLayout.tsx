@@ -24,6 +24,8 @@ import {
   BarChart3,
   Bot,
   GraduationCap,
+  MessageCircle,
+  MessageSquare,
 } from 'lucide-react';
 
 interface VenueLayoutProps {
@@ -37,6 +39,9 @@ const navigation: Array<{
   children?: Array<{ name: string; href: string; icon: any }>;
 }> = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Content', href: '/content', icon: Image },
+  { name: 'Q&A', href: '/qa', icon: MessageCircle },
+  { name: 'Chat', href: '/chat', icon: MessageSquare },
   { 
     name: 'Production', 
     href: '#',
