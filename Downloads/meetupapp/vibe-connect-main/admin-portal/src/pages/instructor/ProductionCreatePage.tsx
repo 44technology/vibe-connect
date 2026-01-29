@@ -6,23 +6,31 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Badge } from '../../components/ui/badge';
-import { GraduationCap, Sparkles, Calendar, Monitor, Building, Video } from 'lucide-react';
+import { GraduationCap, Sparkles, Calendar, Monitor, Building, Video, MessageCircle, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ProductionCreatePage() {
-  const [activeTab, setActiveTab] = useState<'class' | 'event' | 'vibe'>('class');
+  const [activeTab, setActiveTab] = useState<'class' | 'event' | 'vibe' | 'qa'>('class');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<'online' | 'onsite' | 'hybrid'>('online');
+  const [eventType, setEventType] = useState<'networking' | 'qa' | 'masterclass'>('networking');
 
   const handleSubmit = () => {
     if (!title.trim()) {
       toast.error('Please enter a title');
       return;
     }
-    toast.success(`${activeTab === 'class' ? 'Class' : activeTab === 'event' ? 'Event' : 'Vibe'} created successfully!`);
+    const labels = {
+      class: 'Class',
+      event: 'Event',
+      qa: 'Q&A Session',
+      vibe: 'Vibe'
+    };
+    toast.success(`${labels[activeTab]} created successfully!`);
     setTitle('');
     setDescription('');
+    setEventType('networking');
   };
 
   return (
@@ -32,8 +40,8 @@ export default function ProductionCreatePage() {
         <p className="text-muted-foreground mt-2">Create classes, events, or vibes</p>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'class' | 'event' | 'vibe')}>
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'class' | 'event' | 'vibe' | 'qa')}>
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="class" className="flex items-center gap-2">
             <GraduationCap className="w-4 h-4" />
             Class
@@ -41,6 +49,10 @@ export default function ProductionCreatePage() {
           <TabsTrigger value="event" className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             Event
+          </TabsTrigger>
+          <TabsTrigger value="qa" className="flex items-center gap-2">
+            <MessageCircle className="w-4 h-4" />
+            Q&A
           </TabsTrigger>
           <TabsTrigger value="vibe" className="flex items-center gap-2">
             <Sparkles className="w-4 h-4" />

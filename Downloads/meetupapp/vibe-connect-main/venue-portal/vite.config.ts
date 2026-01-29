@@ -3,9 +3,9 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 export default defineConfig({
-  base: "/", // Changed from "/admin" to "/" for Netlify deployment
+  base: "/venue",
   server: {
-    port: 3001,
+    port: 3002,
     host: "0.0.0.0",
   },
   plugins: [react()],

@@ -1,21 +1,20 @@
 import { useState } from 'react';
-import { Button } from '../../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Textarea } from '../../components/ui/textarea';
-import { Image, Video, Plus, Upload, Film, Sparkles } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
+import { Image, Video, Plus, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ContentPage() {
   const [posts, setPosts] = useState([
-    { id: 1, type: 'post', content: 'New class starting next week!', image: null, createdAt: '2025-01-27' },
-    { id: 2, type: 'story', content: 'Behind the scenes', image: null, createdAt: '2025-01-26' },
-    { id: 3, type: 'reel', content: 'Quick tip: How to start your e-commerce journey', video: null, createdAt: '2025-01-25' },
+    { id: 1, type: 'post', content: 'New menu item available!', image: null, createdAt: '2025-01-27' },
+    { id: 2, type: 'story', content: 'Weekend special', image: null, createdAt: '2025-01-26' },
   ]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [contentType, setContentType] = useState<'post' | 'story' | 'reel'>('post');
+  const [contentType, setContentType] = useState<'post' | 'story'>('post');
   const [content, setContent] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -28,28 +27,22 @@ export default function ContentPage() {
       id: posts.length + 1,
       type: contentType,
       content,
-      image: (contentType === 'post' || contentType === 'story') && selectedFile ? URL.createObjectURL(selectedFile) : null,
-      video: contentType === 'reel' && selectedFile ? URL.createObjectURL(selectedFile) : null,
+      image: selectedFile ? URL.createObjectURL(selectedFile) : null,
       createdAt: new Date().toISOString().split('T')[0],
     };
     setPosts([newPost, ...posts]);
     setContent('');
     setSelectedFile(null);
     setIsDialogOpen(false);
-    const contentTypeLabels = {
-      post: 'Post',
-      story: 'Story',
-      reel: 'Reel'
-    };
-    toast.success(`${contentTypeLabels[contentType]} created successfully!`);
+    toast.success(`${contentType === 'post' ? 'Post' : 'Story'} created successfully!`);
   };
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Content Flywheel</h1>
-          <p className="text-muted-foreground mt-2">Create posts, stories, and reels to grow your audience. FOMO-driven content that drives enrollments.</p>
+          <h1 className="text-3xl font-bold text-foreground">Posts & Stories</h1>
+          <p className="text-muted-foreground mt-2">Create and manage your content</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -61,7 +54,7 @@ export default function ContentPage() {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Create New Content</DialogTitle>
-              <DialogDescription>Share posts or stories with your students</DialogDescription>
+              <DialogDescription>Share posts or stories with your audience</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="flex gap-2">
@@ -81,26 +74,7 @@ export default function ContentPage() {
                   <Video className="w-4 h-4 mr-2" />
                   Story
                 </Button>
-                <Button
-                  variant={contentType === 'reel' ? 'default' : 'outline'}
-                  onClick={() => setContentType('reel')}
-                  className="flex-1"
-                >
-                  <Film className="w-4 h-4 mr-2" />
-                  Reel
-                </Button>
               </div>
-              {contentType === 'reel' && (
-                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                    <p className="text-sm font-semibold text-foreground">Content Flywheel</p>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Reels help grow your audience and drive enrollments. Share quick tips, behind-the-scenes, and class highlights.
-                  </p>
-                </div>
-              )}
               <div className="space-y-2">
                 <Label>Content</Label>
                 <Textarea

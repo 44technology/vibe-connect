@@ -7,20 +7,43 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Textarea } from '../../components/ui/textarea';
 import { Badge } from '../../components/ui/badge';
-import { Plus, GraduationCap, MapPin, Calendar, Clock, Users, DollarSign, Monitor, Building, Video } from 'lucide-react';
+import { Plus, GraduationCap, MapPin, Calendar, Clock, Users, DollarSign, Monitor, Building, Video, Crown, Lock, TrendingUp } from 'lucide-react';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Switch } from '../../components/ui/switch';
 import { toast } from 'sonner';
+
+const classCategories = [
+  { id: 'ecommerce', label: 'E-commerce & Digital', emoji: '🛒' },
+  { id: 'realestate', label: 'Real Estate & Investing', emoji: '🏠' },
+  { id: 'marketing', label: 'Marketing & Growth', emoji: '📈' },
+  { id: 'mentality', label: 'Mentality & Lifestyle', emoji: '🧠' },
+  { id: 'business', label: 'Business', emoji: '💼' },
+  { id: 'tech', label: 'Tech', emoji: '💻' },
+  { id: 'diction', label: 'Diction & Speech', emoji: '🎤' },
+  { id: 'acting', label: 'Acting & Audition', emoji: '🎭' },
+];
+
+const mexicoCities = [
+  { id: 'mexico-city', label: 'Mexico City' },
+  { id: 'monterrey', label: 'Monterrey' },
+  { id: 'guadalajara', label: 'Guadalajara' },
+  { id: 'queretaro', label: 'Querétaro' },
+  { id: 'cancun', label: 'Cancún / Playa del Carmen' },
+];
 
 export default function ClassesPage() {
   const navigate = useNavigate();
   const [classes, setClasses] = useState([
-    { id: 1, title: 'Diction Class', type: 'online', price: 50, maxStudents: 20, currentStudents: 12, location: 'Zoom', meetingPlatform: 'zoom', meetingLink: 'https://zoom.us/j/123456789', date: '2025-02-05', time: '18:00', duration: '1 hour', frequency: 'Monday, Wednesday, Friday' },
-    { id: 2, title: 'AutoCAD Basics', type: 'onsite', price: 75, maxStudents: 15, currentStudents: 8, location: 'Training Center', date: '2025-02-10', time: '14:00', duration: '2 hours', frequency: 'weekly' },
+    { id: 1, title: 'Diction Class', category: 'diction', type: 'online', price: 50, maxStudents: 20, currentStudents: 12, location: 'Zoom', meetingPlatform: 'zoom', meetingLink: 'https://zoom.us/j/123456789', date: '2025-02-05', time: '18:00', duration: '1 hour', frequency: 'Monday, Wednesday, Friday', isPremium: false, isExclusive: false, isPopular: false, recentEnrollments: 0, city: 'mexico-city' },
+    { id: 2, title: 'AutoCAD Basics', category: 'tech', type: 'onsite', price: 75, maxStudents: 15, currentStudents: 8, location: 'Training Center', date: '2025-02-10', time: '14:00', duration: '2 hours', frequency: 'weekly', isPremium: true, isExclusive: false, isPopular: true, recentEnrollments: 15, city: 'monterrey' },
   ]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('');
+  const [city, setCity] = useState('');
   const [type, setType] = useState<'online' | 'onsite' | 'hybrid'>('online');
+  const [classType, setClassType] = useState<'regular' | 'masterclass'>('regular');
   const [price, setPrice] = useState('');
   const [maxStudents, setMaxStudents] = useState('');
   const [location, setLocation] = useState('');
@@ -32,6 +55,8 @@ export default function ClassesPage() {
   const [frequency, setFrequency] = useState<'daily' | 'weekly' | 'monthly' | 'custom'>('weekly');
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [description, setDescription] = useState('');
+  const [isPremium, setIsPremium] = useState(false);
+  const [isExclusive, setIsExclusive] = useState(false);
   
   const weekDays = [
     { value: 'monday', label: 'Monday' },
@@ -67,7 +92,10 @@ export default function ClassesPage() {
     const newClass = {
       id: classes.length + 1,
       title,
+      category: category || 'business',
+      city: city || 'mexico-city',
       type,
+      classType,
       price: parseFloat(price),
       maxStudents: parseInt(maxStudents),
       currentStudents: 0,
@@ -80,6 +108,10 @@ export default function ClassesPage() {
       frequency: frequencyDisplay,
       selectedDays: frequency === 'custom' ? selectedDays : [],
       description,
+      isPremium: classType === 'masterclass' ? true : isPremium,
+      isExclusive: classType === 'masterclass' ? true : isExclusive,
+      isPopular: false,
+      recentEnrollments: 0,
     };
     setClasses([newClass, ...classes]);
     setTitle('');
@@ -94,8 +126,13 @@ export default function ClassesPage() {
     setFrequency('weekly');
     setSelectedDays([]);
     setDescription('');
+    setCategory('');
+    setCity('');
+    setClassType('regular');
+    setIsPremium(false);
+    setIsExclusive(false);
     setIsDialogOpen(false);
-    toast.success('Class created successfully!');
+    toast.success(`${classType === 'masterclass' ? 'Masterclass' : 'Class'} created successfully!`);
   };
 
   return (
@@ -125,6 +162,38 @@ export default function ClassesPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Category</Label>
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {classCategories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.emoji} {cat.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>City (Mexico)</Label>
+                  <Select value={city} onValueChange={setCity}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select city" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mexicoCities.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Class Type</Label>
@@ -361,15 +430,47 @@ export default function ClassesPage() {
                 <CardTitle className="flex items-center gap-2">
                   <GraduationCap className="w-4 h-4" />
                   {cls.title}
+                  {(cls as any).classType === 'masterclass' && (
+                    <Badge variant="outline" className="border-yellow-500 text-yellow-600 ml-2">
+                      <Crown className="w-3 h-3 mr-1" />
+                      Masterclass
+                    </Badge>
+                  )}
                 </CardTitle>
-                <Badge variant={cls.type === 'online' ? 'default' : 'secondary'}>
-                  {cls.type}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  {(cls as any).isPremium && (cls as any).classType !== 'masterclass' && (
+                    <Badge variant="outline" className="border-yellow-500 text-yellow-600">
+                      <Crown className="w-3 h-3 mr-1" />
+                      Premium
+                    </Badge>
+                  )}
+                  {(cls as any).isExclusive && (cls as any).classType !== 'masterclass' && (
+                    <Badge variant="outline" className="border-primary text-primary">
+                      <Lock className="w-3 h-3 mr-1" />
+                      Exclusive
+                    </Badge>
+                  )}
+                  <Badge variant={cls.type === 'online' ? 'default' : 'secondary'}>
+                    {cls.type}
+                  </Badge>
+                </div>
               </div>
               <CardDescription className="flex items-center gap-2 mt-2">
                 <DollarSign className="w-4 h-4" />
                 <span>${cls.price}</span>
+                {parseFloat(price) > 0 && (
+                  <span className="text-xs text-muted-foreground">(+3% platform fee)</span>
+                )}
               </CardDescription>
+              {(cls as any).isPopular && (cls as any).recentEnrollments > 0 && (
+                <div className="flex items-center gap-2 mt-2 p-2 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                  <TrendingUp className="w-4 h-4 text-orange-600" />
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold text-orange-600">This course is popular.</p>
+                    <p className="text-xs text-muted-foreground">{(cls as any).recentEnrollments} people enrolled last week.</p>
+                  </div>
+                </div>
+              )}
             </CardHeader>
             <CardContent>
               <div className="space-y-2">

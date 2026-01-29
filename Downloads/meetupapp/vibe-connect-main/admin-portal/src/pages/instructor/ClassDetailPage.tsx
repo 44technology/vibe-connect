@@ -26,7 +26,12 @@ import {
   File,
   Download,
   BookOpen,
-  Edit
+  Edit,
+  ListChecks,
+  PlayCircle,
+  ShoppingBag,
+  Package,
+  Gift
 } from 'lucide-react';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
@@ -48,7 +53,36 @@ const mockClasses = [
     time: '18:00', 
     duration: '1 hour', 
     frequency: 'Monday, Wednesday, Friday',
-    description: 'Learn proper diction and pronunciation techniques'
+    description: 'Learn proper diction and pronunciation techniques',
+    syllabus: [
+      {
+        id: 'module-1',
+        title: 'Introduction to Diction',
+        description: 'Learn the fundamentals of proper diction',
+        lessons: [
+          { id: 'lesson-1', title: 'Diction Basics', duration: '30 min', description: 'Understanding proper pronunciation' },
+          { id: 'lesson-2', title: 'Vowel Sounds', duration: '45 min', description: 'Mastering vowel pronunciation' },
+        ],
+      },
+      {
+        id: 'module-2',
+        title: 'Advanced Techniques',
+        description: 'Advanced diction and speech techniques',
+        lessons: [
+          { id: 'lesson-3', title: 'Consonant Clarity', duration: '40 min', description: 'Clear consonant pronunciation' },
+          { id: 'lesson-4', title: 'Speech Flow', duration: '50 min', description: 'Natural speech patterns' },
+        ],
+      },
+    ],
+    digitalProducts: [
+      { id: 'dp1', name: 'Diction Workbook', description: 'Complete practice exercises', price: 29 },
+    ],
+    courseMaterials: [
+      { id: 'cm1', name: 'Pronunciation Guide', type: 'pdf' },
+    ],
+    bonusContent: [
+      { id: 'bc1', name: 'Q&A Recording', description: 'Access to live Q&A session' },
+    ],
   },
   { 
     id: 2, 
@@ -62,7 +96,18 @@ const mockClasses = [
     time: '14:00', 
     duration: '2 hours', 
     frequency: 'weekly',
-    description: 'Master the basics of AutoCAD design software'
+    description: 'Master the basics of AutoCAD design software',
+    syllabus: [
+      {
+        id: 'module-1',
+        title: 'AutoCAD Interface',
+        description: 'Understanding the AutoCAD workspace',
+        lessons: [
+          { id: 'lesson-1', title: 'Interface Overview', duration: '45 min', description: 'Navigating AutoCAD interface' },
+          { id: 'lesson-2', title: 'Basic Tools', duration: '60 min', description: 'Essential drawing tools' },
+        ],
+      },
+    ],
   },
 ];
 
@@ -951,6 +996,149 @@ export default function ClassDetailPage() {
               </div>
             </DialogContent>
           </Dialog>
+        </TabsContent>
+
+        {/* Monetization Tab */}
+        <TabsContent value="monetization" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Monetization</h2>
+              <p className="text-muted-foreground mt-1">Manage digital products, course materials, and bonus content</p>
+            </div>
+          </div>
+
+          {/* Digital Products */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Package className="w-5 h-5 text-primary" />
+                  <CardTitle>Digital Products</CardTitle>
+                </div>
+                <Button size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Product
+                </Button>
+              </div>
+              <CardDescription>Sell digital products alongside your class</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {classData.digitalProducts && Array.isArray(classData.digitalProducts) && classData.digitalProducts.length > 0 ? (
+                <div className="space-y-3">
+                  {classData.digitalProducts.map((product: any) => (
+                    <div key={product.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">{product.name}</p>
+                        {product.description && (
+                          <p className="text-sm text-muted-foreground mt-1">{product.description}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg font-bold text-primary">${product.price}</span>
+                        <Button variant="outline" size="sm">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">No digital products added yet</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Course Materials */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  <CardTitle>Course Materials</CardTitle>
+                </div>
+                <Button size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Material
+                </Button>
+              </div>
+              <CardDescription>Free downloadable materials for enrolled students</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {classData.courseMaterials && Array.isArray(classData.courseMaterials) && classData.courseMaterials.length > 0 ? (
+                <div className="space-y-3">
+                  {classData.courseMaterials.map((material: any) => (
+                    <div key={material.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium text-foreground">{material.name}</p>
+                          {material.type && (
+                            <p className="text-xs text-muted-foreground mt-1">{material.type.toUpperCase()}</p>
+                          )}
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">No course materials added yet</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Bonus Content */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Gift className="w-5 h-5 text-orange-500" />
+                  <CardTitle>Bonus Content</CardTitle>
+                </div>
+                <Button size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Bonus
+                </Button>
+              </div>
+              <CardDescription>Exclusive bonus content for enrolled students</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {classData.bonusContent && Array.isArray(classData.bonusContent) && classData.bonusContent.length > 0 ? (
+                <div className="space-y-3">
+                  {classData.bonusContent.map((bonus: any) => (
+                    <div key={bonus.id} className="flex items-center justify-between p-3 rounded-lg border border-orange-500/20 bg-orange-500/5">
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">{bonus.name}</p>
+                        {bonus.description && (
+                          <p className="text-sm text-muted-foreground mt-1">{bonus.description}</p>
+                        )}
+                      </div>
+                      <Button variant="outline" size="sm">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">No bonus content added yet</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Platform Fee Info */}
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <DollarSign className="w-6 h-6 text-primary" />
+                <div>
+                  <p className="font-semibold text-foreground">Platform Fee</p>
+                  <p className="text-sm text-muted-foreground">Ulikme charges a 3% platform fee on all paid classes</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
