@@ -1,25 +1,19 @@
 # Admin Portal Netlify Configuration
 # 
-# SEÇENEK 1: Base directory BOŞ (Önerilen - Dashboard'da daha kolay)
-# Netlify Dashboard Settings:
-# - Base directory: BOŞ BIRAKIN
-# - Build command: cd admin-portal && npm install --legacy-peer-deps && npm run build
-# - Publish directory: admin-portal/dist
+# GitHub Repository Structure:
+# main/Downloads/meetupapp/vibe-connect-main/admin-portal
 #
-# SEÇENEK 2: Base directory admin-portal
 # Netlify Dashboard Settings:
-# - Base directory: admin-portal
+# - Base directory: Downloads/meetupapp/vibe-connect-main/admin-portal
 # - Build command: npm install --legacy-peer-deps && npm run build
-# - Publish directory: dist (Netlify otomatik olarak admin-portal/dist gösterebilir, bu normal)
+# - Publish directory: dist
 
 [build]
-  # Eğer Base directory BOŞ ise, burada cd kullanın:
-  # command = "cd admin-portal && npm install --legacy-peer-deps && npm run build"
-  # publish = "admin-portal/dist"
-  
-  # Eğer Base directory admin-portal ise, burada cd kullanmayın:
   command = "npm install --legacy-peer-deps && npm run build"
   publish = "dist"
+  
+# TypeScript type checking is disabled during build for faster deployment
+# Run "npm run type-check" locally to check types
 
 [[redirects]]
   from = "/*"

@@ -576,7 +576,7 @@ export default function ClassesPage() {
                 <CardTitle className="flex items-center gap-2">
                   <GraduationCap className="w-4 h-4" />
                   {cls.title}
-                  {(cls as any).classType === 'masterclass' && (
+                  {'classType' in cls && cls.classType === 'masterclass' && (
                     <Badge variant="outline" className="border-yellow-500 text-yellow-600 ml-2">
                       <Crown className="w-3 h-3 mr-1" />
                       Masterclass
@@ -584,13 +584,13 @@ export default function ClassesPage() {
                   )}
                 </CardTitle>
                 <div className="flex items-center gap-2">
-                  {(cls as any).isPremium && (cls as any).classType !== 'masterclass' && (
+                  {'isPremium' in cls && cls.isPremium && 'classType' in cls && cls.classType !== 'masterclass' && (
                     <Badge variant="outline" className="border-yellow-500 text-yellow-600">
                       <Crown className="w-3 h-3 mr-1" />
                       Premium
                     </Badge>
                   )}
-                  {(cls as any).isExclusive && (cls as any).classType !== 'masterclass' && (
+                  {'isExclusive' in cls && cls.isExclusive && 'classType' in cls && cls.classType !== 'masterclass' && (
                     <Badge variant="outline" className="border-primary text-primary">
                       <Lock className="w-3 h-3 mr-1" />
                       Exclusive
@@ -608,12 +608,12 @@ export default function ClassesPage() {
                   <span className="text-xs text-muted-foreground">(+3% platform fee)</span>
                 )}
               </CardDescription>
-              {(cls as any).isPopular && (cls as any).recentEnrollments > 0 && (
+              {'isPopular' in cls && cls.isPopular && 'recentEnrollments' in cls && cls.recentEnrollments > 0 && (
                 <div className="flex items-center gap-2 mt-2 p-2 rounded-lg bg-orange-500/10 border border-orange-500/20">
                   <TrendingUp className="w-4 h-4 text-orange-600" />
                   <div className="flex-1">
                     <p className="text-xs font-semibold text-orange-600">This course is popular.</p>
-                    <p className="text-xs text-muted-foreground">{(cls as any).recentEnrollments} people enrolled last week.</p>
+                    <p className="text-xs text-muted-foreground">{cls.recentEnrollments} people enrolled last week.</p>
                   </div>
                 </div>
               )}

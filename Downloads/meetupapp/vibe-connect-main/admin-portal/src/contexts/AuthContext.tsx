@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string, role: 'admin' | 'venue' | 'instructor') => {
+  const login = async (email: string, password: string, role: 'admin' | 'venue' | 'instructor' = 'admin') => {
     // TODO: Implement actual login API call
     // Mock login for now
     let mockUser: User;

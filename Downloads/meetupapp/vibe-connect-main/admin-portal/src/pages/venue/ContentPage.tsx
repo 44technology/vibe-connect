@@ -333,7 +333,7 @@ export default function ContentPage() {
       </div>
 
       {/* Content Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'all' | 'posts' | 'stories' | 'reels')}>
         <TabsList>
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="posts">Posts</TabsTrigger>

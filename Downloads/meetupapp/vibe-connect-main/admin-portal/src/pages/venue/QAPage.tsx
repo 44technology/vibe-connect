@@ -100,7 +100,7 @@ export default function QAPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'all' | 'pending' | 'answered')}>
         <TabsList>
           <TabsTrigger value="all">All Questions</TabsTrigger>
           <TabsTrigger value="pending" className="relative">

@@ -5,19 +5,47 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Badge } from '../../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { DollarSign, Gift, ToggleLeft, ToggleRight, GraduationCap, Calendar } from 'lucide-react';
+import { DollarSign, Gift, ToggleLeft, ToggleRight, GraduationCap, Calendar, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Mock data
+const mockClasses = [
+  { id: 1, title: 'Diction Class', type: 'online', price: 50 },
+  { id: 2, title: 'AutoCAD Basics', type: 'onsite', price: 75 },
+];
+
+const mockMeetups = [
+  { id: 1, title: 'Networking Event', type: 'networking' },
+  { id: 2, title: 'Workshop Session', type: 'workshop' },
+];
+
+type Ticket = {
+  id: number;
+  title: string;
+  price: number;
+  type: 'paid' | 'free';
+  available: number;
+  sold: number;
+  linkedTo?: 'class' | 'meetup';
+  linkedId?: number;
+};
+
 export default function TicketsPricingPage() {
-  const [tickets, setTickets] = useState([
-    { id: 1, title: 'Diction Class', price: 50, type: 'paid', available: 20, sold: 12 },
-    { id: 2, title: 'Free Workshop', price: 0, type: 'free', available: 100, sold: 45 },
+  const [tickets, setTickets] = useState<Ticket[]>([
+    { id: 1, title: 'Diction Class', price: 50, type: 'paid', available: 20, sold: 12, linkedTo: 'class', linkedId: 1 },
+    { id: 2, title: 'Free Workshop', price: 0, type: 'free', available: 100, sold: 45, linkedTo: 'meetup', linkedId: 1 },
   ]);
 
-  const [newTicket, setNewTicket] = useState({
-    title: '',
+  const [newTicket, setNewTicket] = useState<{
+    linkedTo: '' | 'class' | 'meetup';
+    linkedId: string;
+    price: string;
+    type: 'paid' | 'free';
+  }>({
+    linkedTo: '',
+    linkedId: '',
     price: '',
-    type: 'paid' as 'paid' | 'free',
+    type: 'paid',
   });
 
   const handleAddTicket = () => {
@@ -44,12 +72,13 @@ export default function TicketsPricingPage() {
       return;
     }
     
-    const ticket = {
+    const ticket: Ticket = {
       id: tickets.length + 1,
-      ...newTicket,
+      linkedTo: newTicket.linkedTo as 'class' | 'meetup',
       linkedId: Number(newTicket.linkedId),
       title: linkedEvent.title,
       price: newTicket.type === 'paid' ? parseFloat(newTicket.price) : 0,
+      type: newTicket.type,
       available: 100,
       sold: 0,
     };
@@ -203,9 +232,9 @@ export default function TicketsPricingPage() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">{ticket.title}</CardTitle>
                 <div className="flex items-center gap-2">
-                  {(ticket as any).linkedTo && (
+                  {ticket.linkedTo && (
                     <Badge variant="outline" className="text-xs">
-                      {(ticket as any).linkedTo === 'class' ? (
+                      {ticket.linkedTo === 'class' ? (
                         <><GraduationCap className="w-3 h-3 mr-1" />Class</>
                       ) : (
                         <><Calendar className="w-3 h-3 mr-1" />Vibe</>

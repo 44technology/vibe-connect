@@ -1025,7 +1025,7 @@ export default function ClassDetailPage() {
             <CardContent>
               {classData.digitalProducts && Array.isArray(classData.digitalProducts) && classData.digitalProducts.length > 0 ? (
                 <div className="space-y-3">
-                  {classData.digitalProducts.map((product: any) => (
+                  {classData.digitalProducts.map((product) => (
                     <div key={product.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
                       <div className="flex-1">
                         <p className="font-medium text-foreground">{product.name}</p>
@@ -1107,7 +1107,7 @@ export default function ClassDetailPage() {
             <CardContent>
               {classData.bonusContent && Array.isArray(classData.bonusContent) && classData.bonusContent.length > 0 ? (
                 <div className="space-y-3">
-                  {classData.bonusContent.map((bonus: any) => (
+                  {classData.bonusContent.map((bonus) => (
                     <div key={bonus.id} className="flex items-center justify-between p-3 rounded-lg border border-orange-500/20 bg-orange-500/5">
                       <div className="flex-1">
                         <p className="font-medium text-foreground">{bonus.name}</p>

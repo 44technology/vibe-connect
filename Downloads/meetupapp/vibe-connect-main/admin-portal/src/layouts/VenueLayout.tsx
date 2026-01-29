@@ -27,6 +27,7 @@ import {
   MessageCircle,
   MessageSquare,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface VenueLayoutProps {
   children: ReactNode;
@@ -35,8 +36,8 @@ interface VenueLayoutProps {
 const navigation: Array<{
   name: string;
   href: string;
-  icon: any;
-  children?: Array<{ name: string; href: string; icon: any }>;
+  icon: LucideIcon;
+  children?: Array<{ name: string; href: string; icon: LucideIcon }>;
 }> = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Content', href: '/content', icon: Image },

@@ -14,7 +14,21 @@ import {
   Menu,
   X,
   User,
+  Sparkles,
+  Bot,
+  Calendar,
+  Ticket,
+  DollarSign,
+  QrCode,
+  Shield,
+  TrendingUp,
+  Star,
+  MapPin,
+  PieChart,
+  Wallet,
+  BarChart3,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface InstructorLayoutProps {
   children: ReactNode;
@@ -23,8 +37,8 @@ interface InstructorLayoutProps {
 const navigation: Array<{
   name: string;
   href: string;
-  icon: any;
-  children?: Array<{ name: string; href: string; icon: any }>;
+  icon: LucideIcon;
+  children?: Array<{ name: string; href: string; icon: LucideIcon }>;
 }> = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Posts & Stories', href: '/content', icon: Image },
