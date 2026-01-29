@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, Filter, Star, MapPin, Clock, DollarSign, GraduationCap, Send, X, Monitor, Building2, Users, Award, Tag, Circle, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Search, Filter, Star, MapPin, Clock, DollarSign, GraduationCap, Send, X, Monitor, Building2, Users, Award, Tag, Circle, CheckCircle2, Crown, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MobileLayout from '@/components/layout/MobileLayout';
 import BottomNav from '@/components/layout/BottomNav';
@@ -16,12 +16,15 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const classCategories = [
   { id: 'all', label: 'All', emoji: '✨' },
+  { id: 'ecommerce', label: 'E-commerce & Digital', emoji: '🛒' },
+  { id: 'realestate', label: 'Real Estate & Investing', emoji: '🏠' },
+  { id: 'marketing', label: 'Marketing & Growth', emoji: '📈' },
+  { id: 'mentality', label: 'Mentality & Lifestyle', emoji: '🧠' },
+  { id: 'business', label: 'Business', emoji: '💼' },
+  { id: 'tech', label: 'Tech', emoji: '💻' },
   { id: 'sports', label: 'Sports', emoji: '⚽' },
   { id: 'tennis', label: 'Tennis', emoji: '🎾' },
   { id: 'yoga', label: 'Yoga', emoji: '🧘' },
-  { id: 'swimming', label: 'Swimming', emoji: '🏊' },
-  { id: 'golf', label: 'Golf', emoji: '⛳' },
-  { id: 'skydiving', label: 'Skydiving', emoji: '🪂' },
   { id: 'cooking', label: 'Cooking', emoji: '👨‍🍳' },
   { id: 'dance', label: 'Dance', emoji: '💃' },
   { id: 'art', label: 'Art', emoji: '🎨' },
@@ -29,21 +32,187 @@ const classCategories = [
   { id: 'diction', label: 'Diction & Speech', emoji: '🎤' },
   { id: 'acting', label: 'Acting & Audition', emoji: '🎭' },
   { id: 'music', label: 'Music', emoji: '🎵' },
-  { id: 'tech', label: 'Tech', emoji: '💻' },
-  { id: 'business', label: 'Business', emoji: '💼' },
   { id: 'mentorship', label: 'Mentorship', emoji: '👔' },
   { id: 'fitness', label: 'Fitness', emoji: '💪' },
-  { id: 'photography', label: 'Photography', emoji: '📸' },
-  { id: 'writing', label: 'Writing', emoji: '✍️' },
+];
+
+// Mexico target cities
+const mexicoCities = [
+  { id: 'mexico-city', label: 'Mexico City', emoji: '🏙️' },
+  { id: 'monterrey', label: 'Monterrey', emoji: '🏭' },
+  { id: 'guadalajara', label: 'Guadalajara', emoji: '🌮' },
+  { id: 'queretaro', label: 'Querétaro', emoji: '🏛️' },
+  { id: 'cancun', label: 'Cancún / Playa del Carmen', emoji: '🏖️' },
 ];
 
 const classes = [
   {
     id: '1',
+    title: 'Shopify Store Setup & Brand Building',
+    instructor: { name: 'Maria Rodriguez', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150', rating: 4.9 },
+    category: 'ecommerce',
+    location: 'Mexico City',
+    distance: '2.5 km',
+    price: 299,
+    duration: '3 hours',
+    image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400',
+    nextAvailable: 'Sat, Jan 27, 10 AM',
+    students: 24,
+    hasCertificate: true,
+    isPremium: true,
+    isExclusive: true,
+    maxStudents: 30,
+    syllabus: [
+      {
+        id: 'module-1',
+        title: 'Introduction to E-commerce',
+        description: 'Learn the fundamentals of online business',
+        lessons: [
+          { id: 'lesson-1', title: 'E-commerce Basics', duration: '30 min', description: 'Understanding online business models' },
+          { id: 'lesson-2', title: 'Market Research', duration: '45 min', description: 'Finding your niche and target audience' },
+        ],
+      },
+      {
+        id: 'module-2',
+        title: 'Shopify Store Setup',
+        description: 'Build your online store from scratch',
+        lessons: [
+          { id: 'lesson-3', title: 'Shopify Account Setup', duration: '30 min', description: 'Creating and configuring your store' },
+          { id: 'lesson-4', title: 'Product Management', duration: '45 min', description: 'Adding products and inventory' },
+          { id: 'lesson-5', title: 'Payment & Shipping', duration: '30 min', description: 'Setting up payment and shipping options' },
+        ],
+      },
+      {
+        id: 'module-3',
+        title: 'Brand Building & Marketing',
+        description: 'Grow your brand and reach customers',
+        lessons: [
+          { id: 'lesson-6', title: 'Brand Identity', duration: '45 min', description: 'Creating a strong brand presence' },
+          { id: 'lesson-7', title: 'Marketing Strategies', duration: '60 min', description: 'Social media and digital marketing' },
+        ],
+      },
+    ],
+  },
+  {
+    id: '2',
+    title: 'Real Estate Investing Masterclass',
+    instructor: { name: 'Carlos Mendez', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', rating: 5.0 },
+    category: 'realestate',
+    location: 'Monterrey',
+    distance: '5 km',
+    price: 499,
+    duration: '4 hours',
+    image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400',
+    nextAvailable: 'Sun, Jan 28, 2 PM',
+    students: 18,
+    hasCertificate: true,
+    isPremium: true,
+    isExclusive: true,
+    maxStudents: 25,
+    isPopular: true,
+    recentEnrollments: 28,
+    digitalProducts: [
+      { id: 'dp3', name: 'Real Estate Investment Calculator', description: 'Excel spreadsheet with formulas', price: 39 },
+      { id: 'dp4', name: 'Property Analysis Template', description: 'Complete property evaluation tool', price: 49 },
+    ],
+    courseMaterials: [
+      { id: 'cm3', name: 'Financing Guide', type: 'pdf' },
+      { id: 'cm4', name: 'Legal Checklist', type: 'pdf' },
+    ],
+    bonusContent: [
+      { id: 'bc3', name: 'Case Studies Library', description: 'Real investment case studies' },
+    ],
+    syllabus: [
+      {
+        id: 'module-1',
+        title: 'Real Estate Fundamentals',
+        description: 'Understanding the basics of real estate investing',
+        lessons: [
+          { id: 'lesson-1', title: 'Introduction to Real Estate', duration: '45 min', description: 'Market overview and investment types' },
+          { id: 'lesson-2', title: 'Property Analysis', duration: '60 min', description: 'Evaluating properties and ROI calculations' },
+        ],
+      },
+      {
+        id: 'module-2',
+        title: 'Investment Strategies',
+        description: 'Different approaches to real estate investing',
+        lessons: [
+          { id: 'lesson-3', title: 'Buy & Hold Strategy', duration: '50 min', description: 'Long-term rental property investments' },
+          { id: 'lesson-4', title: 'Fix & Flip', duration: '55 min', description: 'Short-term profit strategies' },
+          { id: 'lesson-5', title: 'Airbnb & Short-term Rentals', duration: '60 min', description: 'Maximizing returns with short-term rentals' },
+        ],
+      },
+      {
+        id: 'module-3',
+        title: 'Financing & Legal',
+        description: 'Securing funding and understanding legal aspects',
+        lessons: [
+          { id: 'lesson-6', title: 'Financing Options', duration: '50 min', description: 'Mortgages, loans, and creative financing' },
+          { id: 'lesson-7', title: 'Legal Considerations', duration: '40 min', description: 'Contracts, taxes, and regulations' },
+        ],
+      },
+    ],
+  },
+  {
+    id: '3',
+    title: 'Instagram Ads & Meta Marketing',
+    instructor: { name: 'Sofia Martinez', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150', rating: 4.8 },
+    category: 'marketing',
+    location: 'Guadalajara',
+    distance: '1.8 km',
+    price: 199,
+    duration: '2.5 hours',
+    image: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=400',
+    nextAvailable: 'Fri, Jan 26, 6 PM',
+    students: 32,
+    hasCertificate: false,
+    isPremium: false,
+    isExclusive: false,
+    maxStudents: 50,
+  },
+  {
+    id: '4',
+    title: 'Business Mindset & Discipline',
+    instructor: { name: 'Diego Fernandez', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150', rating: 4.9 },
+    category: 'mentality',
+    location: 'Querétaro',
+    distance: '3 km',
+    price: 149,
+    duration: '2 hours',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+    nextAvailable: 'Wed, Jan 24, 7 PM',
+    students: 45,
+    hasCertificate: false,
+    isPremium: true,
+    isExclusive: false,
+    maxStudents: 60,
+    syllabus: [
+      {
+        id: 'module-1',
+        title: 'Entrepreneurial Mindset',
+        description: 'Developing the right mental framework for success',
+        lessons: [
+          { id: 'lesson-1', title: 'Growth vs Fixed Mindset', duration: '30 min', description: 'Understanding mindset psychology' },
+          { id: 'lesson-2', title: 'Overcoming Limiting Beliefs', duration: '35 min', description: 'Breaking through mental barriers' },
+        ],
+      },
+      {
+        id: 'module-2',
+        title: 'Discipline & Habits',
+        description: 'Building sustainable business habits',
+        lessons: [
+          { id: 'lesson-3', title: 'Daily Routines', duration: '30 min', description: 'Creating effective morning routines' },
+          { id: 'lesson-4', title: 'Productivity Systems', duration: '25 min', description: 'Time management and focus techniques' },
+        ],
+      },
+    ],
+  },
+  {
+    id: '5',
     title: 'Tennis Lessons for Beginners',
     instructor: { name: 'Coach Mike', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', rating: 4.9 },
     category: 'tennis',
-    location: 'Flamingo Park Tennis Center',
+    location: 'Cancún',
     distance: '1.2 mi',
     price: 75,
     duration: '1 hour',
@@ -51,6 +220,8 @@ const classes = [
     nextAvailable: 'Tomorrow, 9 AM',
     students: 48,
     hasCertificate: false,
+    isPremium: false,
+    isExclusive: false,
   },
   {
     id: '2',
@@ -377,8 +548,9 @@ const classes = [
 
 const ClassesPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCity, setSelectedCity] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestionDialog, setShowSuggestionDialog] = useState(false);
   const [suggestionText, setSuggestionText] = useState('');
@@ -420,8 +592,13 @@ const ClassesPage = () => {
             rating: (c as any).instructor?.rating || 4.5,
           },
           category: c.category || 'all',
-          location: c.venue?.name || 'Location TBD',
+          location: c.venue?.name || c.venue?.city || 'Location TBD',
           distance: '0.5 mi',
+          isPremium: (c as any).isPremium || false,
+          isExclusive: (c as any).isExclusive || false,
+          maxStudents: (c as any).maxStudents || c.maxStudents,
+          isPopular: (c as any).isPopular || false,
+          recentEnrollments: (c as any).recentEnrollments || 0,
           price: c.price || 0,
           duration: c.endTime && c.startTime
             ? `${Math.round((new Date(c.endTime).getTime() - new Date(c.startTime).getTime()) / 60000)} min`
@@ -437,6 +614,7 @@ const ClassesPage = () => {
           mentor: undefined,
           isEnrolled,
           isPaid,
+          _count: c._count || { enrollments: 0 },
         };
       })
     : classes.map(c => ({ ...c, isOnline: c.isOnline || false, hasCertificate: (c as any).hasCertificate || false, isMentor: false, mentor: undefined, isEnrolled: false, isPaid: false }));
@@ -536,7 +714,19 @@ const ClassesPage = () => {
           >
             <ArrowLeft className="w-6 h-6 text-foreground" />
           </motion.button>
-          <h1 className="text-xl font-bold text-foreground">Classes & Mentorship</h1>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold text-foreground">Expert-Led Classes</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Real entrepreneurs. Real results. Real connections.</p>
+          </div>
+          {isAuthenticated && (
+            <motion.button
+              onClick={() => navigate('/create-class')}
+              className="p-2 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors"
+              whileTap={{ scale: 0.9 }}
+            >
+              <GraduationCap className="w-5 h-5 text-primary" />
+            </motion.button>
+          )}
         </div>
         
         {/* Search */}
@@ -588,6 +778,43 @@ const ClassesPage = () => {
               >
                 <span>{cat.emoji}</span>
                 <span className="text-sm font-medium">{cat.label}</span>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+
+        {/* Mexico Cities Filter */}
+        <div className="px-4 pb-3 border-b border-border">
+          <div className="flex items-center gap-2 mb-2">
+            <MapPin className="w-4 h-4 text-muted-foreground" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase">Target Cities</span>
+          </div>
+          <div className="flex gap-2 overflow-x-auto hide-scrollbar">
+            <motion.button
+              onClick={() => setSelectedCity('')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full whitespace-nowrap text-xs transition-all ${
+                selectedCity === '' 
+                  ? 'bg-primary/20 text-primary border border-primary/40' 
+                  : 'bg-muted/50 text-muted-foreground border border-transparent'
+              }`}
+              whileTap={{ scale: 0.95 }}
+            >
+              <span>🌎</span>
+              <span className="font-medium">All Cities</span>
+            </motion.button>
+            {mexicoCities.map((city) => (
+              <motion.button
+                key={city.id}
+                onClick={() => setSelectedCity(city.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full whitespace-nowrap text-xs transition-all ${
+                  selectedCity === city.id 
+                    ? 'bg-primary/20 text-primary border border-primary/40' 
+                    : 'bg-muted/50 text-muted-foreground border border-transparent'
+                }`}
+                whileTap={{ scale: 0.95 }}
+              >
+                <span>{city.emoji}</span>
+                <span className="font-medium">{city.label}</span>
               </motion.button>
             ))}
           </div>
@@ -665,7 +892,7 @@ const ClassesPage = () => {
               </div>
               
               <div className="mt-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {(classItem as any).price === 0 || !(classItem as any).price ? (
                     <span className="text-green-600 flex items-center gap-1">
                       <Tag className="w-4 h-4" />
@@ -675,12 +902,22 @@ const ClassesPage = () => {
                     <span className="text-primary flex items-center gap-1">
                       <DollarSign className="w-4 h-4" />
                       <span>${(classItem as any).price}</span>
+                      {(classItem as any).price && (classItem as any).price > 0 && (
+                        <span className="text-xs text-muted-foreground ml-1">
+                          (+3% platform fee)
+                        </span>
+                      )}
                     </span>
                   )}
                   {(classItem as any).isPaid && (
                     <span className="px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 text-xs font-medium flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" />
                       Paid
+                    </span>
+                  )}
+                  {(classItem as any).maxStudents && (
+                    <span className="text-xs text-muted-foreground">
+                      {(classItem as any).students || 0} / {(classItem as any).maxStudents} seats
                     </span>
                   )}
                 </div>
@@ -697,10 +934,19 @@ const ClassesPage = () => {
                     navigate(`/class/${classItem.id}`);
                   }
                 }}
-                className="w-full mt-3 py-2.5 rounded-xl bg-gradient-primary text-primary-foreground font-medium"
+                className={`w-full mt-3 py-2.5 rounded-xl font-medium transition-all ${
+                  (classItem as any).isEnrolled
+                    ? 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20'
+                    : 'bg-gradient-primary text-primary-foreground'
+                }`}
                 whileTap={{ scale: 0.98 }}
+                disabled={(classItem as any).isEnrolled}
               >
-                {(classItem as any).isMentor ? 'View Profile' : 'Book Now'}
+                {(classItem as any).isMentor 
+                  ? 'View Profile' 
+                  : (classItem as any).isEnrolled 
+                    ? 'Enrolled' 
+                    : 'Join Now'}
               </motion.button>
             </div>
           </motion.div>

@@ -251,7 +251,13 @@ const ChatPage = () => {
   
   // Check if current chat is a class chat
   const isClassChat = currentChat?.type === 'class' || currentChat?.class;
+  const isVibeChat = currentChat?.type === 'vibe' || currentChat?.meetup;
   const classId = currentChat?.class?.id;
+  
+  // Get other user for direct chat
+  const otherUser = chatData?.type === 'direct' 
+    ? chatData.members?.find((m: any) => m.user.id !== user?.id)?.user 
+    : null;
   
   // Check if there's already a meetup request in this chat
   const hasPendingRequest = useMemo(() => {
@@ -410,70 +416,98 @@ const ChatPage = () => {
           {/* Chat header */}
           <div className="sticky top-0 z-40 glass safe-top">
             <div className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
                 <motion.button
                   onClick={() => setSelectedChat(null)}
-                  className="text-foreground font-medium"
+                  className="text-foreground font-medium flex-shrink-0"
                   whileTap={{ scale: 0.95 }}
                 >
                   ←
                 </motion.button>
-                <UserAvatar 
-                  src={isBlindMeetupChat && !revealBlindDetails
-                    ? undefined // Blurred avatar
-                    : chatData?.type === 'direct' 
-                    ? chatData.members?.find((m: any) => m.user.id !== user?.id)?.user.avatar || currentChat.avatar
-                    : currentChat.avatar
-                  } 
-                  alt={isBlindMeetupChat && !revealBlindDetails
-                    ? 'Anonymous'
-                    : chatData?.type === 'direct'
-                    ? (chatData.members?.find((m: any) => m.user.id !== user?.id)?.user.displayName || currentChat.name)
-                    : currentChat.name
-                  } 
-                  size="sm"
-                  isOnline={currentChat.isOnline}
-                  className={isBlindMeetupChat && !revealBlindDetails ? 'blur-md' : ''}
-                />
-                <div>
-                  <h2 className="font-semibold text-foreground">
-                    {isBlindMeetupChat && !revealBlindDetails
-                      ? 'Anonymous'
-                      : chatData?.type === 'direct'
-                      ? (chatData.members?.find((m: any) => m.user.id !== user?.id)?.user.displayName || currentChat.name)
-                      : currentChat.name
-                    }
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    {currentChat.isOnline ? 'Online' : chatData?.type === 'group' ? `${chatData.members?.length || 0} members` : 'Offline'}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {/* Class Details Button */}
-                {isClassChat && currentChat?.class?.id && (
-                  <motion.button 
-                    className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-sm font-medium flex items-center gap-1.5"
-                    whileTap={{ scale: 0.95 }}
+                
+                {/* Class/Vibe/Profile Link */}
+                {isClassChat && currentChat?.class?.id ? (
+                  <motion.button
                     onClick={() => navigate(`/class/${currentChat.class.id}`)}
-                  >
-                    <Info className="w-4 h-4" />
-                    Class Details
-                    <ArrowRight className="w-3 h-3" />
-                  </motion.button>
-                )}
-                {/* Vibe Details Button */}
-                {currentChat?.type === 'vibe' && currentChat?.meetup?.id && (
-                  <motion.button 
-                    className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-sm font-medium flex items-center gap-1.5"
+                    className="flex items-center gap-2 flex-1 min-w-0"
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => navigate(`/meetup/${currentChat.meetup.id}`)}
                   >
-                    <Info className="w-4 h-4" />
-                    Vibe Details
-                    <ArrowRight className="w-3 h-3" />
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <GraduationCap className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="text-xs text-muted-foreground">Class</p>
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {currentChat.class.title || currentChat.name}
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                   </motion.button>
+                ) : isVibeChat && currentChat?.meetup?.id ? (
+                  <motion.button
+                    onClick={() => navigate(`/meetup/${currentChat.meetup.id}`)}
+                    className="flex items-center gap-2 flex-1 min-w-0"
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center flex-shrink-0">
+                      <Calendar className="w-4 h-4 text-secondary" />
+                    </div>
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="text-xs text-muted-foreground">Vibe</p>
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {currentChat.meetup.title || currentChat.name}
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  </motion.button>
+                ) : isDirectChat && otherUser ? (
+                  <motion.button
+                    onClick={() => navigate(`/user/${otherUser.id}`)}
+                    className="flex items-center gap-2 flex-1 min-w-0"
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <UserAvatar 
+                      src={isBlindMeetupChat && !revealBlindDetails
+                        ? undefined
+                        : otherUser.avatar || currentChat.avatar
+                      } 
+                      alt={isBlindMeetupChat && !revealBlindDetails
+                        ? 'Anonymous'
+                        : otherUser.displayName || `${otherUser.firstName} ${otherUser.lastName}` || currentChat.name
+                      } 
+                      size="sm"
+                      isOnline={currentChat.isOnline}
+                      className={isBlindMeetupChat && !revealBlindDetails ? 'blur-md' : ''}
+                    />
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="text-xs text-muted-foreground">Profile</p>
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {isBlindMeetupChat && !revealBlindDetails
+                          ? 'Anonymous'
+                          : otherUser.displayName || `${otherUser.firstName} ${otherUser.lastName}` || currentChat.name
+                        }
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  </motion.button>
+                ) : (
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <UserAvatar 
+                      src={currentChat.avatar} 
+                      alt={currentChat.name} 
+                      size="sm"
+                      isOnline={currentChat.isOnline}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h2 className="font-semibold text-foreground truncate">{currentChat.name}</h2>
+                      <p className="text-xs text-muted-foreground">
+                        {currentChat.isOnline ? 'Online' : chatData?.type === 'group' ? `${chatData.members?.length || 0} members` : 'Offline'}
+                      </p>
+                    </div>
+                  </div>
                 )}
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {isDirectChat && (
                   <motion.button 
                     className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-sm font-medium flex items-center gap-1.5"
@@ -1370,8 +1404,16 @@ const ChatPage = () => {
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-foreground truncate">{chat.name}</h3>
-                    <span className="text-xs text-muted-foreground">{chat.time}</span>
+                    <motion.button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedChat(chat.id);
+                      }}
+                      className="text-left flex-1 min-w-0"
+                    >
+                      <h3 className="font-semibold text-foreground truncate">{chat.name}</h3>
+                    </motion.button>
+                    <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">{chat.time}</span>
                   </div>
                   <p className="text-sm text-muted-foreground truncate">{chat.lastMessage}</p>
                 </div>

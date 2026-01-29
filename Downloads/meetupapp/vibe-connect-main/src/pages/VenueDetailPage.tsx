@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Star, Clock, DollarSign, Heart, Share2, Shield, UtensilsCrossed, Sparkles, Camera, X, Tag, Percent, Calendar, Box, Eye, RotateCcw } from 'lucide-react';
+import { ArrowLeft, MapPin, Star, Clock, DollarSign, Heart, Share2, Shield, UtensilsCrossed, Sparkles, Camera, X, Tag, Percent, Calendar, Box, Eye, RotateCcw, GraduationCap, Users, ChevronRight } from 'lucide-react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -12,7 +12,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useVenue } from '@/hooks/useVenues';
+import { useClasses } from '@/hooks/useClasses';
+import { useMeetups } from '@/hooks/useMeetups';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import ClassCard from '@/components/cards/ClassCard';
 
 // Sample menu items for restaurants
 const sampleMenuItems = [
@@ -139,6 +143,25 @@ const VenueDetailPage = () => {
   const [selectedMenuItem, setSelectedMenuItem] = useState<typeof sampleMenuItems[0] | null>(null);
   const [viewMode, setViewMode] = useState<'2d' | '3d' | 'ar'>('2d');
   const { data: venue, isLoading, error } = useVenue(id || '');
+  
+  // Fetch classes and meetups for this venue
+  const { data: venueClasses, isLoading: classesLoading } = useClasses(undefined, undefined, 'UPCOMING', id);
+  const { data: venueMeetups, isLoading: meetupsLoading } = useMeetups({ 
+    status: 'UPCOMING',
+  });
+  
+  // Filter meetups by venue ID
+  const upcomingMeetups = venueMeetups?.filter(m => m.venue?.id === id) || [];
+  
+  // Combine and sort by start time
+  const upcomingEvents = [
+    ...(venueClasses || []).map(c => ({ ...c, type: 'class' as const })),
+    ...upcomingMeetups.map(m => ({ ...m, type: 'vibe' as const })),
+  ].sort((a, b) => {
+    const dateA = new Date(a.startTime).getTime();
+    const dateB = new Date(b.startTime).getTime();
+    return dateA - dateB;
+  });
   
   // Determine if venue is a restaurant based on amenities or description
   const isRestaurant = venue?.amenities?.some(a => 
@@ -284,6 +307,118 @@ const VenueDetailPage = () => {
               </a>
             )}
           </div>
+
+          {/* Upcoming Events Section */}
+          {upcomingEvents.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold text-foreground text-lg">Yaklaşanlar</h3>
+                </div>
+                {upcomingEvents.length > 3 && (
+                  <motion.button
+                    onClick={() => navigate(`/discover?venue=${id}`)}
+                    className="text-primary text-sm font-medium flex items-center gap-1"
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    View All
+                    <ChevronRight className="w-4 h-4" />
+                  </motion.button>
+                )}
+              </div>
+              <div className="space-y-3">
+                {upcomingEvents.slice(0, 3).map((event: any, index: number) => (
+                  <motion.div
+                    key={event.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    onClick={() => {
+                      if (event.type === 'class') {
+                        navigate(`/class/${event.id}`);
+                      } else {
+                        navigate(`/vibe/${event.id}`);
+                      }
+                    }}
+                    className="card-elevated p-4 rounded-2xl cursor-pointer hover:border-primary/40 transition-all"
+                  >
+                    <div className="flex gap-3">
+                      <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                        {event.image ? (
+                          <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                            {event.type === 'class' ? (
+                              <GraduationCap className="w-8 h-8 text-primary" />
+                            ) : (
+                              <Calendar className="w-8 h-8 text-primary" />
+                            )}
+                          </div>
+                        )}
+                        <div className="absolute top-1 right-1 w-6 h-6 rounded-full bg-primary/90 flex items-center justify-center">
+                          {event.type === 'class' ? (
+                            <GraduationCap className="w-3 h-3 text-primary-foreground" />
+                          ) : (
+                            <Calendar className="w-3 h-3 text-primary-foreground" />
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                            event.type === 'class' 
+                              ? 'bg-primary/10 text-primary' 
+                              : 'bg-secondary/10 text-secondary'
+                          }`}>
+                            {event.type === 'class' ? 'Class' : 'Vibe'}
+                          </span>
+                          {event.isPremium && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 text-yellow-600 dark:text-yellow-400 font-bold">
+                              Premium
+                            </span>
+                          )}
+                          {event.isExclusive && (
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 text-purple-600 dark:text-purple-400 font-bold">
+                              Exclusive
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="font-bold text-foreground mb-1 line-clamp-1">{event.title}</h4>
+                        {event.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{event.description}</p>
+                        )}
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            <span>{format(new Date(event.startTime), 'MMM d, h:mm a')}</span>
+                          </div>
+                          {event.type === 'class' && event._count && (
+                            <div className="flex items-center gap-1">
+                              <Users className="w-3 h-3" />
+                              <span>{event._count.enrollments || 0} enrolled</span>
+                            </div>
+                          )}
+                          {event.type === 'vibe' && event._count && (
+                            <div className="flex items-center gap-1">
+                              <Users className="w-3 h-3" />
+                              <span>{event._count.members || 0} joined</span>
+                            </div>
+                          )}
+                          {event.price !== undefined && event.price !== null && (
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="w-3 h-3" />
+                              <span>{event.price === 0 ? 'Free' : `$${event.price}`}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Campaigns Section - Horizontal Scroll */}
           {campaigns.length > 0 && (

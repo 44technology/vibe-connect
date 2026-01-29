@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { X, BookOpen, Camera, Calendar, Clock, DollarSign, Users } from 'lucide-react';
+import { X, BookOpen, Camera, Calendar, Clock, DollarSign, Users, MapPin } from 'lucide-react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,8 @@ const CreateClassPage = () => {
   const [price, setPrice] = useState('');
   const [schedule, setSchedule] = useState('');
   const [image, setImage] = useState<File | null>(null);
+  const [isPremium, setIsPremium] = useState(false);
+  const [isExclusive, setIsExclusive] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
@@ -101,8 +103,8 @@ const CreateClassPage = () => {
 
         <div className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
           <div>
-            <h2 className="text-2xl font-bold text-foreground mb-1">Create a Class</h2>
-            <p className="text-muted-foreground">Offer classes at your venue</p>
+            <h2 className="text-2xl font-bold text-foreground mb-1">Create an Expert-Led Class</h2>
+            <p className="text-muted-foreground">Share real experience, not theory. Teach what you've actually built and achieved. Entrepreneurs learn from real results.</p>
           </div>
 
           {/* Image upload */}
@@ -255,6 +257,57 @@ const CreateClassPage = () => {
                   onChange={(e) => setPrice(e.target.value)}
                   className="h-12 rounded-xl"
                 />
+                {price && parseFloat(price) > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">+3% platform fee applies</p>
+                )}
+              </div>
+            </div>
+
+            {/* Premium & Exclusive Options */}
+            <div className="space-y-3 p-4 rounded-xl bg-muted/50 border border-border">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Crown className="w-4 h-4 text-yellow-600" />
+                  <div>
+                    <label className="text-sm font-medium text-foreground">Premium Class</label>
+                    <p className="text-xs text-muted-foreground">Highlight your expertise</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPremium(!isPremium)}
+                  className={`relative w-12 h-6 rounded-full transition-colors ${
+                    isPremium ? 'bg-yellow-500' : 'bg-muted-foreground/30'
+                  }`}
+                >
+                  <div
+                    className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform ${
+                      isPremium ? 'translate-x-6' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-border">
+                <div className="flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-purple-600" />
+                  <div>
+                    <label className="text-sm font-medium text-foreground">Exclusive Class</label>
+                    <p className="text-xs text-muted-foreground">Limited seats, private access</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsExclusive(!isExclusive)}
+                  className={`relative w-12 h-6 rounded-full transition-colors ${
+                    isExclusive ? 'bg-purple-500' : 'bg-muted-foreground/30'
+                  }`}
+                >
+                  <div
+                    className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform ${
+                      isExclusive ? 'translate-x-6' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
               </div>
             </div>
           </div>

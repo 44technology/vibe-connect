@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChevronRight, Plus, Calendar, Clock, MapPin, ArrowRight, GraduationCap } from 'lucide-react';
+import { Search, ChevronRight, Plus, Calendar, Clock, MapPin, ArrowRight, GraduationCap, DollarSign } from 'lucide-react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import BottomNav from '@/components/layout/BottomNav';
 import { meetups as mockMeetups, venues as mockVenues } from '@/data/mockData';
@@ -12,6 +12,7 @@ import { useStories } from '@/hooks/useStories';
 import { useClasses } from '@/hooks/useClasses';
 import { useAuth } from '@/contexts/AuthContext';
 import VenueCard from '@/components/cards/VenueCard';
+import ClassCard from '@/components/cards/ClassCard';
 import UserAvatar from '@/components/ui/UserAvatar';
 import CreateStoryModal from '@/components/CreateStoryModal';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -169,6 +170,57 @@ const HomePage = () => {
 
   // Fetch user's enrolled classes
   const { data: userClasses } = useClasses(undefined, undefined, undefined, undefined, true);
+  
+  // Fetch all classes for display
+  const { data: allClassesData, isLoading: allClassesLoading } = useClasses();
+  
+  // Get enrolled class IDs
+  const enrolledClassIds = useMemo(() => {
+    if (!userClasses) return new Set<string>();
+    return new Set(userClasses.map((c: any) => c.id));
+  }, [userClasses]);
+  
+  // Format classes for display
+  const formattedClasses = useMemo(() => {
+    if (!allClassesData || allClassesData.length === 0) return [];
+    
+    return allClassesData.slice(0, 6).map((c: any) => {
+      const isEnrolled = enrolledClassIds.has(c.id);
+      const userEnrollment = c.enrollments?.find((e: any) => e.user?.id === user?.id);
+      const isPaid = isEnrolled && userEnrollment && (userEnrollment.status === 'paid' || userEnrollment.status === 'enrolled') && c.price && c.price > 0;
+      
+      return {
+        id: c.id,
+        title: c.title || `${c.category ? c.category.charAt(0).toUpperCase() + c.category.slice(1) : 'Class'} Course`,
+        description: c.description || 'Join this class to learn and grow!',
+        skill: c.skill || 'Class',
+        category: c.category,
+        image: c.image || 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=400',
+        startTime: c.startTime ? (typeof c.startTime === 'string' ? c.startTime : new Date(c.startTime).toISOString()) : new Date().toISOString(),
+        endTime: c.endTime,
+        price: c.price !== undefined && c.price !== null ? c.price : 0,
+        schedule: c.schedule,
+        venue: c.venue ? {
+          id: c.venue.id || '',
+          name: c.venue.name || 'Location TBD',
+          address: c.venue.address || '',
+          city: c.venue.city || '',
+        } : {
+          id: '',
+          name: 'Location TBD',
+          address: '',
+          city: '',
+        },
+        _count: c._count || { enrollments: 0 },
+        hasCertificate: (c as any).hasCertificate || false,
+        isPremium: (c as any).isPremium || false,
+        isExclusive: (c as any).isExclusive || false,
+        maxStudents: (c as any).maxStudents,
+        isEnrolled,
+        isPaid,
+      };
+    });
+  }, [allClassesData, enrolledClassIds, user?.id]);
 
   // Use API data if available, otherwise fall back to mock data
   const meetups = meetupsData && meetupsData.length > 0 ? meetupsData : mockMeetups;
@@ -406,24 +458,72 @@ const HomePage = () => {
           </div>
         </section>
 
-        {/* Quick Access - Classes */}
+        {/* Expert-Led Classes Section */}
         <section>
-          <motion.button
-            onClick={() => navigate('/classes')}
-            className="w-full p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 transition-all group"
-            whileTap={{ scale: 0.98 }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
-                <GraduationCap className="w-6 h-6 text-primary" />
-              </div>
-              <div className="text-left flex-1">
-                <h3 className="font-bold text-foreground text-base">Classes & Mentorship</h3>
-                <p className="text-xs text-muted-foreground">Learn from instructors, mentors & venues</p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-bold text-foreground">Expert-Led Classes</h2>
+              <p className="text-sm text-muted-foreground mt-1">Real entrepreneurs teaching real results. Connect through learning.</p>
             </div>
-          </motion.button>
+            <motion.button
+              onClick={() => navigate('/classes')}
+              className="text-primary text-sm font-medium flex items-center gap-1"
+              whileTap={{ scale: 0.95 }}
+            >
+              View All
+              <ChevronRight className="w-4 h-4" />
+            </motion.button>
+          </div>
+          
+          {/* Featured Classes - Card Format */}
+          <div className="space-y-4">
+            {allClassesLoading ? (
+              <div className="text-center py-8">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="w-8 h-8 mx-auto mb-4 rounded-full border-4 border-primary/20 border-t-primary"
+                />
+                <p className="text-muted-foreground">Loading classes...</p>
+              </div>
+            ) : formattedClasses && formattedClasses.length > 0 ? (
+              formattedClasses.map((classItem: any, index: number) => (
+                <ClassCard
+                  key={classItem.id}
+                  {...classItem}
+                  isEnrolled={classItem.isEnrolled}
+                  isPopular={classItem.isPopular}
+                  recentEnrollments={classItem.recentEnrollments}
+                  onClick={() => navigate(`/class/${classItem.id}`)}
+                  onEnroll={(e) => {
+                    e?.stopPropagation();
+                    if (classItem.isEnrolled) {
+                      navigate(`/class/${classItem.id}`);
+                    } else {
+                      navigate(`/class/${classItem.id}`);
+                    }
+                  }}
+                />
+              ))
+            ) : (
+              <motion.button
+                onClick={() => navigate('/classes')}
+                className="w-full p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 transition-all group"
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
+                    <GraduationCap className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <h3 className="font-bold text-foreground text-base">Explore Expert-Led Classes</h3>
+                    <p className="text-xs text-muted-foreground">Connect through learning and shared progress</p>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                </div>
+              </motion.button>
+            )}
+          </div>
         </section>
 
         {/* My Vibes & Classes Section */}
@@ -540,13 +640,16 @@ const HomePage = () => {
         {/* Discover Section */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-foreground">Discover</h2>
+            <div>
+              <h2 className="text-xl font-bold text-foreground">Discover</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Expert-led classes, vibes & venues</p>
+            </div>
             <motion.button
               onClick={() => navigate('/discover')}
               className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
               whileTap={{ scale: 0.95 }}
             >
-              <span>Select All</span>
+              <span>View All</span>
               <ChevronRight className="w-4 h-4" />
             </motion.button>
           </div>

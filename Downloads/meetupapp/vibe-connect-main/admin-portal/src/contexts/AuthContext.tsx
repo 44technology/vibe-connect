@@ -23,36 +23,76 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Check for stored auth token
-    const token = localStorage.getItem('admin_token');
-    if (token) {
+    const token = localStorage.getItem('portal_token');
+    const storedRole = localStorage.getItem('portal_role') as 'admin' | 'venue' | 'instructor' | null;
+    if (token && storedRole) {
       // TODO: Verify token with backend
-      // For now, set mock user
-      setUser({
-        id: '1',
-        email: 'admin@ulikme.com',
-        name: 'Admin User',
-        role: 'admin',
-      });
+      // For now, set mock user based on role
+      if (storedRole === 'venue') {
+        setUser({
+          id: '1',
+          email: 'venue@ulikme.com',
+          name: 'Venue Manager',
+          venueName: 'Sample Restaurant',
+          role: 'venue',
+        });
+      } else if (storedRole === 'instructor') {
+        setUser({
+          id: '1',
+          email: 'instructor@ulikme.com',
+          name: 'Instructor',
+          role: 'instructor',
+        });
+      } else {
+        setUser({
+          id: '1',
+          email: 'admin@ulikme.com',
+          name: 'Admin User',
+          role: 'admin',
+        });
+      }
     }
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, role: 'admin' | 'venue' | 'instructor') => {
     // TODO: Implement actual login API call
     // Mock login for now
-    const mockUser: User = {
-      id: '1',
-      email,
-      name: 'Admin User',
-      role: 'admin',
-    };
+    let mockUser: User;
+    
+    if (role === 'venue') {
+      mockUser = {
+        id: '1',
+        email,
+        name: 'Venue Manager',
+        venueName: 'Sample Restaurant',
+        role: 'venue',
+      };
+    } else if (role === 'instructor') {
+      mockUser = {
+        id: '1',
+        email,
+        name: 'Instructor',
+        role: 'instructor',
+      };
+    } else {
+      mockUser = {
+        id: '1',
+        email,
+        name: 'Admin User',
+        role: 'admin',
+      };
+    }
+    
     setUser(mockUser);
-    localStorage.setItem('admin_token', 'mock_token');
+    localStorage.setItem('portal_token', 'mock_token');
+    localStorage.setItem('portal_role', role);
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('admin_token');
+    localStorage.removeItem('portal_token');
+    localStorage.removeItem('portal_role');
   };
 
   return (

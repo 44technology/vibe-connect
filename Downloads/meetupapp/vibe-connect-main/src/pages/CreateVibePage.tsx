@@ -46,9 +46,10 @@ const pricingOptions = [
 ];
 
 const groupSizeOptions = [
-  { id: '1-1', label: '1-on-1', icon: '👥' },
-  { id: '2-4', label: '2-4 people', icon: '👥👥' },
-  { id: '4+', label: '4+ people', icon: '👥👥👥' },
+  { id: '1-1', label: '1-on-1', icon: '👥', value: 2 },
+  { id: '2-4', label: '2-4 people', icon: '👥👥', value: 4 },
+  { id: '4+', label: '4+ people', icon: '👥👥👥', value: 10 },
+  { id: 'custom', label: 'Custom', icon: '✏️', value: null },
 ];
 
 // Mock venues for fallback with venue types
@@ -109,6 +110,7 @@ const CreateVibePage = () => {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [groupSize, setGroupSize] = useState('2-4');
+  const [customGroupSize, setCustomGroupSize] = useState('');
   const [visibility, setVisibility] = useState('public');
   const [pricing, setPricing] = useState('free');
   const [pricePerPerson, setPricePerPerson] = useState('');
@@ -218,7 +220,18 @@ const CreateVibePage = () => {
       const startTime = startTimeDate.toISOString();
       
       // Parse group size to maxAttendees
-      const maxAttendees = groupSize === '1-1' ? 2 : groupSize === '2-4' ? 4 : 10;
+      let maxAttendees: number;
+      if (groupSize === 'custom' && customGroupSize) {
+        const customValue = parseInt(customGroupSize);
+        if (isNaN(customValue) || customValue < 1) {
+          toast.error('Please enter a valid number for custom group size');
+          return;
+        }
+        maxAttendees = customValue;
+      } else {
+        const selectedOption = groupSizeOptions.find(opt => opt.id === groupSize);
+        maxAttendees = selectedOption?.value || 4;
+      }
       
       const meetupData: any = {
         title: title.trim(),
@@ -310,7 +323,11 @@ const CreateVibePage = () => {
       case 'details': return !!title.trim();
       case 'location': return !!venue.trim();
       case 'datetime': return !!date && !!time;
-      case 'settings': return pricing === 'free' || (pricing === 'paid' && !!pricePerPerson);
+      case 'settings': {
+        const groupSizeValid = groupSize !== 'custom' || (groupSize === 'custom' && !!customGroupSize && parseInt(customGroupSize) > 0);
+        const pricingValid = pricing === 'free' || (pricing === 'paid' && !!pricePerPerson);
+        return groupSizeValid && pricingValid;
+      }
       default: return false;
     }
   };
@@ -602,7 +619,7 @@ const CreateVibePage = () => {
                 className="space-y-6"
               >
                 <div className="text-center space-y-2">
-                  <h2 className="text-3xl font-bold text-foreground bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent animate-gradient">
                     Final touches
                   </h2>
                   <p className="text-muted-foreground text-sm">Customize your vibe experience</p>
@@ -665,10 +682,13 @@ const CreateVibePage = () => {
                     className="space-y-4"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-primary/10">
+                      <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 shadow-sm">
                         <Globe className="w-5 h-5 text-primary" />
                       </div>
-                      <label className="text-base font-semibold text-foreground">Visibility</label>
+                      <div>
+                        <label className="text-base font-bold text-foreground">Visibility</label>
+                        <p className="text-xs text-muted-foreground">Who can see your vibe?</p>
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       {visibilityOptions.map((option, index) => {
@@ -746,27 +766,36 @@ const CreateVibePage = () => {
                           transition={{ delay: 0.35 + index * 0.05 }}
                           className={`relative p-5 rounded-2xl border-2 transition-all duration-300 ${
                             pricing === option.id 
-                              ? 'border-primary bg-gradient-to-br from-primary/20 to-primary/5 shadow-lg shadow-primary/20' 
-                              : 'border-border/50 bg-card hover:border-primary/30 hover:bg-muted/50'
+                              ? 'border-primary bg-gradient-to-br from-primary via-primary/90 to-primary/80 shadow-xl shadow-primary/30 scale-105' 
+                              : 'border-border/50 bg-card/50 backdrop-blur-sm hover:border-primary/40 hover:bg-muted/30'
                           }`}
-                          whileHover={{ scale: 1.02, y: -2 }}
+                          whileHover={{ scale: pricing === option.id ? 1.05 : 1.02, y: -2 }}
                           whileTap={{ scale: 0.98 }}
                         >
                           {pricing === option.id && (
                             <motion.div
                               layoutId="pricingIndicator"
-                              className="absolute top-3 right-3 w-2 h-2 rounded-full bg-primary"
+                              className="absolute top-3 right-3 w-3 h-3 rounded-full bg-white shadow-lg"
                               initial={false}
                               transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                            />
+                            >
+                              <motion.div
+                                className="w-full h-full rounded-full bg-primary"
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ delay: 0.1 }}
+                              />
+                            </motion.div>
                           )}
                           <div className="text-center space-y-2">
-                            <p className={`text-base font-bold ${
-                              pricing === option.id ? 'text-primary' : 'text-foreground'
+                            <p className={`text-base font-bold transition-colors ${
+                              pricing === option.id ? 'text-white' : 'text-foreground'
                             }`}>
                               {option.label}
                             </p>
-                            <p className="text-xs text-muted-foreground leading-tight">
+                            <p className={`text-xs leading-tight transition-colors ${
+                              pricing === option.id ? 'text-white/80' : 'text-muted-foreground'
+                            }`}>
                               {option.description}
                             </p>
                           </div>

@@ -4,12 +4,21 @@ import { useNavigate } from 'react-router-dom';
 import uliMascot from '@/assets/uli-mascot.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronRight, Check, Users, Heart, Briefcase, Home, Phone, Mail, Smartphone, Camera, X, Upload, Sparkles, Coffee, Dumbbell, Music, Gamepad2, BookOpen, Plane, UtensilsCrossed, Film, ShoppingBag, GraduationCap } from 'lucide-react';
+import { ChevronRight, Check, Users, Heart, Briefcase, Home, Phone, Mail, Smartphone, Camera, X, Upload, Sparkles, Coffee, Dumbbell, Music, Gamepad2, BookOpen, Plane, UtensilsCrossed, Film, ShoppingBag, GraduationCap, TrendingUp, Building2, Target, Lightbulb, MapPin, DollarSign, Zap } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { API_ENDPOINTS, apiRequest } from '@/lib/api';
 
 type OnboardingStep = 'welcome' | 'method' | 'phone' | 'name' | 'birthday' | 'gender' | 'lookingFor' | 'interests' | 'bio' | 'photos' | 'selfie' | 'complete';
+
+// Mexico cities for location preference (optional)
+const mexicoCities = [
+  { id: 'mexico-city', label: 'Mexico City', emoji: '🏙️' },
+  { id: 'monterrey', label: 'Monterrey', emoji: '🏭' },
+  { id: 'guadalajara', label: 'Guadalajara', emoji: '🌮' },
+  { id: 'queretaro', label: 'Querétaro', emoji: '🏛️' },
+  { id: 'cancun', label: 'Cancún / Playa del Carmen', emoji: '🏖️' },
+];
 
 const signupMethods = [
   { id: 'phone', label: 'Phone Number', icon: Phone, description: 'Sign up with phone number' },
@@ -25,21 +34,18 @@ const genderOptions = [
 ];
 
 const lookingForOptions = [
-  { id: 'friendship', label: 'Friendship', icon: Users, emoji: '👥', color: 'friendme' },
-  { id: 'dating', label: 'Dating', icon: Heart, emoji: '💕', color: 'loveme' },
+  { id: 'learn-entrepreneurship', label: 'Learn Entrepreneurship', icon: TrendingUp, emoji: '🚀', color: 'connectme' },
+  { id: 'ecommerce-business', label: 'E-commerce & Digital Business', icon: ShoppingBag, emoji: '🛒', color: 'connectme' },
+  { id: 'real-estate-investing', label: 'Real Estate & Investing', icon: Building2, emoji: '🏠', color: 'connectme' },
+  { id: 'marketing-growth', label: 'Marketing & Growth', icon: Target, emoji: '📈', color: 'connectme' },
+  { id: 'business-mindset', label: 'Business Mindset & Lifestyle', icon: Lightbulb, emoji: '🧠', color: 'connectme' },
   { id: 'networking', label: 'Networking', icon: Briefcase, emoji: '🤝', color: 'connectme' },
-  { id: 'coffee-chats', label: 'Coffee Chats', icon: Coffee, emoji: '☕', color: 'friendme' },
-  { id: 'workout-buddies', label: 'Workout Buddies', icon: Dumbbell, emoji: '💪', color: 'friendme' },
-  { id: 'music-lovers', label: 'Music Lovers', icon: Music, emoji: '🎵', color: 'friendme' },
-  { id: 'gaming', label: 'Gaming', icon: Gamepad2, emoji: '🎮', color: 'friendme' },
-  { id: 'book-club', label: 'Book Club', icon: BookOpen, emoji: '📚', color: 'friendme' },
-  { id: 'travel-companions', label: 'Travel', icon: Plane, emoji: '✈️', color: 'friendme' },
-  { id: 'foodies', label: 'Foodies', icon: UtensilsCrossed, emoji: '🍽️', color: 'friendme' },
-  { id: 'movie-buddies', label: 'Movies', icon: Film, emoji: '🎬', color: 'friendme' },
-  { id: 'shopping', label: 'Shopping', icon: ShoppingBag, emoji: '🛍️', color: 'friendme' },
-  { id: 'study-partners', label: 'Study Partners', icon: GraduationCap, emoji: '📖', color: 'friendme' },
-  { id: 'adventure', label: 'Adventure', icon: Users, emoji: '🏔️', color: 'friendme' },
-  { id: 'nightlife', label: 'Nightlife', icon: Music, emoji: '🌃', color: 'friendme' },
+  { id: 'mentorship', label: 'Find a Mentor', icon: Users, emoji: '👔', color: 'connectme' },
+  { id: 'teach-share', label: 'Teach & Share Knowledge', icon: GraduationCap, emoji: '📚', color: 'connectme' },
+  { id: 'startup-community', label: 'Startup Community', icon: Zap, emoji: '⚡', color: 'connectme' },
+  { id: 'investor-connections', label: 'Investor Connections', icon: DollarSign, emoji: '💰', color: 'connectme' },
+  { id: 'coffee-chats', label: 'Coffee & Business Chats', icon: Coffee, emoji: '☕', color: 'friendme' },
+  { id: 'workshops', label: 'Workshops & Masterclasses', icon: BookOpen, emoji: '🎓', color: 'friendme' },
 ];
 
 const interestOptions = [
@@ -140,7 +146,8 @@ const interestOptions = [
 const messages: Record<OnboardingStep, string[]> = {
   welcome: [
     "Hey there! 👋",
-    "I'm Uli, your personal guide to meeting amazing people!",
+    "I'm Uli, your guide to learning from real entrepreneurs!",
+    "Ulikme is where real experience meets real results.",
     "Let's create your account to get started.",
     "How would you like to sign up?",
   ],
@@ -167,23 +174,23 @@ const messages: Record<OnboardingStep, string[]> = {
   ],
   lookingFor: [
     "Great!",
-    "What are you looking for?",
-    "Select all that apply! Find your vibe! ✨",
+    "What are you looking to learn or achieve?",
+    "Select all that apply! We'll match you with the right classes and mentors! 🚀",
   ],
   interests: [
     "Awesome!",
-    "What are you passionate about?",
-    "Select up to 10 interests! Pick your hobbies and passions! 🎨",
+    "What business skills and topics interest you?",
+    "Select up to 10 interests! Focus on what you want to learn or teach! 💼",
   ],
   bio: [
     "Great!",
     "Tell us about yourself.",
-    "Share a bit about who you are and what you love! 💫",
+    "Share your business journey, what you've built, or what you want to learn. Real experience matters! 💼",
   ],
   photos: [
     "Awesome!",
     "Let's add photos and videos to your profile.",
-    "Add at least 2 photos/videos (up to 15) so people can see the real you! 📸🎥",
+    "Add at least 2 photos/videos (up to 15) to showcase your work, achievements, or yourself! 📸🎥",
   ],
   selfie: [
     "Last step!",
@@ -192,7 +199,7 @@ const messages: Record<OnboardingStep, string[]> = {
   ],
   complete: [
     "You're all set! 🎉",
-    "Let's find you some amazing people to meet!",
+    "Welcome to Ulikme! Let's connect you with real entrepreneurs and expert-led classes!",
   ],
 };
 

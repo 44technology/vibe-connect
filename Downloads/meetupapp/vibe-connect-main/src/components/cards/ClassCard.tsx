@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { BookOpen, MapPin, Clock, DollarSign, Users, Calendar } from 'lucide-react';
+import { BookOpen, MapPin, Clock, DollarSign, Users, Calendar, Crown, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import UserAvatar from '@/components/ui/UserAvatar';
 import { Class } from '@/hooks/useClasses';
@@ -8,6 +8,9 @@ interface ClassCardProps extends Class {
   onEnroll?: (e?: React.MouseEvent) => void;
   isEnrolled?: boolean;
   onClick?: () => void;
+  isPremium?: boolean;
+  isExclusive?: boolean;
+  maxStudents?: number;
 }
 
 const ClassCard = ({
@@ -25,6 +28,11 @@ const ClassCard = ({
   onEnroll,
   isEnrolled,
   onClick,
+  isPremium,
+  isExclusive,
+  maxStudents,
+  isPopular,
+  recentEnrollments,
 }: ClassCardProps) => {
   return (
     <motion.div
@@ -52,6 +60,17 @@ const ClassCard = ({
             </div>
           )}
         </div>
+
+        {/* Popular Badge */}
+        {isPopular && recentEnrollments && recentEnrollments > 0 && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20">
+            <TrendingUp className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">This course is popular.</p>
+              <p className="text-xs text-muted-foreground">{recentEnrollments} people enrolled last week.</p>
+            </div>
+          </div>
+        )}
 
         <p className="text-sm text-foreground line-clamp-2">{description}</p>
 
@@ -86,7 +105,10 @@ const ClassCard = ({
         <div className="flex items-center justify-between pt-3 border-t border-border">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Users className="w-4 h-4" />
-            <span>{_count?.enrollments || 0} enrolled</span>
+            <span>
+              {_count?.enrollments || 0}
+              {maxStudents ? ` / ${maxStudents}` : ''} enrolled
+            </span>
           </div>
           {onEnroll && (
             <motion.button
@@ -95,14 +117,14 @@ const ClassCard = ({
                 onEnroll(e);
               }}
               disabled={isEnrolled}
-              className={`px-4 py-2 rounded-xl text-sm font-medium ${
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                 isEnrolled
-                  ? 'bg-muted text-muted-foreground'
-                  : 'bg-primary text-primary-foreground'
+                  ? 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20'
+                  : 'bg-primary text-primary-foreground hover:bg-primary/90'
               }`}
               whileTap={{ scale: 0.95 }}
             >
-              {isEnrolled ? 'Enrolled' : 'Enroll'}
+              {isEnrolled ? 'Enrolled' : 'Join Now'}
             </motion.button>
           )}
         </div>

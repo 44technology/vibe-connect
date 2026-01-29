@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, BookOpen, MapPin, Clock, DollarSign, Users, Calendar, Phone, Globe, CreditCard, AlertCircle, Info, Star, CheckCircle2, X, Monitor, CheckCircle, Sparkles, MessageCircle, ChevronRight } from 'lucide-react';
+import { ArrowLeft, BookOpen, MapPin, Clock, DollarSign, Users, Calendar, Phone, Globe, CreditCard, AlertCircle, Info, Star, CheckCircle2, X, Monitor, CheckCircle, Sparkles, MessageCircle, ChevronRight, FileText, ListChecks, PlayCircle, TrendingUp, ShoppingBag, Download, Gift, Package } from 'lucide-react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
 import UserAvatar from '@/components/ui/UserAvatar';
@@ -277,7 +277,7 @@ const ClassDetailPage = () => {
                 )}
               </div>
               <h2 className="text-3xl font-bold text-card mb-2 drop-shadow-lg">
-                {classItem.title || 'Untitled Class'}
+                {classItem.title || `${classItem.category ? classItem.category.charAt(0).toUpperCase() + classItem.category.slice(1) : 'Class'} Course`}
               </h2>
               {classItem.price !== undefined && classItem.price !== null && (
                 <div className="flex items-center gap-2">
@@ -295,6 +295,23 @@ const ClassDetailPage = () => {
           </div>
 
           <div className="px-4 py-6 space-y-6 -mt-4">
+            {/* Popular Badge */}
+            {(classItem as any).isPopular && (classItem as any).recentEnrollments && (classItem as any).recentEnrollments > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500/10 via-red-500/10 to-orange-500/10 border border-orange-500/20 mb-4"
+              >
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-orange-600 dark:text-orange-400">This course is popular.</p>
+                  <p className="text-xs text-muted-foreground">{(classItem as any).recentEnrollments} people enrolled last week.</p>
+                </div>
+              </motion.div>
+            )}
+
             {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-3">
               <div className="card-elevated p-4 rounded-2xl text-center">
@@ -325,6 +342,201 @@ const ClassDetailPage = () => {
                 <p className="text-foreground leading-relaxed">{classItem.description}</p>
               </div>
             )}
+
+            {/* Course Syllabus - Always show if available */}
+            {classItem.syllabus && Array.isArray(classItem.syllabus) && classItem.syllabus.length > 0 ? (
+              <div className="card-elevated p-4 rounded-2xl">
+                <div className="flex items-center gap-2 mb-4">
+                  <FileText className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold text-foreground">Course Syllabus</h3>
+                </div>
+                <div className="space-y-4">
+                  {classItem.syllabus.map((module: any, index: number) => (
+                    <motion.div
+                      key={module.id || index}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="border-l-2 border-primary/30 pl-4 pb-4 last:pb-0"
+                    >
+                      <div className="flex items-start gap-3 mb-2">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="text-sm font-bold text-primary">{index + 1}</span>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-foreground mb-1">{module.title || `Module ${index + 1}`}</h4>
+                          {module.description && (
+                            <p className="text-sm text-muted-foreground mb-3">{module.description}</p>
+                          )}
+                          {module.lessons && Array.isArray(module.lessons) && module.lessons.length > 0 && (
+                            <div className="space-y-2 mt-3">
+                              {module.lessons.map((lesson: any, lessonIndex: number) => (
+                                <div
+                                  key={lesson.id || lessonIndex}
+                                  className="flex items-start gap-2 p-2 rounded-lg bg-muted/50"
+                                >
+                                  <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <PlayCircle className="w-3 h-3 text-primary" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-foreground">
+                                      {lesson.title || `Lesson ${lessonIndex + 1}`}
+                                    </p>
+                                    {lesson.duration && (
+                                      <p className="text-xs text-muted-foreground mt-0.5">
+                                        {lesson.duration}
+                                      </p>
+                                    )}
+                                    {lesson.description && (
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        {lesson.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                  {lesson.completed && (
+                                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="card-elevated p-4 rounded-2xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <FileText className="w-5 h-5 text-muted-foreground" />
+                  <h3 className="font-semibold text-foreground">Course Syllabus</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">Syllabus will be available soon.</p>
+              </div>
+            )}
+
+            {/* Monetization - Digital Products & Course Materials */}
+            {(classItem as any).digitalProducts || (classItem as any).courseMaterials || (classItem as any).bonusContent ? (
+              <div className="card-elevated p-4 rounded-2xl">
+                <div className="flex items-center gap-2 mb-4">
+                  <ShoppingBag className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold text-foreground">Course Materials & Digital Products</h3>
+                </div>
+                <div className="space-y-3">
+                  {/* Digital Products */}
+                  {(classItem as any).digitalProducts && Array.isArray((classItem as any).digitalProducts) && (classItem as any).digitalProducts.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                        <Package className="w-4 h-4" />
+                        Digital Products
+                      </h4>
+                      <div className="space-y-2">
+                        {(classItem as any).digitalProducts.map((product: any, index: number) => (
+                          <motion.div
+                            key={product.id || index}
+                            className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/10"
+                          >
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <Package className="w-5 h-5 text-primary" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground">{product.name}</p>
+                                {product.description && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">{product.description}</p>
+                                )}
+                              </div>
+                            </div>
+                            {product.price ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold text-primary">${product.price}</span>
+                                <Button size="sm" className="h-8">
+                                  Buy
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button size="sm" variant="outline" className="h-8">
+                                <Download className="w-4 h-4 mr-1" />
+                                Download
+                              </Button>
+                            )}
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Course Materials */}
+                  {(classItem as any).courseMaterials && Array.isArray((classItem as any).courseMaterials) && (classItem as any).courseMaterials.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        Course Materials
+                      </h4>
+                      <div className="space-y-2">
+                        {(classItem as any).courseMaterials.map((material: any, index: number) => (
+                          <motion.div
+                            key={material.id || index}
+                            className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border"
+                          >
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
+                                <FileText className="w-5 h-5 text-secondary" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground">{material.name}</p>
+                                {material.type && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">{material.type.toUpperCase()}</p>
+                                )}
+                              </div>
+                            </div>
+                            <Button size="sm" variant="outline" className="h-8">
+                              <Download className="w-4 h-4 mr-1" />
+                              Download
+                            </Button>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bonus Content */}
+                  {(classItem as any).bonusContent && Array.isArray((classItem as any).bonusContent) && (classItem as any).bonusContent.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                        <Gift className="w-4 h-4 text-orange-500" />
+                        Bonus Content
+                      </h4>
+                      <div className="space-y-2">
+                        {(classItem as any).bonusContent.map((bonus: any, index: number) => (
+                          <motion.div
+                            key={bonus.id || index}
+                            className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-orange-500/5 to-yellow-500/5 border border-orange-500/10"
+                          >
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                                <Gift className="w-5 h-5 text-orange-500" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground">{bonus.name}</p>
+                                {bonus.description && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">{bonus.description}</p>
+                                )}
+                              </div>
+                            </div>
+                            <Button size="sm" variant="outline" className="h-8 border-orange-500/20">
+                              <Download className="w-4 h-4 mr-1" />
+                              Access
+                            </Button>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : null}
 
             {/* Venue Info / Online Info */}
             {isOnline ? (

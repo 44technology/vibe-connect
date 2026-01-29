@@ -39,7 +39,7 @@ const DiscoverPage = () => {
     priceFilter: 'all' as 'all' | 'free' | 'paid',
     certificateFilter: 'all' as 'all' | 'certified' | 'non-certified',
   });
-  const [activeTab, setActiveTab] = useState<'vibes' | 'venues' | 'classes'>('vibes');
+  const [activeTab, setActiveTab] = useState<'vibes' | 'venues' | 'classes'>('classes');
 
   // Convert distance filter to radius in miles
   const radius = filters.distance ? parseFloat(filters.distance) * 1.60934 : undefined; // Convert miles to km
@@ -78,12 +78,12 @@ const DiscoverPage = () => {
     
     let filtered = classesData.map((c: any) => ({
       id: c.id,
-      title: c.title || 'Untitled Class',
+      title: c.title || `${c.category ? c.category.charAt(0).toUpperCase() + c.category.slice(1) : 'Class'} Course`,
       description: c.description || 'Join this class to learn and grow!',
       skill: c.skill || 'Class',
       category: c.category,
       image: c.image || 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=400',
-      startTime: c.startTime || new Date().toISOString(),
+      startTime: c.startTime ? (typeof c.startTime === 'string' ? c.startTime : new Date(c.startTime).toISOString()) : new Date().toISOString(),
       endTime: c.endTime,
       price: c.price !== undefined && c.price !== null ? c.price : 0,
       schedule: c.schedule,
@@ -100,6 +100,11 @@ const DiscoverPage = () => {
       },
       _count: c._count || { enrollments: 0 },
       hasCertificate: (c as any).hasCertificate || false,
+      isPremium: (c as any).isPremium || false,
+      isExclusive: (c as any).isExclusive || false,
+      maxStudents: (c as any).maxStudents,
+      isPopular: (c as any).isPopular || false,
+      recentEnrollments: (c as any).recentEnrollments || 0,
     }));
 
     // Apply price filter
@@ -134,9 +139,25 @@ const DiscoverPage = () => {
       }
       
       // Otherwise, normalize from mock data format
+      let startTime = meetup.startTime;
+      if (!startTime && meetup.date && meetup.time) {
+        try {
+          const dateObj = new Date(`${meetup.date} ${meetup.time}`);
+          if (!isNaN(dateObj.getTime())) {
+            startTime = dateObj.toISOString();
+          } else {
+            startTime = new Date().toISOString();
+          }
+        } catch (e) {
+          startTime = new Date().toISOString();
+        }
+      } else if (!startTime) {
+        startTime = new Date().toISOString();
+      }
+      
       return {
         ...meetup,
-        startTime: meetup.startTime || (meetup.date && meetup.time ? new Date(`${meetup.date} ${meetup.time}`).toISOString() : new Date().toISOString()),
+        startTime,
         creator: meetup.creator || (meetup.host ? {
           id: meetup.host.id || 'unknown',
           firstName: meetup.host.name?.split(' ')[0] || 'Unknown',
@@ -216,6 +237,7 @@ const DiscoverPage = () => {
       <div className="sticky top-0 z-40 glass safe-top">
         <div className="px-4 py-3">
           <h1 className="text-xl font-bold text-foreground mb-3">Discover</h1>
+          <p className="text-sm text-muted-foreground mb-3">Real entrepreneurs. Real results. Real connections through learning.</p>
           
           {/* Search bar */}
           <div className="flex gap-2">
@@ -223,7 +245,7 @@ const DiscoverPage = () => {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search vibes or venues..."
+                placeholder="Search classes, vibes, or venues..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full h-12 pl-12 pr-4 rounded-2xl bg-muted border-0 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
@@ -308,6 +330,11 @@ const DiscoverPage = () => {
                 <ClassCard
                   key={classItem.id}
                   {...classItem}
+                  isPremium={classItem.isPremium}
+                  isExclusive={classItem.isExclusive}
+                  maxStudents={classItem.maxStudents}
+                  isPopular={classItem.isPopular}
+                  recentEnrollments={classItem.recentEnrollments}
                   onClick={() => navigate(`/class/${classItem.id}`)}
                   onEnroll={(e) => {
                     e?.stopPropagation();
@@ -316,8 +343,10 @@ const DiscoverPage = () => {
                 />
               ))
             ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No classes found. Try adjusting your filters.</p>
+              <div className="text-center py-12">
+                <GraduationCap className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <p className="text-muted-foreground mb-2">No expert-led classes found</p>
+                <p className="text-xs text-muted-foreground">Try adjusting your filters or search for different skills</p>
               </div>
             )}
           </TabsContent>
