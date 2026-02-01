@@ -20,10 +20,11 @@
 # Admin Portal Context (for separate Netlify site deployment)
 # Netlify Dashboard'da bu context'i kullanmak için:
 # Site settings → Build & deploy → Environment → Add context → admin-portal
+# VEYA Netlify Dashboard'da Base directory: admin-portal olarak ayarlayın
 [context.admin-portal]
   base = "admin-portal"
-  command = "cd admin-portal && npm install --legacy-peer-deps && npm run build"
-  publish = "admin-portal/dist"
+  command = "npm install --legacy-peer-deps && npm run build"
+  publish = "dist"
   
 [context.admin-portal.environment]
   NODE_VERSION = "18"

@@ -11,6 +11,7 @@ import DashboardPage from './pages/DashboardPage';
 import UsersPage from './pages/UsersPage';
 import VenuesPage from './pages/VenuesPage';
 import InstructorsPage from './pages/InstructorsPage';
+import RefundsPage from './pages/RefundsPage';
 
 // Venue pages
 import VenueDashboardPage from './pages/venue/DashboardPage';
@@ -40,6 +41,8 @@ import InstructorSettingsPage from './pages/instructor/SettingsPage';
 
 // Production pages
 import ScheduleCapacityPage from './pages/instructor/ScheduleCapacityPage';
+import ProductionCreatePage from './pages/instructor/ProductionCreatePage';
+import AIContentAssistantPage from './pages/instructor/AIContentAssistantPage';
 
 // Tickets pages
 import TicketsPricingPage from './pages/instructor/TicketsPricingPage';

@@ -1034,6 +1034,27 @@ const ClassDetailPage = () => {
                 </div>
               )}
 
+              {/* Example Payment Breakdown */}
+              {classItem?.price && classItem.price > 0 && (
+                <div className="p-4 rounded-xl bg-muted/50 border border-border space-y-2">
+                  <p className="text-sm font-semibold text-foreground mb-2">Example Payment Breakdown</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Gross Payment</span>
+                      <span className="text-sm font-semibold text-foreground">${classItem.price.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Processing Fee (4%)</span>
+                      <span className="text-sm font-semibold text-orange-600">-${(classItem.price * 0.04).toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-border">
+                      <span className="font-semibold text-foreground">You Receive</span>
+                      <span className="text-lg font-bold text-primary">${(classItem.price * 0.96).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Total */}
               <div className="flex items-center justify-between pt-3 border-t border-border">
                 <span className="font-semibold text-foreground">Total</span>

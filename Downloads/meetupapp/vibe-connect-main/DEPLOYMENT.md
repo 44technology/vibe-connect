@@ -1,5 +1,11 @@
 # Deployment Guide
 
+## 📱 Mobile App Deployment
+
+**Mobile App Netlify URL:** https://ulikme1.netlify.app/
+
+Mobile app root directory'den deploy edilir ve `netlify.toml` dosyasındaki ayarları kullanır.
+
 ## ⚠️ ÖNEMLİ: Root Directory Sorunu
 
 Hem Vercel hem de Netlify'da `package.json` bulunamama hatası alıyorsanız, bu **Root Directory** ayarından kaynaklanıyor olabilir.
@@ -41,15 +47,19 @@ vercel --prod
 
 ## Netlify Deployment Sorunu Çözümü
 
-### Netlify Dashboard Ayarları:
+### Mobile App Netlify Deployment
+
+**Deploy URL:** https://ulikme1.netlify.app/
+
+### Netlify Dashboard Ayarları (Mobile App):
 
 1. **Netlify Dashboard'a gidin:**
    - https://app.netlify.com
-   - Projenizi seçin
+   - `ulikme1` sitesini seçin (veya mobile app için oluşturduğunuz site)
    - **Site settings** → **Build & deploy**
 
 2. **Base directory Ayarını Kontrol Edin:**
-   - "Base directory" alanı **MUTLAKA BOŞ** olmalı
+   - "Base directory" alanı **MUTLAKA BOŞ** olmalı (mobile app için root'tan deploy edilir)
    - Eğer bir şey yazıyorsa, **SİLİN ve BOŞALTIN**
 
 3. **Build settings:**
@@ -63,6 +73,7 @@ vercel --prod
 5. **Deploy:**
    - Ayarları kaydedin
    - "Trigger deploy" → "Deploy site" butonuna tıklayın
+   - Veya GitHub'a push yaptığınızda otomatik deploy olur
 
 ### Netlify CLI ile Deploy
 
