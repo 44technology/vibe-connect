@@ -27,6 +27,7 @@ import {
   PieChart,
   Wallet,
   BarChart3,
+  Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -44,13 +45,13 @@ const navigation: Array<{
   { name: 'Posts & Stories', href: '/content', icon: Image },
   { name: 'Live Streaming', href: '/streaming', icon: Video },
   { name: 'Classes', href: '/classes', icon: GraduationCap },
+  { name: 'Vibes', href: '/vibes', icon: Users },
+  { name: 'Events', href: '/events', icon: Calendar },
   {
     name: 'Production',
     href: '#',
     icon: Sparkles,
     children: [
-      { name: 'Create Class / Event / Vibe', href: '/production/create', icon: GraduationCap },
-      { name: 'AI Content Assistant', href: '/production/ai-assistant', icon: Bot },
       { name: 'Schedule & Capacity', href: '/production/schedule', icon: Calendar },
     ]
   },
@@ -59,7 +60,6 @@ const navigation: Array<{
     href: '#',
     icon: Ticket,
     children: [
-      { name: 'Paid / Free', href: '/tickets/pricing', icon: DollarSign },
       { name: 'QR Check-in', href: '/tickets/checkin', icon: QrCode },
       { name: 'Access Rules', href: '/tickets/access', icon: Shield },
     ]
@@ -72,7 +72,7 @@ const navigation: Array<{
       { name: 'Boosts', href: '/visibility/boosts', icon: TrendingUp },
       { name: 'Trending', href: '/visibility/trending', icon: Star },
       { name: 'Nearby', href: '/visibility/nearby', icon: MapPin },
-      { name: 'Influencer / Sponsored', href: '/visibility/influencer', icon: Star },
+      { name: 'Ad Campaigns', href: '/visibility/influencer', icon: Star },
     ]
   },
   {

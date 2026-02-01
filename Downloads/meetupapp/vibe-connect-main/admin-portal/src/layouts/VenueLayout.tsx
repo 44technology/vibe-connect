@@ -10,11 +10,7 @@ import {
   Menu,
   X,
   Building2,
-  Sparkles,
   Calendar,
-  Ticket,
-  QrCode,
-  Shield,
   TrendingUp,
   MapPin,
   Star,
@@ -22,10 +18,10 @@ import {
   PieChart,
   Wallet,
   BarChart3,
-  Bot,
   GraduationCap,
   MessageCircle,
   MessageSquare,
+  Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -41,28 +37,10 @@ const navigation: Array<{
 }> = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Content', href: '/content', icon: Image },
-  { name: 'Q&A', href: '/qa', icon: MessageCircle },
   { name: 'Chat', href: '/chat', icon: MessageSquare },
-  { 
-    name: 'Production', 
-    href: '#',
-    icon: Sparkles,
-    children: [
-      { name: 'Create Class / Event / Vibe', href: '/production/create', icon: GraduationCap },
-      { name: 'AI Content Assistant', href: '/production/ai-assistant', icon: Bot },
-      { name: 'Schedule & Capacity', href: '/production/schedule', icon: Calendar },
-    ]
-  },
-  {
-    name: 'Tickets',
-    href: '#',
-    icon: Ticket,
-    children: [
-      { name: 'Paid / Free', href: '/tickets/pricing', icon: DollarSign },
-      { name: 'QR Check-in', href: '/tickets/checkin', icon: QrCode },
-      { name: 'Access Rules', href: '/tickets/access', icon: Shield },
-    ]
-  },
+  { name: 'Classes', href: '/classes', icon: GraduationCap },
+  { name: 'Vibes', href: '/vibes', icon: Users },
+  { name: 'Events', href: '/events', icon: Calendar },
   {
     name: 'Visibility',
     href: '#',
@@ -71,7 +49,7 @@ const navigation: Array<{
       { name: 'Boosts', href: '/visibility/boosts', icon: TrendingUp },
       { name: 'Trending', href: '/visibility/trending', icon: Star },
       { name: 'Nearby', href: '/visibility/nearby', icon: MapPin },
-      { name: 'Influencer / Sponsored', href: '/visibility/influencer', icon: Star },
+      { name: 'Ad Campaigns', href: '/visibility/influencer', icon: Star },
     ]
   },
   {

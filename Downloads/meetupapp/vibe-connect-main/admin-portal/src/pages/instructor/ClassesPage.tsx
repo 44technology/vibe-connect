@@ -24,24 +24,16 @@ const classCategories = [
   { id: 'acting', label: 'Acting & Audition', emoji: '🎭' },
 ];
 
-const mexicoCities = [
-  { id: 'mexico-city', label: 'Mexico City' },
-  { id: 'monterrey', label: 'Monterrey' },
-  { id: 'guadalajara', label: 'Guadalajara' },
-  { id: 'queretaro', label: 'Querétaro' },
-  { id: 'cancun', label: 'Cancún / Playa del Carmen' },
-];
 
 export default function ClassesPage() {
   const navigate = useNavigate();
   const [classes, setClasses] = useState([
-    { id: 1, title: 'Diction Class', category: 'diction', type: 'online', price: 50, maxStudents: 20, currentStudents: 12, location: 'Zoom', meetingPlatform: 'zoom', meetingLink: 'https://zoom.us/j/123456789', date: '2025-02-05', time: '18:00', duration: '1 hour', frequency: 'Monday, Wednesday, Friday', isPremium: false, isExclusive: false, isPopular: false, recentEnrollments: 0, city: 'mexico-city' },
-    { id: 2, title: 'AutoCAD Basics', category: 'tech', type: 'onsite', price: 75, maxStudents: 15, currentStudents: 8, location: 'Training Center', date: '2025-02-10', time: '14:00', duration: '2 hours', frequency: 'weekly', isPremium: true, isExclusive: false, isPopular: true, recentEnrollments: 15, city: 'monterrey' },
+    { id: 1, title: 'Diction Class', category: 'diction', type: 'online', price: 50, maxStudents: 20, currentStudents: 12, location: 'Zoom', meetingPlatform: 'zoom', meetingLink: 'https://zoom.us/j/123456789', date: '2025-02-05', time: '18:00', duration: '1 hour', frequency: 'Monday, Wednesday, Friday', isPremium: false, isExclusive: false, isPopular: false, recentEnrollments: 0 },
+    { id: 2, title: 'AutoCAD Basics', category: 'tech', type: 'onsite', price: 75, maxStudents: 15, currentStudents: 8, location: 'Training Center', date: '2025-02-10', time: '14:00', duration: '2 hours', frequency: 'weekly', isPremium: true, isExclusive: false, isPopular: true, recentEnrollments: 15 },
   ]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
-  const [city, setCity] = useState('');
   const [type, setType] = useState<'online' | 'onsite' | 'hybrid'>('online');
   const [classType, setClassType] = useState<'regular' | 'masterclass'>('regular');
   const [price, setPrice] = useState('');
@@ -119,6 +111,30 @@ export default function ClassesPage() {
       return;
     }
     
+    // For online/hybrid, require meeting platform and link
+    if ((type === 'online' || type === 'hybrid') && (!meetingPlatform || !meetingLink)) {
+      toast.error('Please select a meeting platform and provide a meeting link');
+      return;
+    }
+    
+    // For hybrid, require physical location
+    if (type === 'hybrid' && !location.trim()) {
+      toast.error('Please provide a physical location for hybrid classes');
+      return;
+    }
+    
+    // For onsite, require location
+    if (type === 'onsite' && !location.trim()) {
+      toast.error('Please provide a location for onsite classes');
+      return;
+    }
+    
+    // For custom platform, require platform name
+    if (meetingPlatform === 'custom' && !customPlatformName.trim()) {
+      toast.error('Please enter the platform name');
+      return;
+    }
+    
     // For custom frequency, require lessons
     if (frequency === 'custom') {
       if (selectedDays.length === 0) {
@@ -142,7 +158,6 @@ export default function ClassesPage() {
       id: classes.length + 1,
       title,
       category: category || 'business',
-      city: city || 'mexico-city',
       type,
       classType,
       price: classPrice,
@@ -179,8 +194,8 @@ export default function ClassesPage() {
     setSelectedDays([]);
     setDescription('');
     setCategory('');
-    setCity('');
     setClassType('regular');
+    setCustomPlatformName('');
     setIsPremium(false);
     setIsExclusive(false);
     setLessons([]);
@@ -228,21 +243,6 @@ export default function ClassesPage() {
                       {classCategories.map((cat) => (
                         <SelectItem key={cat.id} value={cat.id}>
                           {cat.emoji} {cat.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>City (Mexico)</Label>
-                  <Select value={city} onValueChange={setCity}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select city" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {mexicoCities.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -309,7 +309,7 @@ export default function ClassesPage() {
                     }}
                   />
                   {price && parseFloat(price) > 0 && (
-                    <p className="text-xs text-muted-foreground">+3% platform fee applies</p>
+                    <p className="text-xs text-muted-foreground">+4% processing fee applies</p>
                   )}
                 </div>
                 <div className="space-y-2">

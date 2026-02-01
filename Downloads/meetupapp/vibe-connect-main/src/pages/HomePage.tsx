@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChevronRight, Plus, Calendar, Clock, MapPin, ArrowRight, GraduationCap, DollarSign } from 'lucide-react';
+import { Search, ChevronRight, Plus, Calendar, Clock, MapPin, ArrowRight, GraduationCap, DollarSign, Ticket } from 'lucide-react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import BottomNav from '@/components/layout/BottomNav';
 import { meetups as mockMeetups, venues as mockVenues } from '@/data/mockData';
@@ -180,12 +180,13 @@ const HomePage = () => {
     return new Set(userClasses.map((c: any) => c.id));
   }, [userClasses]);
   
-  // Format classes for display
+  // Format classes for display - only 3 classes, 2 Join, 1 Enrolled
   const formattedClasses = useMemo(() => {
     if (!allClassesData || allClassesData.length === 0) return [];
     
-    return allClassesData.slice(0, 6).map((c: any) => {
-      const isEnrolled = enrolledClassIds.has(c.id);
+    return allClassesData.slice(0, 3).map((c: any, index: number) => {
+      // First 2 classes: not enrolled (Join button), Last 1: enrolled
+      const isEnrolled = index === 2; // Third class (index 2) is enrolled
       const userEnrollment = c.enrollments?.find((e: any) => e.user?.id === user?.id);
       const isPaid = isEnrolled && userEnrollment && (userEnrollment.status === 'paid' || userEnrollment.status === 'enrolled') && c.price && c.price > 0;
       
@@ -223,8 +224,8 @@ const HomePage = () => {
   }, [allClassesData, enrolledClassIds, user?.id]);
 
   // Use API data if available, otherwise fall back to mock data
-  const meetups = meetupsData && meetupsData.length > 0 ? meetupsData : mockMeetups;
-  const venues = venuesData && venuesData.length > 0 ? venuesData : mockVenues;
+  const meetups = (meetupsData?.data && meetupsData.data.length > 0) ? meetupsData.data : mockMeetups;
+  const venues = (venuesData?.data && venuesData.data.length > 0) ? venuesData.data : mockVenues;
 
   // Format date helper function
   const formatDate = (date: string | Date | undefined) => {
@@ -353,7 +354,7 @@ const HomePage = () => {
   }, [meetups, userClasses, isAuthenticated, user]);
 
   const discoverMeetups = useMemo(() => {
-    // Show all meetups except user's own activities
+    // Show all meetups (both activities and events) except user's own activities
     if (!isAuthenticated || !user || myVibesAndClasses.length === 0) {
       // If not authenticated or no activities, show all meetups
       return meetups;
@@ -372,7 +373,7 @@ const HomePage = () => {
           
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-2xl font-bold text-foreground tracking-tight">Events</h1>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">Home</h1>
             </div>
             <div className="flex items-center gap-3">
               <motion.button
@@ -676,10 +677,11 @@ const HomePage = () => {
                       />
                       <p className="text-muted-foreground">Loading events...</p>
                     </div>
-                  ) : discoverMeetups.length > 0 ? (
+                  ) : discoverMeetups && discoverMeetups.length > 0 ? (
                     discoverMeetups.slice(0, 5).map((meetup: any, index: number) => {
                       const hostName = meetup.host?.name || meetup.creator?.displayName || 
                         (meetup.creator ? `${meetup.creator.firstName} ${meetup.creator.lastName}` : 'Unknown');
+                      const isEvent = meetup.type === 'event';
                       
                       return (
                         <motion.div
@@ -697,6 +699,14 @@ const HomePage = () => {
                             ) : (
                               <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
                                 <span className="text-2xl">{meetup.categoryEmoji || '🎉'}</span>
+                              </div>
+                            )}
+                            {isEvent && (
+                              <div className="absolute top-1 right-1">
+                                <div className="px-1.5 py-0.5 rounded bg-primary/90 text-white text-[10px] font-semibold flex items-center gap-1">
+                                  <Ticket className="w-2.5 h-2.5" />
+                                  Event
+                                </div>
                               </div>
                             )}
                           </div>
@@ -744,7 +754,7 @@ const HomePage = () => {
                     })
                   ) : (
                     <div className="text-center py-12">
-                      <p className="text-muted-foreground">No events found. Try adjusting your filters.</p>
+                      <p className="text-muted-foreground">No vibes found. Try adjusting your filters.</p>
                     </div>
                   )}
                 </AnimatePresence>

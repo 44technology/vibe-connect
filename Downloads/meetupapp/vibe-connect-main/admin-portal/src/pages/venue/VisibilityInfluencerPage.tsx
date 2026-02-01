@@ -37,44 +37,44 @@ export default function VisibilityInfluencerPage() {
   const [campaigns, setCampaigns] = useState<AdCampaign[]>([
     { 
       id: 1, 
-      title: 'Summer Class Promotion', 
-      type: 'reel',
-      content: 'Join our summer classes and get 20% off!',
-      media: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400',
-      budget: 500,
-      spent: 320,
-      targetAudience: '18-35, Students',
+      title: 'Weekend Special Promotion', 
+      type: 'story',
+      content: '20% off all drinks this weekend!',
+      media: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=400',
+      budget: 400,
+      spent: 250,
+      targetAudience: '25-45, Professionals',
       status: 'active',
       createdAt: '2025-01-20',
-      views: 12500,
-      likes: 450,
-      shares: 89,
-      clicks: 234,
+      views: 15200,
+      likes: 680,
+      shares: 120,
+      clicks: 340,
     },
     { 
       id: 2, 
-      title: 'Weekend Workshop Story', 
-      type: 'story',
-      content: 'Limited spots available for this weekend!',
-      media: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=400',
-      budget: 300,
-      spent: 180,
-      targetAudience: '25-45, Professionals',
+      title: 'New Menu Launch', 
+      type: 'reel',
+      content: 'Check out our new signature dishes!',
+      media: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400',
+      budget: 600,
+      spent: 420,
+      targetAudience: '18-35, Food Enthusiasts',
       status: 'active',
       createdAt: '2025-01-22',
-      views: 8900,
-      likes: 320,
-      shares: 45,
-      clicks: 156,
+      views: 18900,
+      likes: 890,
+      shares: 156,
+      clicks: 456,
     },
     { 
       id: 3, 
-      title: 'New Course Launch', 
-      type: 'reel',
-      content: 'Check out our new course!',
-      budget: 400,
+      title: 'Event Announcement', 
+      type: 'story',
+      content: 'Join us for our grand opening event!',
+      budget: 500,
       spent: 0,
-      targetAudience: '18-30, Entrepreneurs',
+      targetAudience: 'All Ages, General',
       status: 'draft',
       createdAt: '2025-01-25',
       views: 0,
@@ -219,7 +219,7 @@ export default function VisibilityInfluencerPage() {
               <div className="space-y-2">
                 <Label>Campaign Title</Label>
                 <Input
-                  placeholder="e.g., Summer Class Promotion"
+                  placeholder="e.g., Weekend Special Promotion"
                   value={adTitle}
                   onChange={(e) => setAdTitle(e.target.value)}
                 />
@@ -491,7 +491,7 @@ export default function VisibilityInfluencerPage() {
                     Reel Ads
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Create engaging video ads up to 60 seconds. Perfect for showcasing classes, events, or promotions.
+                    Create engaging video ads up to 60 seconds. Perfect for showcasing venue, events, or promotions.
                   </p>
                 </div>
                 <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">

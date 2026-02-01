@@ -34,6 +34,7 @@ import {
   Calendar,
   Bot,
   Camera,
+  ArrowLeftRight,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -46,6 +47,7 @@ const navigation = [
   { name: 'Venues', href: '/venues', icon: Building2 },
   { name: 'Instructors', href: '/instructors', icon: GraduationCap },
   { name: 'Content', href: '/content', icon: FileText },
+  { name: 'Refunds', href: '/refunds', icon: ArrowLeftRight },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 

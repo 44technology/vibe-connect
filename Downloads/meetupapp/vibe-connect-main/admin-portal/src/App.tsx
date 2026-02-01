@@ -15,10 +15,14 @@ import InstructorsPage from './pages/InstructorsPage';
 // Venue pages
 import VenueDashboardPage from './pages/venue/DashboardPage';
 import VenueContentPage from './pages/venue/ContentPage';
-import VenueQAPage from './pages/venue/QAPage';
 import VenueChatPage from './pages/venue/ChatPage';
 import VenueCampaignsPage from './pages/venue/CampaignsPage';
 import VenueVibesPage from './pages/venue/VibesPage';
+import VenueVibeDetailPage from './pages/venue/VibeDetailPage';
+import VenueClassesPage from './pages/venue/ClassesPage';
+import VenueClassDetailPage from './pages/venue/ClassDetailPage';
+import VenueEventsPage from './pages/venue/EventsPage';
+import VenueEventDetailPage from './pages/venue/EventDetailPage';
 import VenueDiscountsPage from './pages/venue/DiscountsPage';
 import VenueAdsPage from './pages/venue/AdsPage';
 import VenueSettingsPage from './pages/venue/SettingsPage';
@@ -30,11 +34,11 @@ import InstructorContentPage from './pages/instructor/ContentPage';
 import InstructorStreamingPage from './pages/instructor/StreamingPage';
 import InstructorClassesPage from './pages/instructor/ClassesPage';
 import InstructorClassDetailPage from './pages/instructor/ClassDetailPage';
+import InstructorVibesPage from './pages/instructor/VibesPage';
+import InstructorEventsPage from './pages/instructor/EventsPage';
 import InstructorSettingsPage from './pages/instructor/SettingsPage';
 
 // Production pages
-import ProductionCreatePage from './pages/instructor/ProductionCreatePage';
-import AIContentAssistantPage from './pages/instructor/AIContentAssistantPage';
 import ScheduleCapacityPage from './pages/instructor/ScheduleCapacityPage';
 
 // Tickets pages
@@ -47,12 +51,14 @@ import VisibilityBoostsPage from './pages/instructor/VisibilityBoostsPage';
 import VisibilityTrendingPage from './pages/instructor/VisibilityTrendingPage';
 import VisibilityNearbyPage from './pages/instructor/VisibilityNearbyPage';
 import VisibilityInfluencerPage from './pages/instructor/VisibilityInfluencerPage';
+import VenueVisibilityInfluencerPage from './pages/venue/VisibilityInfluencerPage';
 
 // Monetization pages
 import MonetizationPricingPage from './pages/instructor/MonetizationPricingPage';
 import MonetizationRevenuePage from './pages/instructor/MonetizationRevenuePage';
 import MonetizationPayoutsPage from './pages/instructor/MonetizationPayoutsPage';
 import MonetizationAnalyticsPage from './pages/instructor/MonetizationAnalyticsPage';
+import VenueMonetizationPricingPage from './pages/venue/MonetizationPricingPage';
 
 function AppRoutes() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -81,12 +87,16 @@ function AppRoutes() {
               <Route path="/users" element={<UsersPage />} />
               <Route path="/venues" element={<VenuesPage />} />
               <Route path="/instructors" element={<InstructorsPage />} />
+              <Route path="/refunds" element={<RefundsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               
               {/* Venue Features (Admin can access all) */}
               <Route path="/venue/content" element={<VenueContentPage />} />
-              <Route path="/venue/qa" element={<VenueQAPage />} />
               <Route path="/venue/chat" element={<VenueChatPage />} />
+              <Route path="/venue/classes" element={<VenueClassesPage />} />
+              <Route path="/venue/classes/:id" element={<VenueClassDetailPage />} />
+              <Route path="/venue/vibes" element={<VenueVibesPage />} />
+              <Route path="/venue/events" element={<VenueEventsPage />} />
               <Route path="/venue/campaigns" element={<VenueCampaignsPage />} />
               <Route path="/venue/vibes" element={<VenueVibesPage />} />
               <Route path="/venue/discounts" element={<VenueDiscountsPage />} />
@@ -131,31 +141,25 @@ function AppRoutes() {
             <Routes>
               <Route path="/dashboard" element={<VenueDashboardPage />} />
               <Route path="/content" element={<VenueContentPage />} />
-              <Route path="/qa" element={<VenueQAPage />} />
               <Route path="/chat" element={<VenueChatPage />} />
-              <Route path="/campaigns" element={<VenueCampaignsPage />} />
+              <Route path="/classes" element={<VenueClassesPage />} />
+              <Route path="/classes/:id" element={<VenueClassDetailPage />} />
               <Route path="/vibes" element={<VenueVibesPage />} />
+              <Route path="/vibes/:id" element={<VenueVibeDetailPage />} />
+              <Route path="/events" element={<VenueEventsPage />} />
+              <Route path="/events/:id" element={<VenueEventDetailPage />} />
+              <Route path="/campaigns" element={<VenueCampaignsPage />} />
               <Route path="/discounts" element={<VenueDiscountsPage />} />
               <Route path="/ads" element={<VenueAdsPage />} />
-              
-              {/* Production */}
-              <Route path="/production/create" element={<ProductionCreatePage />} />
-              <Route path="/production/ai-assistant" element={<AIContentAssistantPage />} />
-              <Route path="/production/schedule" element={<ScheduleCapacityPage />} />
-              
-              {/* Tickets */}
-              <Route path="/tickets/pricing" element={<TicketsPricingPage />} />
-              <Route path="/tickets/checkin" element={<QRCheckinPage />} />
-              <Route path="/tickets/access" element={<AccessRulesPage />} />
               
               {/* Visibility */}
               <Route path="/visibility/boosts" element={<VisibilityBoostsPage />} />
               <Route path="/visibility/trending" element={<VisibilityTrendingPage />} />
               <Route path="/visibility/nearby" element={<VisibilityNearbyPage />} />
-              <Route path="/visibility/influencer" element={<VisibilityInfluencerPage />} />
+              <Route path="/visibility/influencer" element={<VenueVisibilityInfluencerPage />} />
               
               {/* Monetization */}
-              <Route path="/monetization/pricing" element={<MonetizationPricingPage />} />
+              <Route path="/monetization/pricing" element={<VenueMonetizationPricingPage />} />
               <Route path="/monetization/revenue" element={<MonetizationRevenuePage />} />
               <Route path="/monetization/payouts" element={<MonetizationPayoutsPage />} />
               <Route path="/monetization/analytics" element={<MonetizationAnalyticsPage />} />
@@ -175,10 +179,10 @@ function AppRoutes() {
               <Route path="/streaming" element={<InstructorStreamingPage />} />
               <Route path="/classes" element={<InstructorClassesPage />} />
               <Route path="/classes/:id" element={<InstructorClassDetailPage />} />
+              <Route path="/vibes" element={<InstructorVibesPage />} />
+              <Route path="/events" element={<InstructorEventsPage />} />
               
               {/* Production */}
-              <Route path="/production/create" element={<ProductionCreatePage />} />
-              <Route path="/production/ai-assistant" element={<AIContentAssistantPage />} />
               <Route path="/production/schedule" element={<ScheduleCapacityPage />} />
               
               {/* Tickets */}

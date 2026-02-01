@@ -67,6 +67,7 @@ export const useMeetups = (filters?: {
   priceMax?: number;
   latitude?: number;
   longitude?: number;
+  type?: 'activity' | 'event';
   radius?: number;
 }) => {
   return useQuery({
@@ -84,6 +85,7 @@ export const useMeetups = (filters?: {
       if (filters?.latitude) params.append('latitude', filters.latitude.toString());
       if (filters?.longitude) params.append('longitude', filters.longitude.toString());
       if (filters?.radius) params.append('radius', filters.radius.toString());
+      if (filters?.type) params.append('type', filters.type);
       
       const url = `${API_ENDPOINTS.MEETUPS.LIST}${params.toString() ? `?${params.toString()}` : ''}`;
       const response = await apiRequest<{ success: boolean; data: Meetup[] }>(url);

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
 import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { DollarSign, Edit, Save, Package, FileText, Gift, BookOpen } from 'lucide-react';
@@ -25,68 +24,41 @@ export default function MonetizationPricingPage() {
     // Digital Products
     { 
       id: 'dp1', 
-      name: 'Diction Workbook', 
-      description: 'Complete practice exercises', 
+      name: 'Venue Menu Guide', 
+      description: 'Complete menu and pricing guide', 
       type: 'digital_product',
-      price: 29,
-      classId: 1,
-      className: 'Diction Class',
+      price: 35,
+      classId: null,
+      className: 'Standalone',
     },
     { 
       id: 'dp2', 
-      name: 'AutoCAD Templates Pack', 
-      description: 'Professional templates for AutoCAD', 
+      name: 'Event Planning Template', 
+      description: 'Professional event planning templates', 
       type: 'digital_product',
-      price: 45,
-      classId: 2,
-      className: 'AutoCAD Basics',
-    },
-    { 
-      id: 'dp3', 
-      name: 'Business Plan Template', 
-      description: 'Ready-to-use business plan template', 
-      type: 'digital_product',
-      price: 39,
+      price: 49,
       classId: null,
       className: 'Standalone',
     },
     // Course Materials
     { 
       id: 'cm1', 
-      name: 'Pronunciation Guide', 
-      description: 'PDF guide for pronunciation', 
+      name: 'Venue Setup Guide', 
+      description: 'PDF guide for venue setup', 
       type: 'course_material',
-      price: 15,
-      classId: 1,
-      className: 'Diction Class',
-    },
-    { 
-      id: 'cm2', 
-      name: 'AutoCAD Cheat Sheet', 
-      description: 'Quick reference guide', 
-      type: 'course_material',
-      price: 12,
-      classId: 2,
-      className: 'AutoCAD Basics',
+      price: 18,
+      classId: null,
+      className: 'Standalone',
     },
     // Bonus Content
     { 
       id: 'bc1', 
-      name: 'Q&A Recording', 
-      description: 'Access to live Q&A session', 
+      name: 'VIP Access Pass', 
+      description: 'Exclusive VIP access content', 
       type: 'bonus_content',
-      price: 19,
-      classId: 1,
-      className: 'Diction Class',
-    },
-    { 
-      id: 'bc2', 
-      name: 'Bonus Workshop Video', 
-      description: 'Extra workshop content', 
-      type: 'bonus_content',
-      price: 25,
-      classId: 2,
-      className: 'AutoCAD Basics',
+      price: 29,
+      classId: null,
+      className: 'Standalone',
     },
   ]);
 

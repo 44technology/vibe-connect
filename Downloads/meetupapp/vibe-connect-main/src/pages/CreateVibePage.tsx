@@ -6,7 +6,7 @@ import {
   Coffee, UtensilsCrossed, Dumbbell, Film, Heart, 
   Palette, PartyPopper, Briefcase, Sparkles, Camera,
   Globe, Lock, DollarSign, Search, Info, Star, Phone, ExternalLink,
-  Shield, Share2
+  Shield, Share2, CheckCircle2, ArrowRight, Ticket, Users2, Gift
 } from 'lucide-react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
@@ -117,6 +118,10 @@ const CreateVibePage = () => {
   const [searchVenue, setSearchVenue] = useState('');
   const [showVenueDetail, setShowVenueDetail] = useState(false);
   const [selectedVenueDetail, setSelectedVenueDetail] = useState<any>(null);
+  const [eventType, setEventType] = useState<'activity' | 'event'>('activity');
+  const [showTypeRecommendationModal, setShowTypeRecommendationModal] = useState(false);
+  const [recommendedType, setRecommendedType] = useState<'activity' | 'event' | null>(null);
+  const [recommendedMaxAttendees, setRecommendedMaxAttendees] = useState<number>(0);
   
   // Fetch venues from backend
   const { data: venuesData, isLoading: venuesLoading } = useVenues({
@@ -242,6 +247,7 @@ const CreateVibePage = () => {
         isPublic: visibility === 'public',
         isFree: pricing === 'free',
         location: venueAddress || venue || undefined,
+        type: eventType, // 'activity' or 'event'
       };
       
       if (pricing === 'paid' && pricePerPerson) {
@@ -259,13 +265,9 @@ const CreateVibePage = () => {
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         if (uuidRegex.test(selectedVenueId)) {
           meetupData.venueId = selectedVenueId;
-        } else {
-          // If it's not a UUID (mock data), don't send venueId
-          console.warn('Selected venue ID is not a valid UUID, skipping venueId');
         }
+        // If it's not a UUID (mock data), don't send venueId - silently skip
       }
-      
-      console.log('Sending meetup data:', meetupData);
       
       await createMeetup.mutateAsync(meetupData);
       toast.success('Vibe created successfully!');
@@ -643,7 +645,24 @@ const CreateVibePage = () => {
                       {groupSizeOptions.map((option, index) => (
                         <motion.button
                           key={option.id}
-                          onClick={() => setGroupSize(option.id)}
+                          onClick={() => {
+                            setGroupSize(option.id);
+                            // Show recommendation modal when group size is selected
+                            if (option.id === 'custom') {
+                              // Will show modal when custom value is entered
+                              return;
+                            }
+                            const maxAttendees = option.value || 4;
+                            if (maxAttendees > 10) {
+                              setRecommendedType('event');
+                              setRecommendedMaxAttendees(maxAttendees);
+                              setShowTypeRecommendationModal(true);
+                            } else if (maxAttendees <= 10) {
+                              setRecommendedType('activity');
+                              setRecommendedMaxAttendees(maxAttendees);
+                              setShowTypeRecommendationModal(true);
+                            }
+                          }}
                           initial={{ opacity: 0, scale: 0.9 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ delay: 0.15 + index * 0.05 }}
@@ -672,6 +691,38 @@ const CreateVibePage = () => {
                         </motion.button>
                       ))}
                     </div>
+                    {groupSize === 'custom' && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-4"
+                      >
+                        <Input
+                          type="number"
+                          placeholder="Enter number of people"
+                          value={customGroupSize}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setCustomGroupSize(value);
+                            const numValue = parseInt(value);
+                            if (!isNaN(numValue) && numValue > 0) {
+                              if (numValue > 10) {
+                                setRecommendedType('event');
+                                setRecommendedMaxAttendees(numValue);
+                                setShowTypeRecommendationModal(true);
+                              } else if (numValue <= 10) {
+                                setRecommendedType('activity');
+                                setRecommendedMaxAttendees(numValue);
+                                setShowTypeRecommendationModal(true);
+                              }
+                            }
+                          }}
+                          className="h-12 rounded-xl"
+                          min="1"
+                        />
+                      </motion.div>
+                    )}
                   </motion.div>
 
                   {/* Visibility */}
@@ -1094,6 +1145,105 @@ const CreateVibePage = () => {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Activity/Event Recommendation Modal */}
+      <Dialog open={showTypeRecommendationModal} onOpenChange={setShowTypeRecommendationModal}>
+        <DialogContent className="max-w-md mx-4 rounded-2xl p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-4">
+            <div className="text-center mb-4">
+              <div className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-3 ${
+                recommendedType === 'event' 
+                  ? 'bg-primary/20' 
+                  : 'bg-secondary/20'
+              }`}>
+                {recommendedType === 'event' ? (
+                  <Ticket className="w-8 h-8 text-primary" />
+                ) : (
+                  <Users2 className="w-8 h-8 text-secondary" />
+                )}
+              </div>
+            </div>
+            <DialogTitle className="text-center text-xl font-bold">
+              {recommendedType === 'event' ? 'Event Recommended' : 'Activity Recommended'}
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              {recommendedType === 'event' 
+                ? 'Event mode is recommended for this attendance size. Ticket, check-in, and visibility features will be enabled.'
+                : 'Activity mode is recommended for this attendance size. A more intimate and flexible gathering.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="px-6 pb-6 space-y-4">
+
+            <div className={`p-4 rounded-xl ${
+              recommendedType === 'event' 
+                ? 'bg-primary/10 border-2 border-primary/20' 
+                : 'bg-secondary/10 border-2 border-secondary/20'
+            }`}>
+              {recommendedType === 'event' ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-foreground font-medium">
+                    Event is more suitable for this attendance size.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Ticket, check-in, and visibility features will be enabled.
+                  </p>
+                  <div className="mt-3 space-y-1.5">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                      <span>Ticket management</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                      <span>QR Check-in</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                      <span>Enhanced visibility</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm text-foreground font-medium">
+                    This is an Activity. A more intimate and flexible gathering.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Ideal for small groups, a more casual experience.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowTypeRecommendationModal(false);
+                  if (recommendedType === 'event') {
+                    setEventType('activity'); // User can choose to keep as activity
+                  }
+                }}
+                className="flex-1"
+              >
+                {recommendedType === 'event' ? 'Keep as Activity' : 'OK'}
+              </Button>
+              {recommendedType === 'event' && (
+                <Button
+                  onClick={() => {
+                    setEventType('event');
+                    setShowTypeRecommendationModal(false);
+                    toast.success('Event mode activated! Ticket and check-in features are now available.');
+                  }}
+                  className="flex-1 bg-gradient-primary"
+                >
+                  Use Event Mode
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </MobileLayout>

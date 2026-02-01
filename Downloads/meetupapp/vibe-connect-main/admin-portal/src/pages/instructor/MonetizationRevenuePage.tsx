@@ -9,8 +9,8 @@ import { toast } from 'sonner';
 
 export default function MonetizationRevenuePage() {
   const [splits, setSplits] = useState([
-    { id: 1, partner: 'Ulikme Platform', percentage: 3, amount: 15, isPlatform: true },
-    { id: 2, partner: 'Instructor', percentage: 97, amount: 485 },
+    { id: 1, partner: 'Ulikme Platform', percentage: 4, amount: 20, isPlatform: true },
+    { id: 2, partner: 'Instructor', percentage: 96, amount: 480 },
   ]);
 
   const [newSplit, setNewSplit] = useState({
@@ -56,30 +56,22 @@ export default function MonetizationRevenuePage() {
               <span className="text-muted-foreground">User pays:</span>
               <span className="font-semibold">$100.00</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Stripe processing fee (3%):</span>
-              <span className="font-semibold text-red-600">-$3.00</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Net amount after Stripe:</span>
-              <span className="font-semibold">$97.00</span>
-            </div>
             <div className="flex items-center justify-between pt-2 border-t">
-              <span className="text-muted-foreground">Platform fee (3% of net):</span>
-              <span className="font-semibold text-orange-600">-$2.91</span>
+              <span className="text-muted-foreground">Processing fee (4%):</span>
+              <span className="font-semibold text-orange-600">-$4.00</span>
             </div>
             <div className="flex items-center justify-between pt-2 border-t">
               <span className="font-semibold text-foreground">You receive:</span>
-              <span className="font-bold text-green-600 text-lg">$94.09</span>
+              <span className="font-bold text-green-600 text-lg">$96.00</span>
             </div>
           </div>
           <p className="text-xs text-muted-foreground mt-3">
-            Note: Platform fee is calculated on the net amount (after Stripe fee) to ensure Stripe's commission doesn't affect our revenue.
+            Note: Total processing fee includes payment processing and platform fees.
           </p>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -97,25 +89,12 @@ export default function MonetizationRevenuePage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Percent className="w-5 h-5" />
-              Platform Fee
+              Processing Fee
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold">{platformFee}%</p>
-            <p className="text-sm text-muted-foreground mt-1">Ulikme platform fee</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Partners
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{splits.length}</p>
-            <p className="text-sm text-muted-foreground mt-1">Active splits</p>
+            <p className="text-sm text-muted-foreground mt-1">Total processing fee</p>
           </CardContent>
         </Card>
       </div>

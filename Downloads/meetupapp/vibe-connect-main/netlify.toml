@@ -1,5 +1,6 @@
+# Main Mobile App Build Configuration
 [build]
-  base = "Downloads/meetupapp/vibe-connect-main"
+  base = "."
   command = "npm install --legacy-peer-deps && npm run build"
   publish = "dist"
 
@@ -15,3 +16,15 @@
 [dev]
   command = "npm run dev"
   port = 8080
+
+# Admin Portal Context (for separate Netlify site deployment)
+# Netlify Dashboard'da bu context'i kullanmak için:
+# Site settings → Build & deploy → Environment → Add context → admin-portal
+[context.admin-portal]
+  base = "admin-portal"
+  command = "cd admin-portal && npm install --legacy-peer-deps && npm run build"
+  publish = "admin-portal/dist"
+  
+[context.admin-portal.environment]
+  NODE_VERSION = "18"
+  NPM_VERSION = "9"

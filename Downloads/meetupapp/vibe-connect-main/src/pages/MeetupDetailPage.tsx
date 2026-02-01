@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Clock, Users, Calendar, Heart, Share2, User, DollarSign, Lock, Globe, Tag, Sparkles, MessageCircle, Edit, Trash2, Save, X } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Users, Calendar, Heart, Share2, User, DollarSign, Lock, Globe, Tag, Sparkles, MessageCircle, Edit, Trash2, Save, X, Ticket, QrCode } from 'lucide-react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import UserAvatar from '@/components/ui/UserAvatar';
 import { useMeetup, useJoinMeetup, useUpdateMeetup, useDeleteMeetup } from '@/hooks/useMeetups';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePersonalization } from '@/hooks/usePersonalization';
+import { useCreateTicketForMeetup } from '@/hooks/useTickets';
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 // Sample campaigns for meetups
 const sampleCampaigns = [
@@ -61,7 +63,10 @@ const MeetupDetailPage = () => {
   const joinMeetup = useJoinMeetup();
   const updateMeetup = useUpdateMeetup();
   const deleteMeetup = useDeleteMeetup();
+  const createTicket = useCreateTicketForMeetup();
   const { trackJoin } = usePersonalization();
+  const [showTicketDialog, setShowTicketDialog] = useState(false);
+  const [createdTicket, setCreatedTicket] = useState<any>(null);
   
   // Edit states
   const [isEditing, setIsEditing] = useState(false);
@@ -202,8 +207,17 @@ const MeetupDetailPage = () => {
         trackJoin(meetup);
       }
       
-      toast.success('Joined the vibe!');
-      navigate('/home');
+      // Create ticket with QR code
+      try {
+        const ticket = await createTicket.mutateAsync(id);
+        setCreatedTicket(ticket);
+        setShowTicketDialog(true);
+      } catch (ticketError: any) {
+        // Ticket creation failed, but join succeeded
+        console.warn('Ticket creation failed:', ticketError);
+        toast.success('Joined the vibe!');
+        navigate('/home');
+      }
     } catch (error: any) {
       toast.error(error.message || 'Failed to join vibe');
     }
@@ -744,6 +758,85 @@ const MeetupDetailPage = () => {
               {deleteMeetup.isPending ? 'Deleting...' : 'Delete'}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ticket QR Code Dialog */}
+      <Dialog open={showTicketDialog} onOpenChange={setShowTicketDialog}>
+        <DialogContent className="max-w-md mx-4 rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Ticket className="w-5 h-5 text-primary" />
+              Your Ticket
+            </DialogTitle>
+            <DialogDescription>
+              Show this QR code at the event entrance
+            </DialogDescription>
+          </DialogHeader>
+          
+          {createdTicket && (
+            <div className="space-y-6 py-4">
+              {/* Ticket Number */}
+              <div className="text-center pb-4 border-b border-border">
+                <p className="text-sm text-muted-foreground mb-1">Ticket Number</p>
+                <p className="text-xl font-bold text-foreground">{createdTicket.ticketNumber}</p>
+              </div>
+
+              {/* QR Code */}
+              <div className="flex justify-center">
+                <div className="w-64 h-64 bg-white rounded-2xl p-4 border-4 border-primary/20 flex items-center justify-center">
+                  <div className="text-center space-y-2">
+                    <QrCode className="w-48 h-48 mx-auto text-foreground" />
+                    <p className="text-xs font-mono text-muted-foreground break-all">{createdTicket.qrCode}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Event Info */}
+              {createdTicket.meetup && (
+                <div className="p-4 rounded-xl bg-muted space-y-2">
+                  <p className="text-sm font-semibold text-foreground">{createdTicket.meetup.title}</p>
+                  {createdTicket.meetup.startTime && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="w-4 h-4 text-primary" />
+                      <span className="text-muted-foreground">
+                        {format(new Date(createdTicket.meetup.startTime), 'EEEE, MMMM d, yyyy • h:mm a')}
+                      </span>
+                    </div>
+                  )}
+                  {createdTicket.meetup.venue && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <MapPin className="w-4 h-4 text-primary" />
+                      <span className="text-muted-foreground">{createdTicket.meetup.venue.name}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowTicketDialog(false);
+                    navigate(`/ticket/${createdTicket.id}`);
+                  }}
+                  className="flex-1"
+                >
+                  View Full Ticket
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowTicketDialog(false);
+                    navigate('/home');
+                  }}
+                  className="flex-1 bg-gradient-primary"
+                >
+                  Done
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </MobileLayout>

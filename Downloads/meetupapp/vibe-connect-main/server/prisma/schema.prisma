@@ -88,6 +88,7 @@ model User {
   postComments    PostComment[] @relation("UserPostComments")
   badges          UserBadge[]  @relation("UserBadges")
   notifications   Notification[] @relation("UserNotifications")
+  tickets         Ticket[]
 
   @@index([email])
   @@index([phone])
@@ -154,6 +155,7 @@ model Meetup {
   chats       Chat[]
   stories     Story[]
   posts       Post[]        @relation("MeetupPosts")
+  payments    Payment[]
 
   @@index([creatorId])
   @@index([venueId])
@@ -276,6 +278,8 @@ model Class {
   venueId     String
   venue       Venue         @relation(fields: [venueId], references: [id], onDelete: Cascade)
   enrollments ClassEnrollment[]
+  tickets     Ticket[]
+  payments    Payment[]
 
   @@index([venueId])
   @@index([skill])
@@ -291,11 +295,13 @@ model ClassEnrollment {
   classId   String
   userId    String
   enrolledAt DateTime @default(now())
-  status    String   @default("enrolled") // enrolled, completed, cancelled
+  status    String   @default("enrolled") // enrolled, paid, completed, cancelled
 
   // Relations
   class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticket    Ticket?  // One enrollment can have one ticket
+  payment   Payment? // Payment for this enrollment
 
   @@unique([classId, userId])
   @@index([classId])
@@ -455,4 +461,143 @@ model Notification {
   @@index([read])
   @@index([createdAt])
   @@map("notifications")
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  paymentNumber   String        @unique // Human-readable payment number (e.g., PAY-2025-001234)
+  userId          String
+  user            User          @relation("UserPayments", fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Payment details
+  grossAmount     Float         // Amount paid by user (e.g., 100$)
+  stripeFee       Float         // Stripe processing fee (e.g., 3$ = 3% of grossAmount)
+  netAmount       Float         // Amount after Stripe fee (e.g., 97$)
+  platformFee    Float         // Our platform fee (3% of netAmount, e.g., 2.91$)
+  payoutAmount    Float         // Amount to be paid to venue/instructor (e.g., 94.09$)
+  
+  // Payment method
+  paymentMethod   String        // 'card', 'cash', 'bank_transfer'
+  paymentProvider String?       // 'stripe', 'paypal', etc.
+  stripePaymentId String?       // Stripe payment intent ID
+  cardLast4       String?       // Last 4 digits of card
+  
+  status          PaymentStatus @default(PENDING)
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relations - Payment can be for Class or Meetup
+  classId         String?
+  class           Class?        @relation(fields: [classId], references: [id], onDelete: SetNull)
+  meetupId        String?
+  meetup          Meetup?       @relation(fields: [meetupId], references: [id], onDelete: SetNull)
+  enrollmentId    String?       // Link to ClassEnrollment
+  enrollment      ClassEnrollment? @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  ticketId        String?       // Link to Ticket
+  ticket          Ticket?       @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  
+  // Payout relation
+  payout          Payout?
+  
+  @@index([userId])
+  @@index([classId])
+  @@index([meetupId])
+  @@index([paymentNumber])
+  @@index([stripePaymentId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payments")
+}
+
+model Payout {
+  id              String        @id @default(uuid())
+  payoutNumber    String        @unique // Human-readable payout number (e.g., PO-2025-001234)
+  
+  // Recipient (Venue or Instructor)
+  recipientType   String        // 'venue' or 'instructor'
+  recipientId     String        // Venue ID or User ID (instructor)
+  
+  // Amount details
+  totalAmount     Float         // Total payout amount
+  currency        String        @default("USD")
+  
+  // Payout method
+  payoutMethod    String        // 'bank_transfer', 'stripe_connect', 'paypal'
+  bankAccountId   String?       // Bank account reference
+  stripeAccountId String?      // Stripe Connect account ID
+  
+  status          PayoutStatus  @default(PENDING)
+  processedAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relations
+  paymentId       String        @unique
+  payment         Payment       @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  
+  @@index([recipientId])
+  @@index([recipientType])
+  @@index([payoutNumber])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payouts")
+}
+
+enum TicketStatus {
+  ACTIVE
+  USED
+  CANCELLED
+  EXPIRED
+}
+
+model Ticket {
+  id          String       @id @default(uuid())
+  ticketNumber String     @unique // Human-readable ticket number (e.g., TKT-2025-001234)
+  qrCode      String      @unique // QR code data/URL
+  qrCodeImage String?     // QR code image URL (generated)
+  status      TicketStatus @default(ACTIVE)
+  price       Float       @default(0) // Price paid for ticket
+  purchasedAt DateTime    @default(now())
+  usedAt      DateTime?   // When ticket was scanned/used
+  expiresAt   DateTime?   // Optional expiration date
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations - Ticket can be for either a Class or a Meetup
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  classId     String?
+  class       Class?       @relation(fields: [classId], references: [id], onDelete: Cascade)
+  meetupId    String?
+  meetup      Meetup?      @relation(fields: [meetupId], references: [id], onDelete: Cascade)
+  enrollmentId String?     // Link to ClassEnrollment if ticket is for a class
+  enrollment  ClassEnrollment? @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  payment     Payment?     // Payment for this ticket
+
+  @@index([userId])
+  @@index([classId])
+  @@index([meetupId])
+  @@index([ticketNumber])
+  @@index([qrCode])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("tickets")
 }

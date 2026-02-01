@@ -186,6 +186,15 @@ const mockQAs = [
   },
 ];
 
+type Ticket = {
+  id: number;
+  title: string;
+  price: number;
+  type: 'paid' | 'free';
+  available: number;
+  sold: number;
+};
+
 export default function ClassDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -230,6 +239,74 @@ export default function ClassDetailPage() {
   const [selectedQA, setSelectedQA] = useState<string | null>(null);
   const [isAnswerDialogOpen, setIsAnswerDialogOpen] = useState(false);
   const [answerText, setAnswerText] = useState('');
+  const [isQADialogOpen, setIsQADialogOpen] = useState(false);
+  const [selectedLessonForQA, setSelectedLessonForQA] = useState<string | null>(null);
+  
+  // Schedule & Capacity state
+  const initialSchedules = useMemo(() => {
+    if (classData) {
+      return [
+        { 
+          id: 1, 
+          date: classData.date || '2025-02-05', 
+          time: classData.time || '18:00', 
+          capacity: classData.maxStudents || 20, 
+          enrolled: classData.currentStudents || 0, 
+          status: 'active' as const 
+        },
+      ];
+    }
+    return [];
+  }, [classData]);
+  
+  const [classSchedules, setClassSchedules] = useState<Array<{
+    id: number;
+    date: string;
+    time: string;
+    capacity: number;
+    enrolled: number;
+    status: 'active' | 'completed' | 'cancelled';
+  }>>(initialSchedules);
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [newSchedule, setNewSchedule] = useState({
+    date: '',
+    time: '',
+    capacity: '',
+  });
+  
+  const getCapacityStatus = (enrolled: number, capacity: number) => {
+    const percentage = (enrolled / capacity) * 100;
+    if (percentage >= 90) return { color: 'text-red-500', label: 'Almost Full' };
+    if (percentage >= 70) return { color: 'text-yellow-500', label: 'Filling Up' };
+    return { color: 'text-green-500', label: 'Available' };
+  };
+  
+  const handleAddSchedule = () => {
+    if (!newSchedule.date || !newSchedule.time || !newSchedule.capacity) {
+      toast.error('Please fill all fields');
+      return;
+    }
+    const schedule = {
+      id: classSchedules.length + 1,
+      date: newSchedule.date,
+      time: newSchedule.time,
+      capacity: parseInt(newSchedule.capacity),
+      enrolled: 0,
+      status: 'active' as const,
+    };
+    setClassSchedules([...classSchedules, schedule]);
+    setNewSchedule({ date: '', time: '', capacity: '' });
+    setIsScheduleDialogOpen(false);
+    toast.success('Schedule added successfully!');
+  };
+  
+  // Ticket state
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
+  const [newTicketType, setNewTicketType] = useState<'paid' | 'free'>('paid');
+  const [newTicketPrice, setNewTicketPrice] = useState('');
+  const [newTicketAvailable, setNewTicketAvailable] = useState('');
+  
   const [editTitle, setEditTitle] = useState('');
   const [editType, setEditType] = useState<'online' | 'onsite' | 'hybrid'>('online');
   const [editPrice, setEditPrice] = useState('');
@@ -261,6 +338,23 @@ export default function ClassDetailPage() {
         : [...prev, day]
     );
   };
+  
+  // Initialize tickets from classData
+  useEffect(() => {
+    if (classData) {
+      // Initialize with a default ticket if none exist
+      if (tickets.length === 0) {
+        setTickets([{
+          id: 1,
+          title: `${classData.title} Ticket`,
+          price: classData.price,
+          type: classData.price > 0 ? 'paid' : 'free',
+          available: classData.maxStudents,
+          sold: classData.currentStudents,
+        }]);
+      }
+    }
+  }, [classData]);
   
   // Initialize edit form when dialog opens
   const handleEditClick = () => {
@@ -313,7 +407,7 @@ export default function ClassDetailPage() {
     if (classIndex !== -1) {
       mockClasses[classIndex] = updatedClass;
     }
-    setClassData(updatedClass);
+    // Note: classData is a useMemo result, so updating mockClasses will automatically update it
     setIsEditDialogOpen(false);
     toast.success('Class updated successfully!');
   };
@@ -693,11 +787,12 @@ export default function ClassDetailPage() {
       </Card>
 
       {/* Tabs: Materials and Course Content */}
-      <Tabs defaultValue="materials" className="space-y-4">
+      <Tabs defaultValue="syllabus" className="space-y-4">
         <TabsList>
           <TabsTrigger value="syllabus">Course Syllabus</TabsTrigger>
           <TabsTrigger value="materials">Materials</TabsTrigger>
           <TabsTrigger value="content">Course Content</TabsTrigger>
+          <TabsTrigger value="schedule">Schedule & Capacity</TabsTrigger>
           <TabsTrigger value="tickets">Tickets</TabsTrigger>
         </TabsList>
 
@@ -1164,150 +1259,116 @@ export default function ClassDetailPage() {
           </Dialog>
         </TabsContent>
 
-        {/* Monetization Tab */}
-        <TabsContent value="monetization" className="space-y-4">
+        {/* Tickets Tab */}
+        {/* Schedule & Capacity Tab */}
+        <TabsContent value="schedule" className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Monetization</h2>
-              <p className="text-muted-foreground mt-1">Manage digital products, course materials, and bonus content</p>
+              <h2 className="text-2xl font-bold text-foreground">Schedule & Capacity</h2>
+              <p className="text-muted-foreground mt-1">Manage class schedules and student capacity</p>
             </div>
+            <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Schedule
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Schedule</DialogTitle>
+                  <DialogDescription>Create a new scheduled session for this class</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Date</Label>
+                      <Input
+                        type="date"
+                        value={newSchedule.date}
+                        onChange={(e) => setNewSchedule({ ...newSchedule, date: e.target.value })}
+                        min={new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Time</Label>
+                      <Input
+                        type="time"
+                        value={newSchedule.time}
+                        onChange={(e) => setNewSchedule({ ...newSchedule, time: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Capacity</Label>
+                    <Input
+                      type="number"
+                      placeholder="e.g., 20"
+                      value={newSchedule.capacity}
+                      onChange={(e) => setNewSchedule({ ...newSchedule, capacity: e.target.value })}
+                      min="1"
+                    />
+                    <p className="text-xs text-muted-foreground">Maximum number of students for this session</p>
+                  </div>
+                  <Button onClick={handleAddSchedule} className="w-full">
+                    Add Schedule
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
 
-          {/* Digital Products */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Package className="w-5 h-5 text-primary" />
-                  <CardTitle>Digital Products</CardTitle>
-                </div>
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Product
-                </Button>
-              </div>
-              <CardDescription>Sell digital products alongside your class</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {classData.digitalProducts && Array.isArray(classData.digitalProducts) && classData.digitalProducts.length > 0 ? (
-                <div className="space-y-3">
-                  {classData.digitalProducts.map((product) => (
-                    <div key={product.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">{product.name}</p>
-                        {product.description && (
-                          <p className="text-sm text-muted-foreground mt-1">{product.description}</p>
-                        )}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {classSchedules.length > 0 ? (
+              classSchedules.map((schedule) => {
+                const status = getCapacityStatus(schedule.enrolled, schedule.capacity);
+                return (
+                  <Card key={schedule.id}>
+                    <CardHeader>
+                      <CardTitle className="text-lg">{classData?.title}</CardTitle>
+                      <CardDescription>
+                        <span className={`font-semibold ${status.color}`}>{status.label}</span>
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <span>{schedule.date}</span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg font-bold text-primary">${product.price}</span>
-                        <Button variant="outline" size="sm">
-                          <Edit className="w-4 h-4" />
-                        </Button>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="w-4 h-4 text-muted-foreground" />
+                        <span>{schedule.time}</span>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">No digital products added yet</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Course Materials */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-primary" />
-                  <CardTitle>Course Materials</CardTitle>
-                </div>
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Material
-                </Button>
-              </div>
-              <CardDescription>Free downloadable materials for enrolled students</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {classData.courseMaterials && Array.isArray(classData.courseMaterials) && classData.courseMaterials.length > 0 ? (
-                <div className="space-y-3">
-                  {classData.courseMaterials.map((material: any) => (
-                    <div key={material.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
-                      <div className="flex items-center gap-3">
-                        <FileText className="w-5 h-5 text-muted-foreground" />
-                        <div>
-                          <p className="font-medium text-foreground">{material.name}</p>
-                          {material.type && (
-                            <p className="text-xs text-muted-foreground mt-1">{material.type.toUpperCase()}</p>
-                          )}
+                      <div className="flex items-center gap-2 text-sm">
+                        <Users className="w-4 h-4 text-muted-foreground" />
+                        <span>{schedule.enrolled} / {schedule.capacity} enrolled</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2 mt-2">
+                        <div
+                          className="bg-primary h-2 rounded-full transition-all"
+                          style={{ width: `${(schedule.enrolled / schedule.capacity) * 100}%` }}
+                        />
+                      </div>
+                      {schedule.enrolled >= schedule.capacity * 0.9 && (
+                        <div className="flex items-center gap-2 text-xs text-yellow-600">
+                          <AlertCircle className="w-3 h-3" />
+                          <span>Consider adding more capacity</span>
                         </div>
-                      </div>
-                      <Button variant="outline" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">No course materials added yet</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Bonus Content */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Gift className="w-5 h-5 text-orange-500" />
-                  <CardTitle>Bonus Content</CardTitle>
-                </div>
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Bonus
-                </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })
+            ) : (
+              <div className="col-span-full text-center py-12 text-muted-foreground">
+                <Calendar className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <p>No schedules added yet</p>
+                <p className="text-sm mt-1">Add a schedule to start managing capacity</p>
               </div>
-              <CardDescription>Exclusive bonus content for enrolled students</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {classData.bonusContent && Array.isArray(classData.bonusContent) && classData.bonusContent.length > 0 ? (
-                <div className="space-y-3">
-                  {classData.bonusContent.map((bonus) => (
-                    <div key={bonus.id} className="flex items-center justify-between p-3 rounded-lg border border-orange-500/20 bg-orange-500/5">
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">{bonus.name}</p>
-                        {bonus.description && (
-                          <p className="text-sm text-muted-foreground mt-1">{bonus.description}</p>
-                        )}
-                      </div>
-                      <Button variant="outline" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">No bonus content added yet</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Platform Fee Info */}
-          <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <DollarSign className="w-6 h-6 text-primary" />
-                <div>
-                  <p className="font-semibold text-foreground">Processing Fee</p>
-                  <p className="text-sm text-muted-foreground">Ulikme charges a 4% processing fee on all paid classes</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </TabsContent>
 
-        {/* Tickets Tab */}
         <TabsContent value="tickets" className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
@@ -1415,107 +1476,66 @@ export default function ClassDetailPage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {tickets.map((ticket) => (
-              <Card key={ticket.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{ticket.title}</CardTitle>
-                    <Badge variant={ticket.type === 'paid' ? 'default' : 'secondary'}>
-                      {ticket.type === 'paid' ? 'Paid' : 'Free'}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Price</span>
-                    <span className="text-2xl font-bold">
-                      {ticket.type === 'paid' ? `$${ticket.price}` : 'Free'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Sold</span>
-                    <span className="font-semibold">{ticket.sold} / {ticket.available}</span>
-                  </div>
-                  <div className="pt-2 border-t">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setTickets(tickets.map(t => 
-                          t.id === ticket.id 
-                            ? { ...t, type: t.type === 'paid' ? 'free' : 'paid', price: t.type === 'paid' ? 0 : 50 }
-                            : t
-                        ));
-                        toast.success(`Ticket switched to ${ticket.type === 'paid' ? 'free' : 'paid'}`);
-                      }}
-                      className="w-full gap-2"
-                    >
-                      {ticket.type === 'paid' ? (
-                        <>
-                          <ToggleRight className="w-4 h-4" />
-                          Switch to Free
-                        </>
-                      ) : (
-                        <>
-                          <ToggleLeft className="w-4 h-4" />
-                          Switch to Paid
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {tickets.length === 0 ? (
+              <div className="col-span-full text-center py-12 text-muted-foreground">
+                No tickets created yet. Click "Add Ticket" to create one.
+              </div>
+            ) : (
+              tickets.map((ticket) => (
+                <Card key={ticket.id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{ticket.title}</CardTitle>
+                      <Badge variant={ticket.type === 'paid' ? 'default' : 'secondary'}>
+                        {ticket.type === 'paid' ? 'Paid' : 'Free'}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Price</span>
+                      <span className="text-2xl font-bold">
+                        {ticket.type === 'paid' ? `$${ticket.price}` : 'Free'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Sold</span>
+                      <span className="font-semibold">{ticket.sold} / {ticket.available}</span>
+                    </div>
+                    <div className="pt-2 border-t">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setTickets(tickets.map(t => 
+                            t.id === ticket.id 
+                              ? { ...t, type: t.type === 'paid' ? 'free' : 'paid', price: t.type === 'paid' ? 0 : 50 }
+                              : t
+                          ));
+                          toast.success(`Ticket switched to ${ticket.type === 'paid' ? 'free' : 'paid'}`);
+                        }}
+                        className="w-full gap-2"
+                      >
+                        {ticket.type === 'paid' ? (
+                          <>
+                            <ToggleRight className="w-4 h-4" />
+                            Switch to Free
+                          </>
+                        ) : (
+                          <>
+                            <ToggleLeft className="w-4 h-4" />
+                            Switch to Paid
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </TabsContent>
       </Tabs>
-
-      {/* Q&A Add Dialog */}
-      <Dialog open={isQADialogOpen} onOpenChange={setIsQADialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Q&A to Lesson</DialogTitle>
-            <DialogDescription>
-              Add a question and answer for this lesson
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="p-3 rounded-lg bg-muted/50">
-              <p className="text-sm font-medium mb-1">Lesson:</p>
-              <p className="text-sm text-foreground">
-                {classData?.syllabus
-                  ?.flatMap(m => m.lessons)
-                  .find(l => l.id === selectedLessonForQA)?.title || 'Unknown Lesson'}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label>Question</Label>
-              <Textarea
-                placeholder="Enter the question..."
-                rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Answer (Optional)</Label>
-              <Textarea
-                placeholder="Enter the answer..."
-                rows={4}
-              />
-            </div>
-            <Button
-              onClick={() => {
-                toast.success('Q&A added successfully!');
-                setIsQADialogOpen(false);
-                setSelectedLessonForQA(null);
-              }}
-              className="w-full"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Q&A
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Q&A Answer Dialog */}
       <Dialog open={isAnswerDialogOpen} onOpenChange={setIsAnswerDialogOpen}>

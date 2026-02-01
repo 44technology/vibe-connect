@@ -11,6 +11,7 @@ import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import DiscoverPage from "./pages/DiscoverPage";
 import CreateVibePage from "./pages/CreateVibePage";
+import EventsPage from "./pages/EventsPage";
 import ChatPage from "./pages/ChatPage";
 import ProfilePage from "./pages/ProfilePage";
 import ConnectionsPage from "./pages/ConnectionsPage";
@@ -31,6 +32,8 @@ import LifePage from "./pages/LifePage";
 import SurpriseMePage from "./pages/SurpriseMePage";
 import VenuePostsPage from "./pages/VenuePostsPage";
 import StoryViewPage from "./pages/StoryViewPage";
+import MyTicketsPage from "./pages/MyTicketsPage";
+import TicketDetailPage from "./pages/TicketDetailPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +53,8 @@ const App = () => (
             <Route path="/home" element={<HomePage />} />
             <Route path="/discover" element={<DiscoverPage />} />
             <Route path="/create" element={<CreateVibePage />} />
+            <Route path="/events" element={<EventsPage />} />
+            <Route path="/create-event" element={<CreateVibePage />} />
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/connections" element={<ConnectionsPage />} />
@@ -70,6 +75,8 @@ const App = () => (
             <Route path="/surprise" element={<SurpriseMePage />} />
             <Route path="/venue-posts" element={<VenuePostsPage />} />
             <Route path="/story/:id" element={<StoryViewPage />} />
+            <Route path="/tickets" element={<MyTicketsPage />} />
+            <Route path="/ticket/:ticketId" element={<TicketDetailPage />} />
             {/* Mentors are now part of Classes - redirect old routes */}
             <Route path="/mentors" element={<ClassesPage />} />
             <Route path="/mentor/:id" element={<ClassDetailPage />} />

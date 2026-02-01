@@ -144,6 +144,9 @@ const ChatPage = () => {
   const [communityName, setCommunityName] = useState('');
   const [communityDescription, setCommunityDescription] = useState('');
   const [assistantMessages, setAssistantMessages] = useState<Array<{id: string; content: string; actionButton?: any}>>([]);
+  const [showMenuModal, setShowMenuModal] = useState(false);
+  const [selectedMenuItem, setSelectedMenuItem] = useState<typeof sampleMenuItems[0] | null>(null);
+  const [menuViewMode, setMenuViewMode] = useState<'2d' | '3d' | 'ar'>('2d');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch chats from backend

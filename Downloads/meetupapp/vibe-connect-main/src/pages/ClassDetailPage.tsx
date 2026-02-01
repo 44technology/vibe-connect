@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, BookOpen, MapPin, Clock, DollarSign, Users, Calendar, Phone, Globe, CreditCard, AlertCircle, Info, Star, CheckCircle2, X, Monitor, CheckCircle, Sparkles, MessageCircle, ChevronRight, FileText, ListChecks, PlayCircle, TrendingUp, ShoppingBag, Download, Gift, Package } from 'lucide-react';
+import { ArrowLeft, BookOpen, MapPin, Clock, DollarSign, Users, Calendar, Phone, Globe, CreditCard, AlertCircle, Info, Star, CheckCircle2, X, Monitor, CheckCircle, Sparkles, MessageCircle, ChevronRight, FileText, ListChecks, PlayCircle, TrendingUp, ShoppingBag, Download, Gift, Package, Send, Plus } from 'lucide-react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
 import UserAvatar from '@/components/ui/UserAvatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useClass, useEnrollInClass, useCancelEnrollment } from '@/hooks/useClasses';
+import { useCreateTicketForClass } from '@/hooks/useTickets';
 import { useMentor } from '@/hooks/useMentors';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -26,9 +27,12 @@ const ClassDetailPage = () => {
   const isLoading = isMentorClass ? mentorLoading : classLoading;
   const enrollInClass = useEnrollInClass();
   const cancelEnrollment = useCancelEnrollment();
+  const createTicket = useCreateTicketForClass();
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
+  const [showTicketDialog, setShowTicketDialog] = useState(false);
+  const [createdTicket, setCreatedTicket] = useState<any>(null);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card');
   const [cardNumber, setCardNumber] = useState('');
   const [cardExpiry, setCardExpiry] = useState('');
@@ -56,6 +60,15 @@ const ClassDetailPage = () => {
   const isEnrolled = classItem?.enrollments?.some((e) => e.user.id === user?.id) || false;
   const enrollment = classItem?.enrollments?.find((e) => e.user.id === user?.id);
   const isPaid = isEnrolled && enrollment && (enrollment.status === 'paid' || enrollment.status === 'enrolled') && classItem?.price && classItem.price > 0;
+  
+  // Check if enrollment is within 24 hours (for refund eligibility)
+  const enrollmentDate = enrollment?.createdAt ? new Date(enrollment.createdAt) : null;
+  const now = new Date();
+  const hoursSinceEnrollment = enrollmentDate 
+    ? (now.getTime() - enrollmentDate.getTime()) / (1000 * 60 * 60)
+    : null;
+  const isWithin24Hours = hoursSinceEnrollment !== null && hoursSinceEnrollment < 24;
+  const canCancelWithRefund = isPaid && isWithin24Hours;
   
   // Check if class is online
   const isOnline = !classItem?.latitude || !classItem?.longitude;
@@ -108,23 +121,53 @@ const ClassDetailPage = () => {
       setCardExpiry('');
       setCardCVC('');
       
-      // Only show success modal for card payments, not cash
-      if (paymentMethod === 'card') {
-        setShowSuccessDialog(true);
-      } else {
-        // For cash payment, show info message with class start date
-        const startDate = classItem?.startTime ? new Date(classItem.startTime) : null;
-        if (startDate) {
-          const formattedDate = format(startDate, 'EEEE, MMMM d');
-          toast.success('Enrollment confirmed!', {
-            description: `You can pay in cash before the first lesson on ${formattedDate}.`,
-            duration: 5000,
-          });
+      // Create ticket with QR code
+      try {
+        const ticket = await createTicket.mutateAsync(id!);
+        setCreatedTicket(ticket);
+        
+        // Only show success modal for card payments, not cash
+        if (paymentMethod === 'card') {
+          setShowSuccessDialog(true);
         } else {
-          toast.success('Enrollment confirmed!', {
-            description: 'You can pay in cash before the first lesson starts.',
-            duration: 5000,
-          });
+          // For cash payment, show ticket dialog with info message
+          setShowTicketDialog(true);
+          // Also show info message with class start date
+          const startDate = classItem?.startTime ? new Date(classItem.startTime) : null;
+          if (startDate) {
+            const formattedDate = format(startDate, 'EEEE, MMMM d');
+            toast.success('Enrollment confirmed!', {
+              description: `You can pay in cash before the first lesson on ${formattedDate}.`,
+              duration: 5000,
+            });
+          } else {
+            toast.success('Enrollment confirmed!', {
+              description: 'You can pay in cash before the first lesson starts.',
+              duration: 5000,
+            });
+          }
+        }
+      } catch (ticketError: any) {
+        // Ticket creation failed, but enrollment succeeded
+        console.warn('Ticket creation failed:', ticketError);
+        // Only show success modal for card payments, not cash
+        if (paymentMethod === 'card') {
+          setShowSuccessDialog(true);
+        } else {
+          // For cash payment, show info message with class start date
+          const startDate = classItem?.startTime ? new Date(classItem.startTime) : null;
+          if (startDate) {
+            const formattedDate = format(startDate, 'EEEE, MMMM d');
+            toast.success('Enrollment confirmed!', {
+              description: `You can pay in cash before the first lesson on ${formattedDate}.`,
+              duration: 5000,
+            });
+          } else {
+            toast.success('Enrollment confirmed!', {
+              description: 'You can pay in cash before the first lesson starts.',
+              duration: 5000,
+            });
+          }
         }
       }
     } catch (error: any) {
@@ -249,11 +292,17 @@ const ClassDetailPage = () => {
                   </span>
                 )}
                 {isPaid && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="px-3 py-1 rounded-full bg-green-500/90 backdrop-blur-sm text-white text-sm font-medium flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" />
                       Paid
                     </span>
+                    {canCancelWithRefund && (
+                      <span className="px-3 py-1 rounded-full bg-blue-500/90 backdrop-blur-sm text-white text-xs font-medium flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        Refundable (24h)
+                      </span>
+                    )}
                     <motion.button
                       onClick={() => {
                         // Load invoice from enrollment or use stored invoice
@@ -370,34 +419,93 @@ const ClassDetailPage = () => {
                           )}
                           {module.lessons && Array.isArray(module.lessons) && module.lessons.length > 0 && (
                             <div className="space-y-2 mt-3">
-                              {module.lessons.map((lesson: any, lessonIndex: number) => (
-                                <div
-                                  key={lesson.id || lessonIndex}
-                                  className="flex items-start gap-2 p-2 rounded-lg bg-muted/50"
-                                >
-                                  <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                    <PlayCircle className="w-3 h-3 text-primary" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-foreground">
-                                      {lesson.title || `Lesson ${lessonIndex + 1}`}
-                                    </p>
-                                    {lesson.duration && (
-                                      <p className="text-xs text-muted-foreground mt-0.5">
-                                        {lesson.duration}
-                                      </p>
+                              {module.lessons.map((lesson: any, lessonIndex: number) => {
+                                const lessonQAs = mockQAs.filter(qa => qa.lessonId === lesson.id);
+                                return (
+                                  <div key={lesson.id || lessonIndex} className="space-y-2">
+                                    <div className="flex items-start gap-2 p-2 rounded-lg bg-muted/50">
+                                      <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <PlayCircle className="w-3 h-3 text-primary" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-foreground">
+                                          {lesson.title || `Lesson ${lessonIndex + 1}`}
+                                        </p>
+                                        {lesson.duration && (
+                                          <p className="text-xs text-muted-foreground mt-0.5">
+                                            {lesson.duration}
+                                          </p>
+                                        )}
+                                        {lesson.description && (
+                                          <p className="text-xs text-muted-foreground mt-1">
+                                            {lesson.description}
+                                          </p>
+                                        )}
+                                      </div>
+                                      {lesson.completed && (
+                                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                                      )}
+                                    </div>
+                                    
+                                    {/* Q&A Section for this lesson */}
+                                    {isEnrolled && (
+                                      <div className="ml-7 p-3 rounded-lg bg-muted/30 border border-border">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <div className="flex items-center gap-2">
+                                            <MessageCircle className="w-3 h-3 text-primary" />
+                                            <span className="text-xs font-semibold">Q&A ({lessonQAs.length})</span>
+                                          </div>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                              setSelectedLessonForQA(lesson.id);
+                                              setShowQADialog(true);
+                                            }}
+                                            className="h-7 text-xs"
+                                          >
+                                            <Plus className="w-3 h-3 mr-1" />
+                                            Ask
+                                          </Button>
+                                        </div>
+                                        
+                                        {lessonQAs.length > 0 ? (
+                                          <div className="space-y-2 mt-2">
+                                            {lessonQAs.map((qa) => (
+                                              <div key={qa.id} className={`p-2 rounded-lg text-xs ${
+                                                qa.answer 
+                                                  ? 'bg-green-50/50 dark:bg-green-950/20 border border-green-200 dark:border-green-800' 
+                                                  : 'bg-yellow-50/50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800'
+                                              }`}>
+                                                <div className="flex items-start gap-2 mb-1">
+                                                  <Users className="w-3 h-3 text-muted-foreground mt-0.5 flex-shrink-0" />
+                                                  <div className="flex-1">
+                                                    <span className="font-semibold text-foreground">{qa.studentName}</span>
+                                                    <span className="text-muted-foreground ml-1">• {qa.createdAt.toLocaleDateString()}</span>
+                                                  </div>
+                                                </div>
+                                                <p className="text-xs text-foreground mb-1 ml-5">Q: {qa.question}</p>
+                                                {qa.answer && (
+                                                  <div className="ml-5 mt-1 p-2 rounded bg-background/50 border-l-2 border-primary/30">
+                                                    <p className="text-xs text-foreground">
+                                                      <span className="font-semibold text-primary">A: </span>
+                                                      {qa.answer}
+                                                    </p>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <p className="text-xs text-muted-foreground text-center py-1">
+                                            No questions yet
+                                          </p>
+                                        )}
+                                      </div>
                                     )}
-                                    {lesson.description && (
-                                      <p className="text-xs text-muted-foreground mt-1">
-                                        {lesson.description}
-                                      </p>
-                                    )}
                                   </div>
-                                  {lesson.completed && (
-                                    <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                                  )}
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           )}
                         </div>
@@ -725,14 +833,39 @@ const ClassDetailPage = () => {
                   <CheckCircle2 className="w-5 h-5 mr-2" />
                   {isPaid ? 'Enrolled (Paid)' : 'Enrolled'}
                 </Button>
+                {canCancelWithRefund && (
+                  <div className="w-full p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-start gap-2">
+                    <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-xs font-semibold text-blue-600">24-Hour Refund Policy</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        You can cancel and get a full refund within 24 hours of enrollment.
+                      </p>
+                      {hoursSinceEnrollment !== null && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {Math.floor(24 - hoursSinceEnrollment)} hours remaining
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <Button
                   variant="outline"
                   className="w-full h-12 rounded-xl text-destructive border-destructive"
                   onClick={handleCancel}
-                  disabled={cancelEnrollment.isPending}
+                  disabled={cancelEnrollment.isPending || (isPaid && !canCancelWithRefund)}
                 >
-                  {cancelEnrollment.isPending ? 'Cancelling...' : 'Cancel Enrollment'}
+                  {cancelEnrollment.isPending 
+                    ? 'Cancelling...' 
+                    : isPaid && !canCancelWithRefund
+                    ? 'Cancel (No Refund)'
+                    : 'Cancel Enrollment'}
                 </Button>
+                {isPaid && !canCancelWithRefund && (
+                  <p className="text-xs text-center text-muted-foreground mt-1">
+                    24-hour refund window has passed
+                  </p>
+                )}
               </div>
             </>
           ) : (
@@ -1138,16 +1271,31 @@ const ClassDetailPage = () => {
                       transition={{ delay: 0.6 }}
                       className="w-full pb-4"
                     >
-                      <Button
-                        onClick={() => {
-                          setShowSuccessDialog(false);
-                          // Go back to previous page (where user came from)
-                          navigate(-1);
-                        }}
-                        className="w-full h-12 rounded-xl bg-gradient-primary text-primary-foreground"
-                      >
-                        {t('backToDetails')}
-                      </Button>
+                      <div className="space-y-2">
+                        {createdTicket && (
+                          <Button
+                            onClick={() => {
+                              setShowSuccessDialog(false);
+                              setShowTicketDialog(true);
+                            }}
+                            variant="outline"
+                            className="w-full h-12 rounded-xl flex items-center justify-center gap-2"
+                          >
+                            <QrCode className="w-5 h-5" />
+                            View QR Code Ticket
+                          </Button>
+                        )}
+                        <Button
+                          onClick={() => {
+                            setShowSuccessDialog(false);
+                            // Go back to previous page (where user came from)
+                            navigate(-1);
+                          }}
+                          className="w-full h-12 rounded-xl bg-gradient-primary text-primary-foreground"
+                        >
+                          {t('backToDetails')}
+                        </Button>
+                      </div>
                     </motion.div>
                   </div>
                 </div>
@@ -1155,6 +1303,85 @@ const ClassDetailPage = () => {
             </>
           )}
         </AnimatePresence>
+
+        {/* Ticket QR Code Dialog */}
+        <Dialog open={showTicketDialog} onOpenChange={setShowTicketDialog}>
+          <DialogContent className="max-w-md mx-4 rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Ticket className="w-5 h-5 text-primary" />
+                Your Ticket
+              </DialogTitle>
+              <DialogDescription>
+                Show this QR code at the event entrance
+              </DialogDescription>
+            </DialogHeader>
+            
+            {createdTicket && (
+              <div className="space-y-6 py-4">
+                {/* Ticket Number */}
+                <div className="text-center pb-4 border-b border-border">
+                  <p className="text-sm text-muted-foreground mb-1">Ticket Number</p>
+                  <p className="text-xl font-bold text-foreground">{createdTicket.ticketNumber}</p>
+                </div>
+
+                {/* QR Code */}
+                <div className="flex justify-center">
+                  <div className="w-64 h-64 bg-white rounded-2xl p-4 border-4 border-primary/20 flex items-center justify-center">
+                    <div className="text-center space-y-2">
+                      <QrCode className="w-48 h-48 mx-auto text-foreground" />
+                      <p className="text-xs font-mono text-muted-foreground break-all">{createdTicket.qrCode}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Event Info */}
+                {createdTicket.class && (
+                  <div className="p-4 rounded-xl bg-muted space-y-2">
+                    <p className="text-sm font-semibold text-foreground">{createdTicket.class.title}</p>
+                    {createdTicket.class.startTime && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="w-4 h-4 text-primary" />
+                        <span className="text-muted-foreground">
+                          {format(new Date(createdTicket.class.startTime), 'EEEE, MMMM d, yyyy • h:mm a')}
+                        </span>
+                      </div>
+                    )}
+                    {createdTicket.class.venue && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <MapPin className="w-4 h-4 text-primary" />
+                        <span className="text-muted-foreground">{createdTicket.class.venue.name}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowTicketDialog(false);
+                      navigate(`/ticket/${createdTicket.id}`);
+                    }}
+                    className="flex-1"
+                  >
+                    View Full Ticket
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowTicketDialog(false);
+                      navigate(-1);
+                    }}
+                    className="flex-1 bg-gradient-primary"
+                  >
+                    Done
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Invoice Dialog */}
         <Dialog open={showInvoiceDialog} onOpenChange={setShowInvoiceDialog}>
@@ -1254,6 +1481,66 @@ const ClassDetailPage = () => {
           </DialogContent>
         </Dialog>
 
+      {/* Q&A Dialog */}
+      <Dialog open={showQADialog} onOpenChange={setShowQADialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Ask a Question</DialogTitle>
+            <DialogDescription>
+              Ask a question about this lesson. The instructor will respond.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-3 rounded-lg bg-muted/50">
+              <p className="text-xs font-medium text-muted-foreground mb-1">Lesson:</p>
+              <p className="text-sm text-foreground">
+                {classItem?.syllabus
+                  ?.flatMap((m: any) => m.lessons)
+                  .find((l: any) => l.id === selectedLessonForQA)?.title || 'Unknown Lesson'}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Your Question</label>
+              <textarea
+                placeholder="Type your question here..."
+                value={questionText}
+                onChange={(e) => setQuestionText(e.target.value)}
+                rows={4}
+                className="w-full px-3 py-2 rounded-xl bg-muted border-0 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setQuestionText('');
+                  setShowQADialog(false);
+                  setSelectedLessonForQA(null);
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!questionText.trim()) {
+                    toast.error('Please enter a question');
+                    return;
+                  }
+                  toast.success('Question submitted! The instructor will respond soon.');
+                  setQuestionText('');
+                  setShowQADialog(false);
+                  setSelectedLessonForQA(null);
+                }}
+                className="flex-1 bg-gradient-primary"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                Submit
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       </div>
     </MobileLayout>
   );

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Settings, ChevronRight, MapPin, Star, Trophy, Users, Calendar, Heart, Share2, Edit, GraduationCap, X, Music, ExternalLink, Sparkles, Play, Image as ImageIcon, Video as VideoIcon, Check } from 'lucide-react';
+import { Settings, ChevronRight, MapPin, Star, Trophy, Users, Calendar, Heart, Share2, Edit, GraduationCap, X, Music, ExternalLink, Sparkles, Play, Image as ImageIcon, Video as VideoIcon, Check, Ticket } from 'lucide-react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import BottomNav from '@/components/layout/BottomNav';
 import UserAvatar from '@/components/ui/UserAvatar';
@@ -621,12 +621,16 @@ const ProfilePage = () => {
               <div className="grid grid-cols-3 gap-2">
                 {user.photos
                   .filter((url: string) => {
-                    if (activeMediaTab === 'photos') return !url.startsWith('data:video');
-                    if (activeMediaTab === 'videos') return url.startsWith('data:video');
-                    return true; // 'all' shows everything
+                    // Filter out invalid video URLs (unsplash videos don't work)
+                    if (url && url.includes('videos.unsplash.com')) {
+                      return false;
+                    }
+                    if (activeMediaTab === 'photos') return url && !url.startsWith('data:video') && !url.includes('.mp4') && !url.includes('.mov') && !url.includes('.webm');
+                    if (activeMediaTab === 'videos') return url && (url.startsWith('data:video') || url.includes('.mp4') || url.includes('.mov') || url.includes('.webm'));
+                    return url; // 'all' shows everything
                   })
                   .map((url: string, index: number) => {
-                    const isVideo = url.startsWith('data:video');
+                    const isVideo = url && (url.startsWith('data:video') || url.includes('.mp4') || url.includes('.mov') || url.includes('.webm'));
                     const allMedia = user.photos || [];
                     const actualIndex = allMedia.indexOf(url);
                     
@@ -643,6 +647,10 @@ const ProfilePage = () => {
                               src={url}
                               className="w-full h-full object-cover"
                               muted
+                              onError={(e) => {
+                                // Hide video element if it fails to load
+                                e.currentTarget.style.display = 'none';
+                              }}
                             />
                             <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
                               <Play className="w-8 h-8 text-white drop-shadow-lg" />
@@ -653,6 +661,10 @@ const ProfilePage = () => {
                             src={url}
                             alt={`Photo ${index + 1}`}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // Replace broken image with placeholder
+                              e.currentTarget.src = 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400';
+                            }}
                           />
                         )}
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
@@ -699,6 +711,7 @@ const ProfilePage = () => {
             {[
               { label: 'My Vibes', icon: Calendar, route: '/my-meetups' },
               { label: 'My Classes', icon: GraduationCap, route: '/my-classes' },
+              { label: 'My Tickets', icon: Ticket, route: '/tickets' },
               { label: 'Saved Venues', icon: Heart, route: '/discover' },
               { label: 'Social Feed', icon: Users, route: '/social' },
               { label: 'Settings', icon: Settings, route: '/settings' },

@@ -550,7 +550,6 @@ const ClassesPage = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedCity, setSelectedCity] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestionDialog, setShowSuggestionDialog] = useState(false);
   const [suggestionText, setSuggestionText] = useState('');
@@ -783,42 +782,6 @@ const ClassesPage = () => {
           </div>
         </div>
 
-        {/* Mexico Cities Filter */}
-        <div className="px-4 pb-3 border-b border-border">
-          <div className="flex items-center gap-2 mb-2">
-            <MapPin className="w-4 h-4 text-muted-foreground" />
-            <span className="text-xs font-semibold text-muted-foreground uppercase">Target Cities</span>
-          </div>
-          <div className="flex gap-2 overflow-x-auto hide-scrollbar">
-            <motion.button
-              onClick={() => setSelectedCity('')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full whitespace-nowrap text-xs transition-all ${
-                selectedCity === '' 
-                  ? 'bg-primary/20 text-primary border border-primary/40' 
-                  : 'bg-muted/50 text-muted-foreground border border-transparent'
-              }`}
-              whileTap={{ scale: 0.95 }}
-            >
-              <span>🌎</span>
-              <span className="font-medium">All Cities</span>
-            </motion.button>
-            {mexicoCities.map((city) => (
-              <motion.button
-                key={city.id}
-                onClick={() => setSelectedCity(city.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full whitespace-nowrap text-xs transition-all ${
-                  selectedCity === city.id 
-                    ? 'bg-primary/20 text-primary border border-primary/40' 
-                    : 'bg-muted/50 text-muted-foreground border border-transparent'
-                }`}
-                whileTap={{ scale: 0.95 }}
-              >
-                <span>{city.emoji}</span>
-                <span className="font-medium">{city.label}</span>
-              </motion.button>
-            ))}
-          </div>
-        </div>
       </div>
 
       <div className="px-4 py-4 space-y-4">
@@ -904,7 +867,7 @@ const ClassesPage = () => {
                       <span>${(classItem as any).price}</span>
                       {(classItem as any).price && (classItem as any).price > 0 && (
                         <span className="text-xs text-muted-foreground ml-1">
-                          (+3% platform fee)
+                          (+4% processing fee)
                         </span>
                       )}
                     </span>

@@ -98,6 +98,14 @@ export const API_ENDPOINTS = {
     ENROLL: (id: string) => `${API_BASE_URL}/classes/${id}/enroll`,
     CANCEL_ENROLLMENT: (id: string) => `${API_BASE_URL}/classes/${id}/enroll`,
   },
+  // Tickets
+  TICKETS: {
+    LIST: `${API_BASE_URL}/tickets`,
+    MY_TICKETS: `${API_BASE_URL}/tickets/my-tickets`,
+    DETAIL: (id: string) => `${API_BASE_URL}/tickets/${id}`,
+    CREATE_FOR_CLASS: (classId: string) => `${API_BASE_URL}/tickets/class/${classId}`,
+    CREATE_FOR_MEETUP: (meetupId: string) => `${API_BASE_URL}/tickets/meetup/${meetupId}`,
+  },
   // Mentors
   MENTORS: {
     LIST: `${API_BASE_URL}/mentors`,
