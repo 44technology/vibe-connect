@@ -1349,15 +1349,28 @@ export const mockApiRequest = async <T = any>(
 
   if (pathname.includes('/users/avatar')) {
     if (!currentUserId) throw new Error('Unauthorized');
-    // Simulate file upload - return a dummy URL
-    const avatarUrl = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150';
-    const user = getStorage(`${USER_STORAGE_KEY}_current-user`, getDummyUser('current-user'));
-    user.avatar = avatarUrl;
-    setStorage(`${USER_STORAGE_KEY}_current-user`, user);
-    return {
-      success: true,
-      data: { avatar: avatarUrl },
-    } as T;
+    
+    // Handle GET request (fetch avatar)
+    if (method === 'GET') {
+      const user = getStorage(`${USER_STORAGE_KEY}_current-user`, getDummyUser('current-user'));
+      return {
+        success: true,
+        data: { avatar: user.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150' },
+      } as T;
+    }
+    
+    // Handle POST request (upload avatar)
+    if (method === 'POST') {
+      // Simulate file upload - return a dummy URL
+      const avatarUrl = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150';
+      const user = getStorage(`${USER_STORAGE_KEY}_current-user`, getDummyUser('current-user'));
+      user.avatar = avatarUrl;
+      setStorage(`${USER_STORAGE_KEY}_current-user`, user);
+      return {
+        success: true,
+        data: { avatar: avatarUrl },
+      } as T;
+    }
   }
 
 

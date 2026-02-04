@@ -19,7 +19,7 @@ const loginMethods = [
 const messages: Record<LoginStep, string[]> = {
   welcome: [
     "Hey! Welcome back! 👋",
-    "I'm Uli, let's get you signed in.",
+    "I'm Lira, let's get you signed in.",
     "How would you like to sign in?",
   ],
   method: [
@@ -195,7 +195,7 @@ const LoginPage = () => {
       <div className="absolute inset-0 bg-gradient-hero" />
       
       <div className="relative flex-1 flex flex-col px-6 pt-12 pb-8 max-w-md mx-auto w-full">
-        {/* ULI Mascot */}
+        {/* Lira Mascot */}
         <motion.div 
           className="flex justify-center mb-8"
           initial={{ scale: 0, rotate: -180 }}
@@ -204,7 +204,7 @@ const LoginPage = () => {
         >
           <motion.img 
             src={uliMascot} 
-            alt="ULI" 
+            alt="Lira" 
             className="w-32 h-32 drop-shadow-lg"
             animate={{ y: [0, -8, 0] }}
             transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}

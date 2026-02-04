@@ -693,34 +693,48 @@ const CreateVibePage = () => {
                     </div>
                     {groupSize === 'custom' && (
                       <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="mt-4"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
+                        className="mt-4 space-y-2"
                       >
+                        <label className="text-sm font-medium text-foreground block">
+                          Enter number of people
+                        </label>
                         <Input
                           type="number"
-                          placeholder="Enter number of people"
+                          placeholder="e.g., 15"
                           value={customGroupSize}
                           onChange={(e) => {
                             const value = e.target.value;
                             setCustomGroupSize(value);
                             const numValue = parseInt(value);
                             if (!isNaN(numValue) && numValue > 0) {
+                              // If more than 10, recommend event mode
                               if (numValue > 10) {
                                 setRecommendedType('event');
                                 setRecommendedMaxAttendees(numValue);
+                                setEventType('event'); // Auto-set to event
                                 setShowTypeRecommendationModal(true);
                               } else if (numValue <= 10) {
                                 setRecommendedType('activity');
                                 setRecommendedMaxAttendees(numValue);
-                                setShowTypeRecommendationModal(true);
+                                setEventType('activity'); // Auto-set to activity
+                                // Only show modal if user wants to see it, or we can skip for <= 10
                               }
                             }
                           }}
-                          className="h-12 rounded-xl"
+                          className="h-12 rounded-xl border-2 border-border focus:border-primary"
                           min="1"
+                          autoFocus
                         />
+                        {customGroupSize && parseInt(customGroupSize) > 10 && (
+                          <p className="text-xs text-orange-600 flex items-center gap-1">
+                            <Info className="w-3 h-3" />
+                            Event mode will be recommended for {customGroupSize} people
+                          </p>
+                        )}
                       </motion.div>
                     )}
                   </motion.div>

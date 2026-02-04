@@ -7,61 +7,77 @@
 @layer base {
   :root {
     /* ULIKME Brand Colors - New Palette */
+    /* Brand Color Palette */
+    /* Full White: #F4F6F5 - RGB(244, 246, 245) */
+    --color-white: 120 8% 96%;
+    /* Classic Orange: #F5B027 - RGB(245, 176, 39) */
+    --color-orange: 38 90% 56%;
+    /* Vivid Tangelo: #ED6C27 - RGB(237, 108, 39) */
+    --color-tangelo: 19 85% 54%;
+    /* Black Steel: #0D1216 - RGB(13, 18, 22) */
+    --color-black-steel: 210 27% 7%;
+    /* Rich Light Blue: #4799D4 - RGB(71, 153, 212) */
+    --color-blue: 204 60% 55%;
+    /* Subtle Pastel Red: #F0827A - RGB(240, 130, 122) */
+    --color-red: 5 78% 71%;
+
     /* Light mode - Clean white background */
-    --background: 0 0% 100%;
-    --foreground: 240 38% 13%;
+    --background: var(--color-white);
+    --foreground: var(--color-black-steel);
 
     /* Card background - Slightly off-white */
-    --card: 240 20% 99%;
-    --card-foreground: 240 38% 13%;
+    --card: 120 8% 98%;
+    --card-foreground: var(--color-black-steel);
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 38% 13%;
+    --popover: var(--color-white);
+    --popover-foreground: var(--color-black-steel);
 
-    /* Primary: #4834BC (Purple/Blue) */
-    --primary: 251 57% 47%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary: Rich Light Blue (#4799D4) */
+    --primary: var(--color-blue);
+    --primary-foreground: var(--color-white);
 
-    /* Secondary: #230F74 (Dark Purple) */
-    --secondary: 252 77% 26%;
-    --secondary-foreground: 0 0% 100%;
+    /* Secondary: Classic Orange (#F5B027) */
+    --secondary: var(--color-orange);
+    --secondary-foreground: var(--color-black-steel);
 
-    --muted: 240 20% 96%;
-    --muted-foreground: 240 10% 45%;
+    --muted: 120 8% 94%;
+    --muted-foreground: 210 10% 45%;
 
-    --accent: 251 57% 95%;
-    --accent-foreground: 251 57% 30%;
+    /* Accent: Vivid Tangelo (#ED6C27) */
+    --accent: var(--color-tangelo);
+    --accent-foreground: var(--color-white);
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    /* Destructive: Subtle Pastel Red (#F0827A) */
+    --destructive: var(--color-red);
+    --destructive-foreground: var(--color-white);
 
-    --border: 240 20% 90%;
-    --input: 240 20% 90%;
-    --ring: 251 57% 47%;
+    --border: 120 8% 88%;
+    --input: 120 8% 88%;
+    --ring: var(--color-blue);
 
     --radius: 1rem;
 
     /* Module Colors - Updated to match new palette */
-    --friendme: 251 57% 47%;
-    --friendme-foreground: 0 0% 100%;
+    --friendme: var(--color-blue);
+    --friendme-foreground: var(--color-white);
     
-    --loveme: 330 81% 60%;
-    --loveme-foreground: 0 0% 100%;
+    --loveme: var(--color-red);
+    --loveme-foreground: var(--color-white);
     
-    --connectme: 252 77% 26%;
-    --connectme-foreground: 0 0% 100%;
+    --connectme: var(--color-orange);
+    --connectme-foreground: var(--color-black-steel);
 
     /* Gradients - Updated with new colors */
-    --gradient-primary: linear-gradient(135deg, hsl(251 57% 47%) 0%, hsl(252 77% 26%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(252 77% 26%) 0%, hsl(240 38% 13%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(251 57% 47% / 0.1) 0%, transparent 50%);
+    --gradient-primary: linear-gradient(135deg, hsl(var(--color-blue)) 0%, hsl(var(--color-tangelo)) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--color-orange)) 0%, hsl(var(--color-tangelo)) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(var(--color-blue) / 0.1) 0%, transparent 50%);
     
     /* Shadows - Updated with new colors */
-    --shadow-sm: 0 1px 2px 0 hsl(240 38% 13% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(240 38% 13% / 0.1), 0 2px 4px -2px hsl(240 38% 13% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(240 38% 13% / 0.1), 0 4px 6px -4px hsl(240 38% 13% / 0.1);
-    --shadow-xl: 0 20px 25px -5px hsl(240 38% 13% / 0.1), 0 8px 10px -6px hsl(240 38% 13% / 0.1);
-    --shadow-glow: 0 0 20px hsl(251 57% 47% / 0.3);
+    --shadow-sm: 0 1px 2px 0 hsl(var(--color-black-steel) / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(var(--color-black-steel) / 0.1), 0 2px 4px -2px hsl(var(--color-black-steel) / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(var(--color-black-steel) / 0.1), 0 4px 6px -4px hsl(var(--color-black-steel) / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(var(--color-black-steel) / 0.1), 0 8px 10px -6px hsl(var(--color-black-steel) / 0.1);
+    --shadow-glow: 0 0 20px hsl(var(--color-blue) / 0.3);
     
     /* Sidebar (keeping for compatibility) */
     --sidebar-background: 0 0% 98%;
@@ -75,34 +91,38 @@
   }
 
   .dark {
-    /* Dark mode with new palette - #14142D */
-    --background: 240 38% 13%;
-    --foreground: 240 20% 98%;
+    /* Dark mode with new palette - Black Steel (#0D1216) */
+    --background: var(--color-black-steel);
+    --foreground: var(--color-white);
 
-    --card: 240 38% 18%;
-    --card-foreground: 240 20% 98%;
+    --card: 210 27% 12%;
+    --card-foreground: var(--color-white);
 
-    --popover: 240 38% 16%;
-    --popover-foreground: 240 20% 98%;
+    --popover: 210 27% 10%;
+    --popover-foreground: var(--color-white);
 
-    --primary: 251 57% 47%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary: Rich Light Blue (#4799D4) */
+    --primary: var(--color-blue);
+    --primary-foreground: var(--color-white);
 
-    --secondary: 252 77% 26%;
-    --secondary-foreground: 0 0% 100%;
+    /* Secondary: Classic Orange (#F5B027) */
+    --secondary: var(--color-orange);
+    --secondary-foreground: var(--color-black-steel);
 
-    --muted: 240 30% 20%;
-    --muted-foreground: 240 15% 70%;
+    --muted: 210 20% 15%;
+    --muted-foreground: 120 8% 70%;
 
-    --accent: 251 50% 25%;
-    --accent-foreground: 251 57% 70%;
+    /* Accent: Vivid Tangelo (#ED6C27) */
+    --accent: var(--color-tangelo);
+    --accent-foreground: var(--color-white);
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    /* Destructive: Subtle Pastel Red (#F0827A) */
+    --destructive: var(--color-red);
+    --destructive-foreground: var(--color-white);
 
-    --border: 240 30% 25%;
-    --input: 240 30% 25%;
-    --ring: 251 57% 47%;
+    --border: 210 20% 20%;
+    --input: 210 20% 20%;
+    --ring: var(--color-blue);
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;

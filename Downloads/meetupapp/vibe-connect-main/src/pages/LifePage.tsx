@@ -14,11 +14,12 @@ import { useCreateDirectChat } from '@/hooks/useChat';
 import { Input } from '@/components/ui/input';
 import { Send, ExternalLink } from 'lucide-react';
 
-// Sponsor reels data (ads)
+// Sponsor reels data (ads) - Vertical video format
 const sponsorReels = [
   {
-    id: 'sponsor-1',
+    id: 'sponsor-reel-1',
     type: 'sponsor',
+    adType: 'reel',
     sponsorType: 'venue',
     name: 'Panther Coffee',
     avatar: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=150',
@@ -28,8 +29,9 @@ const sponsorReels = [
     category: 'Café',
   },
   {
-    id: 'sponsor-2',
+    id: 'sponsor-reel-2',
     type: 'sponsor',
+    adType: 'reel',
     sponsorType: 'brand',
     name: 'Nike',
     avatar: 'https://logos-world.net/wp-content/uploads/2020/04/Nike-Logo.png',
@@ -39,8 +41,9 @@ const sponsorReels = [
     category: 'Sportswear',
   },
   {
-    id: 'sponsor-3',
+    id: 'sponsor-reel-3',
     type: 'sponsor',
+    adType: 'reel',
     sponsorType: 'venue',
     name: 'Zuma Miami',
     avatar: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=150',
@@ -49,9 +52,14 @@ const sponsorReels = [
     link: 'https://zumarestaurant.com',
     category: 'Restaurant',
   },
+];
+
+// Sponsor posts data (ads) - Square/Post format
+const sponsorPosts = [
   {
-    id: 'sponsor-4',
+    id: 'sponsor-post-1',
     type: 'sponsor',
+    adType: 'post',
     sponsorType: 'brand',
     name: 'Coca-Cola',
     avatar: 'https://logos-world.net/wp-content/uploads/2020/04/Coca-Cola-Logo.png',
@@ -59,10 +67,14 @@ const sponsorReels = [
     image: 'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=800',
     link: 'https://coca-cola.com',
     category: 'Beverage',
+    likes: 0,
+    comments: 0,
+    time: 'Sponsored',
   },
   {
-    id: 'sponsor-5',
+    id: 'sponsor-post-2',
     type: 'sponsor',
+    adType: 'post',
     sponsorType: 'venue',
     name: 'Equinox South Beach',
     avatar: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=150',
@@ -70,6 +82,39 @@ const sponsorReels = [
     image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800',
     link: 'https://equinox.com',
     category: 'Fitness',
+    likes: 0,
+    comments: 0,
+    time: 'Sponsored',
+  },
+  {
+    id: 'sponsor-post-3',
+    type: 'sponsor',
+    adType: 'post',
+    sponsorType: 'brand',
+    name: 'Adidas',
+    avatar: 'https://logos-world.net/wp-content/uploads/2020/04/Adidas-Logo.png',
+    content: 'Impossible is Nothing. 🏃‍♀️',
+    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800',
+    link: 'https://adidas.com',
+    category: 'Sportswear',
+    likes: 0,
+    comments: 0,
+    time: 'Sponsored',
+  },
+  {
+    id: 'sponsor-post-4',
+    type: 'sponsor',
+    adType: 'post',
+    sponsorType: 'venue',
+    name: 'Wynwood Walls',
+    avatar: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=150',
+    content: 'Explore Miami\'s vibrant street art scene! 🎨',
+    image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800',
+    link: 'https://wynwoodwalls.com',
+    category: 'Art & Culture',
+    likes: 0,
+    comments: 0,
+    time: 'Sponsored',
   },
 ];
 
@@ -202,7 +247,7 @@ const LifePage = () => {
     });
   }, [backendPosts, user?.interests]);
 
-  // Filter posts based on active tab and insert sponsor reels every 3 posts
+  // Filter posts based on active tab and insert sponsor reels and posts every 3-5 posts
   const allPosts = useMemo(() => {
     let filteredPosts: any[] = [];
     
@@ -216,21 +261,32 @@ const LifePage = () => {
       filteredPosts = allBackendPosts;
     }
 
-    // Insert sponsor reels every 3 posts
+    // Combine sponsor reels and posts, then shuffle them
+    const allSponsors = [...sponsorReels, ...sponsorPosts];
+    
+    // Insert sponsor content (reels and posts) every 3-5 posts
     const postsWithSponsors: any[] = [];
     let sponsorIndex = 0;
+    let lastSponsorPosition = -1;
     
     filteredPosts.forEach((post, index) => {
       postsWithSponsors.push(post);
       
-      // Insert sponsor reel after every 3 posts (at positions 3, 6, 9, etc.)
-      if ((index + 1) % 3 === 0) {
-        const sponsor = sponsorReels[sponsorIndex % sponsorReels.length];
+      // Insert sponsor content after every 3-5 posts (randomized between 3-5)
+      // Ensure we don't insert at the very beginning or end
+      const shouldInsertSponsor = index > 0 && 
+                                  index < filteredPosts.length - 1 &&
+                                  (index - lastSponsorPosition >= 3) &&
+                                  (Math.random() < 0.3 || (index + 1) % 4 === 0);
+      
+      if (shouldInsertSponsor && allSponsors.length > 0) {
+        const sponsor = allSponsors[sponsorIndex % allSponsors.length];
         postsWithSponsors.push({
           ...sponsor,
           isSponsored: true,
         });
         sponsorIndex++;
+        lastSponsorPosition = index;
       }
     });
 
@@ -580,36 +636,45 @@ const LifePage = () => {
                     <span className="text-white text-sm font-medium">{currentPost.likes}</span>
                   </motion.button>
 
-                  {/* Comment Button */}
-                  <motion.button
-                    onClick={async () => {
-                      // Open chat with post owner when clicking comment
-                      if (currentPost.user?.id && currentPost.user.id !== user?.id) {
-                        try {
-                          const chat = await createDirectChat.mutateAsync(currentPost.user.id);
-                          navigate(`/chat?chatId=${chat.id}`);
-                        } catch (error: any) {
-                          // If chat creation fails, still show comments
+                  {/* Comment Button - Disabled for sponsored content */}
+                  {!currentPost.isSponsored ? (
+                    <motion.button
+                      onClick={async () => {
+                        // Open chat with post owner when clicking comment
+                        if (currentPost.user?.id && currentPost.user.id !== user?.id) {
+                          try {
+                            const chat = await createDirectChat.mutateAsync(currentPost.user.id);
+                            navigate(`/chat?chatId=${chat.id}`);
+                          } catch (error: any) {
+                            // If chat creation fails, still show comments
+                            setSelectedPostId(currentPost.id);
+                            setShowComments(true);
+                            if (error.message && !error.message.includes('chat')) {
+                              toast.error(error.message);
+                            }
+                          }
+                        } else {
+                          // Show comments if own post or no user ID
                           setSelectedPostId(currentPost.id);
                           setShowComments(true);
-                          if (error.message && !error.message.includes('chat')) {
-                            toast.error(error.message);
-                          }
                         }
-                      } else {
-                        // Show comments if own post or no user ID
-                        setSelectedPostId(currentPost.id);
-                        setShowComments(true);
-                      }
-                    }}
-                    className="flex flex-col items-center gap-1"
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <div className="p-3 rounded-full bg-black/30 backdrop-blur-sm">
-                      <MessageCircle className="w-6 h-6 text-white" />
+                      }}
+                      className="flex flex-col items-center gap-1"
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <div className="p-3 rounded-full bg-black/30 backdrop-blur-sm">
+                        <MessageCircle className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="text-white text-sm font-medium">{currentPost.comments}</span>
+                    </motion.button>
+                  ) : (
+                    <div className="flex flex-col items-center gap-1 opacity-50">
+                      <div className="p-3 rounded-full bg-black/30 backdrop-blur-sm">
+                        <MessageCircle className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="text-white text-sm font-medium">{currentPost.comments || 0}</span>
                     </div>
-                    <span className="text-white text-sm font-medium">{currentPost.comments}</span>
-                  </motion.button>
+                  )}
                 </div>
               </div>
             </div>

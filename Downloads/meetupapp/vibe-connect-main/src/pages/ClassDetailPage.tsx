@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, BookOpen, MapPin, Clock, DollarSign, Users, Calendar, Phone, Globe, CreditCard, AlertCircle, Info, Star, CheckCircle2, X, Monitor, CheckCircle, Sparkles, MessageCircle, ChevronRight, FileText, ListChecks, PlayCircle, TrendingUp, ShoppingBag, Download, Gift, Package, Send, Plus } from 'lucide-react';
+import { ArrowLeft, BookOpen, MapPin, Clock, DollarSign, Users, Calendar, Phone, Globe, CreditCard, AlertCircle, Info, Star, CheckCircle2, X, Monitor, CheckCircle, Sparkles, MessageCircle, ChevronRight, FileText, ListChecks, PlayCircle, TrendingUp, ShoppingBag, Download, Gift, Package, Send, Plus, Ticket } from 'lucide-react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import { Button } from '@/components/ui/button';
 import UserAvatar from '@/components/ui/UserAvatar';
@@ -32,6 +32,9 @@ const ClassDetailPage = () => {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
   const [showTicketDialog, setShowTicketDialog] = useState(false);
+  const [showQADialog, setShowQADialog] = useState(false);
+  const [questionText, setQuestionText] = useState('');
+  const [selectedLessonForQA, setSelectedLessonForQA] = useState<string | null>(null);
   const [createdTicket, setCreatedTicket] = useState<any>(null);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card');
   const [cardNumber, setCardNumber] = useState('');

@@ -146,7 +146,7 @@ const interestOptions = [
 const messages: Record<OnboardingStep, string[]> = {
   welcome: [
     "Hey there! 👋",
-    "I'm Uli, your guide to learning from real entrepreneurs!",
+    "I'm Lira, your guide to learning from real entrepreneurs!",
     "Ulikme is where real experience meets real results.",
     "Let's create your account to get started.",
     "How would you like to sign up?",
@@ -188,14 +188,20 @@ const messages: Record<OnboardingStep, string[]> = {
     "Share your business journey, what you've built, or what you want to learn. Real experience matters! 💼",
   ],
   photos: [
-    "Awesome!",
-    "Let's add photos and videos to your profile.",
-    "Add at least 2 photos/videos (up to 15) to showcase your work, achievements, or yourself! 📸🎥",
+    "Great! Now let's add some photos to your profile.",
+    "You need to add at least 2 photos before we can continue.",
+    "After adding 2 photos, we'll take a selfie, then you'll tell us about yourself! 📸",
+    "Tap on the empty slots below to add photos or videos (up to 15).",
   ],
   selfie: [
-    "Last step!",
-    "Take a quick selfie to verify it's really you.",
-    "This helps keep our community safe! ✨",
+    "Great! You've added your photos.",
+    "Now let's take a selfie to verify it's really you.",
+    "After this, you'll tell us about yourself! 📸",
+  ],
+  bio: [
+    "Almost done!",
+    "Tell us a bit about yourself - what you love, what you're passionate about.",
+    "This helps others get to know you better! ✨",
   ],
   complete: [
     "You're all set! 🎉",
@@ -229,22 +235,28 @@ const OnboardingPage = () => {
     setMessageIndex(0);
     setShowInput(false);
     
-    // Auto-fill photos step with dummy data
-    if (step === 'photos' && photos.length === 0) {
-      const dummyPhotos = [
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
-        'data:video;https://videos.unsplash.com/video-1522202176988-66273c2fd55f?w=400',
-        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
-      ];
-      setPhotos(dummyPhotos);
-      // Auto-advance to selfie step after a short delay
-      setTimeout(() => {
-        setStep('selfie');
-      }, 1500);
+    // Prevent going to selfie if less than 2 photos
+    if (step === 'selfie' && photos.length < 2) {
+      toast.error('Please add at least 2 photos before taking selfie');
+      setStep('photos');
       return;
     }
     
+    // Photos step - show immediately without waiting for messages
+    if (step === 'photos') {
+      setShowInput(true);
+      // Show messages quickly
+      const showMessages = async () => {
+        for (let i = 0; i < currentMessages.length; i++) {
+          await new Promise(resolve => setTimeout(resolve, 400));
+          setMessageIndex(i + 1);
+        }
+      };
+      showMessages();
+      return;
+    }
+    
+    // Other steps - show messages then input
     const showMessages = async () => {
       for (let i = 0; i < currentMessages.length; i++) {
         await new Promise(resolve => setTimeout(resolve, 800));
@@ -482,10 +494,11 @@ const OnboardingPage = () => {
   };
 
   const handleNext = () => {
-    const steps: OnboardingStep[] = ['welcome', 'method', 'phone', 'name', 'birthday', 'gender', 'lookingFor', 'interests', 'bio', 'photos', 'selfie', 'complete'];
+    const steps: OnboardingStep[] = ['welcome', 'method', 'phone', 'name', 'birthday', 'gender', 'lookingFor', 'interests', 'photos', 'selfie', 'bio', 'complete'];
     const currentIndex = steps.indexOf(step);
     if (currentIndex < steps.length - 1) {
       const nextStep = steps[currentIndex + 1];
+      
       // Skip steps based on selected method
       if (selectedMethod === 'google' || selectedMethod === 'apple') {
         if (step === 'method') {
@@ -493,6 +506,21 @@ const OnboardingPage = () => {
           return;
         }
       }
+      
+      // Check if moving from photos to selfie - require at least 2 photos
+      if (step === 'photos' && nextStep === 'selfie') {
+        if (photos.length < 2) {
+          toast.error('Please add at least 2 photos before continuing to selfie');
+          return;
+        }
+      }
+      
+      // Check if moving from interests to photos - ensure photos step is shown
+      if (step === 'interests' && nextStep !== 'photos') {
+        setStep('photos');
+        return;
+      }
+      
       setStep(nextStep);
     } else {
       navigate('/home');
@@ -513,20 +541,26 @@ const OnboardingPage = () => {
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (files) {
+    if (files && files.length > 0) {
       const remainingSlots = 15 - photos.length;
       if (remainingSlots <= 0) {
         toast.error('Maximum 15 photos/videos allowed');
+        event.target.value = ''; // Reset input
         return;
       }
       
-      Array.from(files).slice(0, remainingSlots).forEach((file) => {
+      const filesToProcess = Array.from(files).slice(0, remainingSlots);
+      let successCount = 0;
+      let errorCount = 0;
+      
+      filesToProcess.forEach((file, index) => {
         // Check file type
         const isVideo = file.type.startsWith('video/');
         const isImage = file.type.startsWith('image/');
         
         if (!isVideo && !isImage) {
           toast.error(`${file.name} is not a valid image or video file`);
+          errorCount++;
           return;
         }
         
@@ -534,6 +568,7 @@ const OnboardingPage = () => {
         const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
         if (file.size > maxSize) {
           toast.error(`${file.name} is too large. Max size: ${isVideo ? '50MB' : '10MB'}`);
+          errorCount++;
           return;
         }
         
@@ -541,10 +576,25 @@ const OnboardingPage = () => {
         reader.onload = (e) => {
           if (e.target?.result) {
             setPhotos(prev => [...prev, e.target.result as string]);
+            successCount++;
+            
+            // Show success message after all files are processed
+            if (successCount + errorCount === filesToProcess.length) {
+              if (successCount > 0) {
+                toast.success(`Added ${successCount} ${successCount === 1 ? 'photo' : 'photos'}`);
+              }
+            }
           }
+        };
+        reader.onerror = () => {
+          toast.error(`Failed to read ${file.name}`);
+          errorCount++;
         };
         reader.readAsDataURL(file);
       });
+      
+      // Reset input to allow selecting the same file again
+      event.target.value = '';
     }
   };
 
@@ -739,11 +789,11 @@ const OnboardingPage = () => {
               })}
             </div>
             <Button 
-              onClick={() => setStep('interests')} 
+              onClick={() => setStep('photos')} 
               disabled={lookingFor.length === 0 || loading}
               className="w-full bg-gradient-primary h-14 text-lg font-semibold shadow-glow disabled:opacity-50"
             >
-              Continue <ChevronRight className="ml-2" />
+              Continue to Photos <ChevronRight className="ml-2" />
             </Button>
             {lookingFor.length === 0 && (
               <p className="text-xs text-center text-muted-foreground">
@@ -791,22 +841,35 @@ const OnboardingPage = () => {
               })}
             </div>
             <Button 
-              onClick={() => setStep('bio')} 
+              onClick={() => setStep('photos')} 
               disabled={interests.length === 0 || loading}
               className="w-full bg-gradient-primary h-14 text-lg font-semibold shadow-glow disabled:opacity-50"
             >
-              Continue <ChevronRight className="ml-2" />
+              Continue to Photos <ChevronRight className="ml-2" />
             </Button>
+            <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
+              <p className="text-xs text-center text-blue-600 font-medium">
+                📸 Next: You'll add photos, then take a selfie, and finally tell us about yourself
+              </p>
+            </div>
           </div>
         );
 
       case 'bio':
         return (
           <div className="space-y-4 mt-4">
+            <div className="text-center mb-4">
+              <p className="text-base font-semibold text-foreground mb-1">
+                Tell Us About Yourself
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Share what makes you unique! This helps others get to know you better.
+              </p>
+            </div>
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              placeholder="Tell us about yourself... What do you love? What are you passionate about?"
+              placeholder="Tell us about yourself... What do you love? What are you passionate about? What are your goals?"
               rows={6}
               maxLength={500}
               className="w-full px-4 py-3 rounded-xl bg-muted border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
@@ -815,11 +878,11 @@ const OnboardingPage = () => {
               {bio.length} / 500 characters
             </p>
             <Button 
-              onClick={() => setStep('photos')} 
+              onClick={handleComplete} 
               disabled={loading}
               className="w-full bg-gradient-primary h-14 text-lg font-semibold shadow-glow disabled:opacity-50"
             >
-              Continue <ChevronRight className="ml-2" />
+              {loading ? 'Creating account...' : 'Complete Sign Up'} <ChevronRight className="ml-2" />
             </Button>
             <p className="text-xs text-center text-muted-foreground">
               You can skip this and add it later
@@ -830,37 +893,101 @@ const OnboardingPage = () => {
       case 'photos':
         return (
           <div className="space-y-4 mt-4">
-            <div className="text-center mb-2">
-              <p className="text-sm text-muted-foreground">
+            <div className="text-center mb-4">
+              <p className="text-base font-semibold text-foreground mb-1">
+                Add Photos & Videos
+              </p>
+              <p className="text-sm text-muted-foreground mb-2">
                 Added: {photos.length} / 15 (minimum 2 required)
               </p>
+              {photos.length < 2 && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20"
+                >
+                  <span className="text-xs font-medium text-orange-600">
+                    ⚠️ Add at least 2 photos to continue to selfie
+                  </span>
+                </motion.div>
+              )}
+              {photos.length >= 2 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 rounded-xl bg-green-500/10 border-2 border-green-500/30"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-green-500/20 flex-shrink-0">
+                      <Check className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-green-700 mb-0.5">
+                        Great! You've added {photos.length} photo{photos.length > 1 ? 's' : ''}.
+                      </p>
+                      <p className="text-xs text-green-600">
+                        Now let's take your selfie! 📸
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
             </div>
-            <div className="grid grid-cols-3 gap-2 max-h-[50vh] overflow-y-auto">
-              {[...Array(15)].map((_, index) => (
-                <div key={index} className="aspect-square rounded-xl overflow-hidden border-2 border-dashed border-border bg-muted flex items-center justify-center relative">
+            <div className="grid grid-cols-3 gap-3 max-h-[50vh] overflow-y-auto pb-2">
+              {[...Array(Math.max(15, photos.length + 1))].map((_, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.05 }}
+                  className={`aspect-square rounded-xl overflow-hidden border-2 ${
+                    photos[index] 
+                      ? 'border-border' 
+                      : 'border-dashed border-primary/50 bg-muted/50 hover:border-primary hover:bg-muted cursor-pointer'
+                  } flex items-center justify-center relative group`}
+                  onClick={() => {
+                    if (!photos[index] && photos.length < 15) {
+                      document.getElementById('photo-upload')?.click();
+                    }
+                  }}
+                >
                   {photos[index] ? (
                     <div className="relative w-full h-full">
                       {photos[index].startsWith('data:video') ? (
                         <video src={photos[index]} className="w-full h-full object-cover" controls />
                       ) : (
-                        <img src={photos[index]} alt={`Media ${index + 1}`} className="w-full h-full object-cover" />
+                        <img src={photos[index]} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
                       )}
-                      <button
-                        onClick={() => removePhoto(index)}
-                        className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-destructive-foreground shadow-md"
+                      <motion.button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removePhoto(index);
+                        }}
+                        className="absolute top-1 right-1 p-1.5 rounded-full bg-destructive text-destructive-foreground shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
                       >
-                        <X className="w-3 h-3" />
-                      </button>
+                        <X className="w-4 h-4" />
+                      </motion.button>
                       {photos[index].startsWith('data:video') && (
-                        <div className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/50 text-white text-xs">
+                        <div className="absolute bottom-1 left-1 px-2 py-1 rounded-md bg-black/70 text-white text-xs font-medium">
                           🎥 Video
                         </div>
                       )}
                     </div>
                   ) : (
-                    <Upload className="w-6 h-6 text-muted-foreground" />
+                    <div className="flex flex-col items-center justify-center gap-2 p-4">
+                      <div className="p-3 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                        <Camera className="w-6 h-6 text-primary" />
+                      </div>
+                      {index === 0 && photos.length === 0 && (
+                        <p className="text-xs text-center text-muted-foreground px-2">
+                          Tap to add photo
+                        </p>
+                      )}
+                    </div>
                   )}
-                </div>
+                </motion.div>
               ))}
             </div>
             <input
@@ -871,29 +998,73 @@ const OnboardingPage = () => {
               className="hidden"
               id="photo-upload"
             />
-            <label htmlFor="photo-upload">
+            <div className="flex gap-2">
               <Button
                 type="button"
                 variant="outline"
-                className="w-full h-12"
+                className="flex-1 h-12"
                 onClick={() => document.getElementById('photo-upload')?.click()}
                 disabled={photos.length >= 15}
               >
                 <Upload className="w-4 h-4 mr-2" />
-                Add Photos & Videos
+                {photos.length >= 15 ? 'Maximum Reached' : 'Add More'}
               </Button>
-            </label>
+              {photos.length > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 px-4"
+                  onClick={() => {
+                    setPhotos([]);
+                    toast.info('All photos removed');
+                  }}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
             <Button 
-              onClick={() => setStep('selfie')} 
+              onClick={() => {
+                if (photos.length < 2) {
+                  toast.error('Please add at least 2 photos before continuing to selfie');
+                  return;
+                }
+                setStep('selfie');
+              }} 
               disabled={photos.length < 2 || loading}
-              className="w-full bg-gradient-primary h-14 text-lg font-semibold shadow-glow disabled:opacity-50"
+              className="w-full bg-gradient-primary h-14 text-lg font-semibold shadow-glow disabled:opacity-50 disabled:cursor-not-allowed relative"
             >
-              Continue <ChevronRight className="ml-2" />
+              {photos.length < 2 ? (
+                <>
+                  Add {2 - photos.length} More Photo{2 - photos.length > 1 ? 's' : ''} to Continue
+                </>
+              ) : (
+                <>
+                  Continue to Selfie <ChevronRight className="ml-2" />
+                </>
+              )}
             </Button>
             {photos.length < 2 && (
-              <p className="text-xs text-center text-muted-foreground">
-                Please add at least 2 photos or videos
-              </p>
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 rounded-xl bg-orange-500/10 border-2 border-orange-500/30"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="p-1.5 rounded-full bg-orange-500/20 flex-shrink-0 mt-0.5">
+                    <Camera className="w-4 h-4 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-orange-700 mb-1">
+                      Photos Required
+                    </p>
+                    <p className="text-xs text-orange-600 leading-relaxed">
+                      You need to add at least <strong>2 photos</strong> before you can take your selfie. 
+                      Tap on the empty slots above or use the "Add More" button to upload photos.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
             )}
           </div>
         );
@@ -901,6 +1072,14 @@ const OnboardingPage = () => {
       case 'selfie':
         return (
           <div className="space-y-4 mt-4">
+            <div className="text-center mb-4">
+              <p className="text-base font-semibold text-foreground mb-1">
+                Take Your Selfie
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Let's verify it's really you! We'll compare your selfie with your uploaded photos.
+              </p>
+            </div>
             <div className="aspect-square rounded-2xl overflow-hidden border-2 border-primary bg-muted flex items-center justify-center">
               {selfie ? (
                 <div className="relative w-full h-full">
@@ -928,12 +1107,29 @@ const OnboardingPage = () => {
               {selfie ? 'Retake Selfie' : 'Take Selfie'}
             </Button>
             <Button 
-              onClick={handleComplete} 
+              onClick={() => {
+                if (!selfie) {
+                  toast.error('Please take a selfie before continuing');
+                  return;
+                }
+                setStep('bio');
+              }} 
               disabled={!selfie || loading}
               className="w-full bg-gradient-primary h-14 text-lg font-semibold shadow-glow disabled:opacity-50"
             >
-              {loading ? 'Creating account...' : 'Complete Sign Up'} <ChevronRight className="ml-2" />
+              Continue to About Me <ChevronRight className="ml-2" />
             </Button>
+            {!selfie && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20"
+              >
+                <p className="text-xs text-center text-orange-600 font-medium">
+                  ⚠️ Please take a selfie to continue
+                </p>
+              </motion.div>
+            )}
           </div>
         );
 
@@ -949,13 +1145,36 @@ const OnboardingPage = () => {
     }
   };
 
+  // Photos step - render full screen without chat bubbles
+  if (step === 'photos') {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <div className="absolute inset-0 bg-gradient-hero" />
+        <div className="relative flex-1 flex flex-col px-6 pt-12 pb-8 max-w-md mx-auto w-full">
+          {/* Header with back button */}
+          <div className="flex items-center gap-4 mb-6">
+            <motion.button
+              onClick={() => setStep('interests')}
+              className="p-2 -ml-2"
+              whileTap={{ scale: 0.9 }}
+            >
+              <ChevronRight className="w-6 h-6 text-foreground rotate-180" />
+            </motion.button>
+            <h1 className="text-xl font-bold text-foreground">Add Photos</h1>
+          </div>
+          {renderInput()}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-hero" />
       
       <div className="relative flex-1 flex flex-col px-6 pt-12 pb-8 max-w-md mx-auto w-full">
-        {/* ULI Mascot */}
+        {/* Lira Mascot */}
         <motion.div 
           className="flex justify-center mb-8"
           initial={{ scale: 0, rotate: -180 }}
@@ -964,7 +1183,7 @@ const OnboardingPage = () => {
         >
           <motion.img 
             src={uliMascot} 
-            alt="ULI" 
+            alt="Lira" 
             className="w-32 h-32 drop-shadow-lg"
             animate={{ y: [0, -8, 0] }}
             transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}

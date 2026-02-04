@@ -77,6 +77,15 @@ export default {
           DEFAULT: "hsl(var(--connectme))",
           foreground: "hsl(var(--connectme-foreground))",
         },
+        // Brand Color Palette
+        brand: {
+          white: "hsl(var(--color-white))",
+          orange: "hsl(var(--color-orange))",
+          tangelo: "hsl(var(--color-tangelo))",
+          "black-steel": "hsl(var(--color-black-steel))",
+          blue: "hsl(var(--color-blue))",
+          red: "hsl(var(--color-red))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

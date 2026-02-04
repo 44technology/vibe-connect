@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Search, ChevronRight, Plus, Calendar, Clock, MapPin, ArrowRight, GraduationCap, DollarSign, Ticket } from 'lucide-react';
+import { Search, ChevronRight, Plus, Calendar, Clock, MapPin, ArrowRight, GraduationCap, DollarSign, Ticket, Users } from 'lucide-react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import BottomNav from '@/components/layout/BottomNav';
 import { meetups as mockMeetups, venues as mockVenues } from '@/data/mockData';
@@ -609,6 +609,18 @@ const HomePage = () => {
                                 {item.time || (item.startTime ? formatTime(item.startTime) : 'TBD')}
                               </span>
                             </div>
+                            {/* Capacity info */}
+                            {(isClass ? (item.maxStudents || item._count?.enrollments) : (item.maxAttendees || item._count?.members)) && (
+                              <div className="flex items-center gap-1">
+                                <Users className="w-3.5 h-3.5" />
+                                <span>
+                                  {isClass
+                                    ? `${item._count?.enrollments || 0}${item.maxStudents ? `/${item.maxStudents}` : ''}`
+                                    : `${item._count?.members || 0}${item.maxAttendees ? `/${item.maxAttendees}` : ''}`
+                                  }
+                                </span>
+                              </div>
+                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <MapPin className="w-3.5 h-3.5 text-muted-foreground" />

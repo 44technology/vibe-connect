@@ -191,14 +191,22 @@ const SurpriseMePage = () => {
       if (itemType === 'vibe') {
         await joinMeetup.mutateAsync({ meetupId: selectedItem.id });
         toast.success('Successfully joined the surprise vibe!');
-        navigate(`/meetup/${selectedItem.id}`);
+        // Use setTimeout to ensure state updates complete before navigation
+        setTimeout(() => {
+          navigate(`/meetup/${selectedItem.id}`);
+        }, 100);
       } else {
         await enrollInClass.mutateAsync(selectedItem.id);
         toast.success('Successfully enrolled in the surprise class!');
-        navigate(`/class/${selectedItem.id}`);
+        // Use setTimeout to ensure state updates complete before navigation
+        setTimeout(() => {
+          navigate(`/class/${selectedItem.id}`);
+        }, 100);
       }
     } catch (error: any) {
-      toast.error(error.message || `Failed to ${itemType === 'vibe' ? 'join vibe' : 'enroll in class'}`);
+      console.error('Join error:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || `Failed to ${itemType === 'vibe' ? 'join vibe' : 'enroll in class'}`;
+      toast.error(errorMessage);
     }
   };
 

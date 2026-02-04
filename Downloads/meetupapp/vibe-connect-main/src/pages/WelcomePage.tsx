@@ -47,7 +47,7 @@ const WelcomePage = () => {
         >
           <motion.img 
             src={uliMascot} 
-            alt="ULIKME" 
+            alt="Lira" 
             className="w-40 h-40 mb-6 drop-shadow-2xl"
             animate={{ y: [0, -10, 0] }}
             transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}

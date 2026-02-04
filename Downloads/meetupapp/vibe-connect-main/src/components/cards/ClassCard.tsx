@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { BookOpen, MapPin, Clock, DollarSign, Users, Calendar, Crown, Lock } from 'lucide-react';
+import { BookOpen, MapPin, Clock, DollarSign, Users, Calendar, Crown, Lock, TrendingUp } from 'lucide-react';
 import { format } from 'date-fns';
 import UserAvatar from '@/components/ui/UserAvatar';
 import { Class } from '@/hooks/useClasses';
@@ -106,8 +106,10 @@ const ClassCard = ({
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Users className="w-4 h-4" />
             <span>
-              {_count?.enrollments || 0}
-              {maxStudents ? ` / ${maxStudents}` : ''} enrolled
+              {maxStudents 
+                ? `${_count?.enrollments || 0}/${maxStudents}`
+                : `${_count?.enrollments || 0} enrolled`
+              }
             </span>
           </div>
           {onEnroll && (

@@ -305,13 +305,35 @@ const DiscoverPage = () => {
                   <p className="text-muted-foreground">Loading venues...</p>
                 </div>
               ) : venues && venues.length > 0 ? (
-                venues.map((venue: any) => (
-                  <VenueCard
-                    key={venue.id}
-                    {...venue}
-                    onPress={() => navigate(`/venue/${venue.id}`)}
-                  />
-                ))
+                venues.map((venue: any) => {
+                  // Normalize venue data for VenueCard
+                  const normalizedVenue = {
+                    id: venue.id || '',
+                    name: venue.name || 'Unknown Venue',
+                    category: venue.category || venue.amenities?.[0] || 'Venue',
+                    image: venue.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400',
+                    rating: venue.rating || 4.5,
+                    reviewCount: venue.reviewCount || venue._count?.meetups || 0,
+                    distance: venue.distance || `${Math.round(Math.random() * 5 + 0.5)} mi`,
+                    priceRange: venue.priceRange,
+                    isOpen: venue.isOpen !== undefined ? venue.isOpen : true,
+                    hasDeals: venue.hasDeals || false,
+                  };
+                  
+                  return (
+                    <VenueCard
+                      key={venue.id}
+                      {...normalizedVenue}
+                      onPress={() => {
+                        if (venue.id) {
+                          navigate(`/venue/${venue.id}`);
+                        } else {
+                          console.warn('Venue ID is missing:', venue);
+                        }
+                      }}
+                    />
+                  );
+                })
               ) : (
                 <div className="text-center py-8 col-span-2">
                   <p className="text-muted-foreground">No venues found. Try adjusting your filters.</p>
