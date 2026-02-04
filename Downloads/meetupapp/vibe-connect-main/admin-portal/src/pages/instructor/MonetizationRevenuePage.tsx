@@ -115,28 +115,12 @@ export default function MonetizationRevenuePage() {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                <div>
-                  <p className="font-medium text-foreground">Stripe Processing Fee</p>
-                  <p className="text-xs text-muted-foreground">3% of gross amount</p>
-                </div>
-                <span className="font-semibold text-red-600">-$3.00</span>
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                <div>
-                  <p className="font-medium text-foreground">Net Amount</p>
-                  <p className="text-xs text-muted-foreground">After Stripe fee</p>
-                </div>
-                <span className="font-semibold text-green-600">$97.00</span>
-              </div>
-
               <div className="flex items-center justify-between p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
                 <div>
-                  <p className="font-medium text-foreground">Platform Fee (Ulikme)</p>
-                  <p className="text-xs text-muted-foreground">3% of net amount (not affected by Stripe fee)</p>
+                  <p className="font-medium text-foreground">Processing Fee</p>
+                  <p className="text-xs text-muted-foreground">4% of gross amount</p>
                 </div>
-                <span className="font-semibold text-orange-600">-$2.91</span>
+                <span className="font-semibold text-orange-600">-$4.00</span>
               </div>
 
               <div className="flex items-center justify-between p-4 rounded-lg bg-primary/10 border-2 border-primary/30 mt-4">
@@ -144,16 +128,8 @@ export default function MonetizationRevenuePage() {
                   <p className="font-bold text-lg text-foreground">Your Payout</p>
                   <p className="text-xs text-muted-foreground">Amount you receive</p>
                 </div>
-                <span className="text-3xl font-bold text-primary">$94.09</span>
+                <span className="text-3xl font-bold text-primary">$96.00</span>
               </div>
-            </div>
-
-            <div className="p-3 rounded-lg bg-muted/50 border border-border">
-              <p className="text-xs text-muted-foreground">
-                <strong>Important:</strong> Platform fee is calculated on the net amount (after Stripe fee) 
-                to ensure Stripe's commission doesn't reduce our revenue. This means you always get 94.09% 
-                of the net amount, regardless of Stripe's fee.
-              </p>
             </div>
           </div>
         </CardContent>
